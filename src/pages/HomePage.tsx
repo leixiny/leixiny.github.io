@@ -10,69 +10,28 @@ interface GuestbookRow {
   created_at: string
 }
 
-const skillGroups = [
-  {
-    name: '数据处理',
-    items: [
-      { name: 'SQL', evidence: '清洗 3.1 万条问卷与订单记录' },
-      { name: 'Python / pandas', evidence: '按月批量处理销售明细' },
-      { name: 'Excel 建模', evidence: '预算模型，误差控制在 3% 内' },
-    ],
-  },
-  {
-    name: '分析与洞察',
-    items: [
-      { name: '用户调研', evidence: '主导 312 份问卷 + 12 场深访' },
-      { name: '行业研究', evidence: '4 篇消费赛道观察，1 篇被校内公号转载' },
-      { name: '指标体系', evidence: '为二手平台搭 3 层指标' },
-    ],
-  },
-  {
-    name: '表达与协作',
-    items: [
-      { name: 'Power BI', evidence: '区域消费看板，60 人课程评审' },
-      { name: 'Tableau', evidence: '课程可视化作业，评分 A' },
-      { name: 'Git', evidence: '3 人团队分支协作流程' },
-    ],
-  },
-]
+interface Milestone {
+  date: string
+  title: string
+  desc?: string
+}
 
-const projects = [
-  {
-    title: '把 312 份问卷变成 3 条产品优先级',
-    meta: '独立负责 · 2026.03 — 2026.05',
-    background: '校园二手平台留存偏低，团队不确定该先改哪一环。',
-    action: '设计问卷并完成 12 场深访，交叉分析 312 份样本，按影响面与实现成本排序需求。',
-    result: '3 条优先级被采纳进入排期，其中首条已上线，次月留存回升。',
-    tags: ['用户调研', '需求排序', '问卷设计'],
-  },
-  {
-    title: '用公开数据做出区域消费差异看板',
-    meta: '数据处理 · 2026.06',
-    background: '课程作业要解释区域消费差异，而原始数据分散在三个来源。',
-    action: '合并三份数据统一口径，用 Power BI 做联动看板，拆出人均消费与结构差异两条线。',
-    result: '看板覆盖 31 个省份，被选为课程展示案例，评分 A。',
-    tags: ['Power BI', '数据清洗', '可视化'],
-  },
-  {
-    title: '一个下午上线，把简历做成可访问的网站',
-    meta: '设计与开发 · 2026.10',
-    background: '纸质简历承载不了作品细节，投递时容易被快速略过。',
-    action: '用自然语言驱动开发完成单页站点，内容与代码分离，构建为静态站点直接托管。',
-    result: '首屏 3 秒内可读完核心信息，手机端无横向滚动、无需缩放。',
-    tags: ['Vibe Coding', '静态部署', '内容结构'],
-  },
-  {
-    title: '客户任务管理系统 SupaProject',
-    meta: '全栈开发 · 2026.10 · 演示账号 demo@test.cn / demo1234',
-    background: '需要一个能真实落地的小型 CRM：客户、任务、跟进记录都要能增删改查。',
-    action: 'React + TypeScript + Vite 构建前端，Supabase 提供数据库与登录鉴权，客户/任务/看板三视图联动。',
-    result: '完整可用的任务管理系统——你现在看到的这个网站，就是由它驱动的。',
-    tags: ['React', 'TypeScript', 'Supabase'],
-    linkTo: '/',
-    linkLabel: '打开在线系统',
-  },
-]
+interface Project {
+  id: string
+  title: string
+  cover: string
+  uploadedAt: string
+  period: string
+  role: string
+  summary: string
+  result: string
+  tags: string[]
+  linkTo?: string
+  linkLabel?: string
+  milestones: Milestone[]
+}
+
+const skillTags = ['SQL', 'Python / pandas', 'Excel 建模', 'Power BI', 'Tableau', '用户调研', '指标体系', 'Git']
 
 const contacts = [
   { label: '邮箱', value: 'leixinyi@stu.edu.cn', href: 'mailto:leixinyi@stu.edu.cn' },
@@ -81,7 +40,11 @@ const contacts = [
   { label: '简历', value: 'resume.pdf', href: 'resume.pdf', download: true },
 ]
 
-function formatDate(ts: string) {
+function formatDateCN(iso: string) {
+  return iso.replaceAll('-', '.')
+}
+
+function formatDateTime(ts: string) {
   try {
     return new Date(ts).toLocaleString('zh-CN', {
       month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
@@ -96,13 +59,19 @@ function scrollToSection(id: string) {
 }
 
 const navSections = [
-  { id: 'skills', label: '能力' },
-  { id: 'work', label: '作品' },
+  { id: 'portfolio', label: '作品集' },
   { id: 'contact', label: '联系' },
   { id: 'interact', label: '留言' },
 ]
 
+const baseUrl = import.meta.env.BASE_URL
+
 export default function HomePage() {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [projectsState, setProjectsState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [view, setView] = useState<'gallery' | 'timeline'>('gallery')
+  const [active, setActive] = useState<Project | null>(null)
+
   const [likes, setLikes] = useState<number | null>(null)
   const [views, setViews] = useState<number | null>(null)
   const [justLiked, setJustLiked] = useState(false)
@@ -112,6 +81,36 @@ export default function HomePage() {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+
+  // 作品数据：public/projects.json，内容与代码分离
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${baseUrl}projects.json`)
+      .then((r) => {
+        if (!r.ok) throw new Error('projects.json ' + r.status)
+        return r.json()
+      })
+      .then((data: { projects: Project[] }) => {
+        if (cancelled) return
+        const sorted = [...data.projects].sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt))
+        setProjects(sorted)
+        setProjectsState('ready')
+      })
+      .catch(() => !cancelled && setProjectsState('error'))
+    return () => { cancelled = true }
+  }, [])
+
+  // 详情弹层：Esc 关闭 + 锁定背景滚动
+  useEffect(() => {
+    if (!active) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setActive(null)
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [active])
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -228,12 +227,17 @@ export default function HomePage() {
       </header>
 
       <section className="home-hero">
-        <p className="home-eyebrow">数字经济 · 本科三年级</p>
+        <p className="home-eyebrow">数字经济 · 本科三年级 · 作品集</p>
         <h1>你好，我是雷馨怡</h1>
-        <p className="home-tagline">用数据讲清商业问题，把分析做成能落地的决策。</p>
+        <p className="home-tagline">用数据讲清商业问题，把分析做成能落地的决策。这里收录我做过的项目，以及它们从想法到上线的孵化过程。</p>
+        <div className="home-skill-tags">
+          {skillTags.map((t) => (
+            <span key={t} className="badge badge-neutral">{t}</span>
+          ))}
+        </div>
         <div className="home-hero-cta">
-          <button type="button" className="btn-primary" onClick={() => scrollToSection('work')}>
-            查看作品
+          <button type="button" className="btn-primary" onClick={() => scrollToSection('portfolio')}>
+            浏览作品集
           </button>
           <Link className="btn-secondary" to="/">
             进入管理系统
@@ -250,64 +254,99 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="skills" className="home-section">
-        <p className="home-label">01 · 能力</p>
-        <h2>从数据到决策的能力链条</h2>
-        <div className="home-skill-grid">
-          {skillGroups.map((group) => (
-            <article key={group.name} className="card home-skill-card">
-              <h3>{group.name}</h3>
-              <ul>
-                {group.items.map((item) => (
-                  <li key={item.name}>
-                    <strong>{item.name}</strong>
-                    <span>{item.evidence}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+      <section id="portfolio" className="home-section">
+        <div className="home-portfolio-head">
+          <div>
+            <p className="home-label">01 · 作品集</p>
+            <h2>项目与它们的孵化过程</h2>
+          </div>
+          <div className="home-view-switch" role="tablist" aria-label="作品视图切换">
+            <button
+              type="button"
+              className={view === 'gallery' ? 'active' : ''}
+              onClick={() => setView('gallery')}
+            >
+              画廊
+            </button>
+            <button
+              type="button"
+              className={view === 'timeline' ? 'active' : ''}
+              onClick={() => setView('timeline')}
+            >
+              孵化时间线
+            </button>
+          </div>
         </div>
-        <p className="home-learning">最近在学：SQL 窗口函数、A/B 测试的实验设计</p>
-      </section>
 
-      <section id="work" className="home-section">
-        <p className="home-label">02 · 作品</p>
-        <h2>四个能说清结果的项目</h2>
-        <div className="home-work-grid">
-          {projects.map((p) => (
-            <article key={p.title} className="card home-work-card">
-              <h3>{p.title}</h3>
-              <p className="home-work-meta">{p.meta}</p>
-              <div className="home-work-line">
-                <em>背景</em>
-                <p>{p.background}</p>
-              </div>
-              <div className="home-work-line">
-                <em>行动</em>
-                <p>{p.action}</p>
-              </div>
-              <div className="home-work-result">
-                <em>结果</em>
-                <p>{p.result}</p>
-              </div>
-              <div className="home-work-tags">
-                {p.tags.map((t) => (
-                  <span key={t} className="badge badge-neutral">{t}</span>
-                ))}
-                {p.linkTo && (
-                  <Link className="badge badge-purple home-work-link" to={p.linkTo}>
-                    {p.linkLabel} ↗
-                  </Link>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+        {projectsState === 'loading' && <p className="muted">正在加载作品…</p>}
+        {projectsState === 'error' && (
+          <div className="alert alert-error">作品数据加载失败：projects.json 缺失或无法访问。</div>
+        )}
+
+        {projectsState === 'ready' && view === 'gallery' && (
+          <div className="home-gallery">
+            {projects.map((p) => (
+              <article key={p.id} className="card home-gallery-card" onClick={() => setActive(p)}>
+                <div className="home-cover">
+                  <img src={`${baseUrl}${p.cover}`} alt={p.title} loading="lazy" />
+                  <span className="home-cover-date" title="上传时间">
+                    <i>⇪</i> {formatDateCN(p.uploadedAt)} 上传
+                  </span>
+                </div>
+                <div className="home-gallery-body">
+                  <p className="home-work-meta">{p.role} · {p.period}</p>
+                  <h3>{p.title}</h3>
+                  <p className="home-gallery-summary">{p.summary}</p>
+                  <div className="home-work-tags">
+                    {p.tags.map((t) => (
+                      <span key={t} className="badge badge-neutral">{t}</span>
+                    ))}
+                  </div>
+                  <span className="home-gallery-more">查看孵化过程 →</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {projectsState === 'ready' && view === 'timeline' && (
+          <div className="home-timeline">
+            {projects.map((p) => (
+              <section key={p.id} className="home-tl-project">
+                <header className="home-tl-head">
+                  <img className="home-tl-thumb" src={`${baseUrl}${p.cover}`} alt="" loading="lazy" />
+                  <div>
+                    <h3>{p.title}</h3>
+                    <p className="home-work-meta">
+                      {p.role} · {p.period} ·{' '}
+                      <span className="home-tl-uploaded">{formatDateCN(p.uploadedAt)} 上传</span>
+                    </p>
+                  </div>
+                  {p.linkTo && (
+                    <Link className="badge badge-purple home-tl-link" to={p.linkTo}>
+                      {p.linkLabel || '打开'} ↗
+                    </Link>
+                  )}
+                </header>
+                <ol className="home-tl-nodes">
+                  {p.milestones.map((m) => (
+                    <li key={m.date + m.title}>
+                      <time>{formatDateCN(m.date)}</time>
+                      <div>
+                        <strong>{m.title}</strong>
+                        {m.desc && <p>{m.desc}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ))}
+          </div>
+        )}
       </section>
 
       <section id="contact" className="home-section">
-        <p className="home-label">03 · 联系</p>
+        <p className="home-label">02 · 联系</p>
         <h2>随时可以找我</h2>
         <div className="card home-contact-card">
           {contacts.map((c) => (
@@ -324,13 +363,13 @@ export default function HomePage() {
       </section>
 
       <section id="interact" className="home-section">
-        <p className="home-label">04 · 互动</p>
+        <p className="home-label">03 · 互动</p>
         <h2>这一页是活的：留言和点赞都会被记住</h2>
         {interactDisabled && (
           <div className="alert alert-info home-offline">
             {guestbookState === 'offline'
               ? '互动功能尚未接入 Supabase：配置 .env.local 后重启即可激活。'
-              : '互动功能暂时不可用：请在 Supabase 执行 supabase/migrations/0002_site_interaction.sql 建表，并确认网络可以访问 Supabase。'}
+              : '互动功能暂时不可用：请确认网络可以访问 Supabase。'}
           </div>
         )}
         <div className="home-interact-grid">
@@ -375,7 +414,7 @@ export default function HomePage() {
               <article key={m.id} className="home-gb-item">
                 <header>
                   <strong>{m.name || '访客'}</strong>
-                  <time>{formatDate(m.created_at)}</time>
+                  <time>{formatDateTime(m.created_at)}</time>
                 </header>
                 <p>{m.message}</p>
               </article>
@@ -387,6 +426,53 @@ export default function HomePage() {
       <footer className="home-footer">
         © 2026 雷馨怡 · 数字经济专业 · 由 SupaProject 驱动
       </footer>
+
+      {active && (
+        <div className="home-modal-mask" onClick={() => setActive(null)}>
+          <article className="card home-modal" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="home-modal-close" aria-label="关闭" onClick={() => setActive(null)}>
+              ×
+            </button>
+            <img className="home-modal-cover" src={`${baseUrl}${active.cover}`} alt={active.title} />
+            <div className="home-modal-body">
+              <p className="home-work-meta">
+                {active.role} · {active.period} ·{' '}
+                <span className="home-tl-uploaded">{formatDateCN(active.uploadedAt)} 上传</span>
+              </p>
+              <h3>{active.title}</h3>
+              <p className="home-modal-summary">{active.summary}</p>
+              <div className="home-work-tags">
+                {active.tags.map((t) => (
+                  <span key={t} className="badge badge-neutral">{t}</span>
+                ))}
+                {active.linkTo && (
+                  <Link className="badge badge-purple" to={active.linkTo} onClick={() => setActive(null)}>
+                    {active.linkLabel || '打开'} ↗
+                  </Link>
+                )}
+              </div>
+
+              <h4>孵化过程</h4>
+              <ol className="home-tl-nodes home-tl-nodes--modal">
+                {active.milestones.map((m) => (
+                  <li key={m.date + m.title}>
+                    <time>{formatDateCN(m.date)}</time>
+                    <div>
+                      <strong>{m.title}</strong>
+                      {m.desc && <p>{m.desc}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="home-work-result">
+                <em>结果</em>
+                <p>{active.result}</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      )}
     </div>
   )
 }
