@@ -10,8 +10,7 @@
       "summary": "能真实落地的全栈任务管理系统：客户、任务、看板三视图联动，带登录鉴权。",
       "result": "完整可用的任务管理系统——你现在看到的这个网站，就是由它驱动的。",
       "tags": ["React", "TypeScript", "Supabase"],
-      "linkTo": "/",
-      "linkLabel": "打开在线系统",
+      "url": "#/",
       "milestones": [
         { "date": "2026-10-24", "title": "想法萌生", "desc": "想要一个能真实落地的小型 CRM：客户、任务、跟进记录都要能增删改查。" },
         { "date": "2026-10-25", "title": "技术选型与建表", "desc": "确定 React + TypeScript + Vite + Supabase，完成数据库建模。" },
