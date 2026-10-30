@@ -3,6 +3,13 @@
   max-width: 1080px;
   margin: 0 auto;
   padding: 0 20px 0;
+
+  /* 蓝粉主题（仅作用于公开主页，不影响 CRM 后台） */
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-soft: #eff6ff;
+  --pink: #ec4899;
+  --grad: linear-gradient(135deg, #3b82f6, #ec4899);
 }
 
 .home-nav {
@@ -49,13 +56,18 @@
 
 .home-hero {
   padding: 76px 6px 64px;
-  background: radial-gradient(circle at 12% 0%, rgba(199, 210, 254, 0.55) 0, transparent 42%);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(147, 197, 253, 0.5) 0, transparent 42%),
+    radial-gradient(circle at 90% 14%, rgba(249, 168, 212, 0.45) 0, transparent 45%);
   border-radius: 0 0 26px 26px;
 }
 
 .home-eyebrow {
   margin: 0 0 12px;
-  color: var(--primary);
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-weight: 800;
   font-size: 14px;
   letter-spacing: 0.04em;
@@ -118,8 +130,8 @@
   transition: transform .15s ease, border-color .15s ease;
 }
 
-.home-like:hover { border-color: #c7d2fe; transform: translateY(-1px); }
-.home-like.liked { border-color: #fda4af; color: #e11d48; }
+.home-like:hover { border-color: #93c5fd; transform: translateY(-1px); }
+.home-like.liked { border-color: #f9a8d4; color: #db2777; }
 .home-like-heart { font-style: normal; font-size: 16px; }
 
 .home-section { padding: 56px 0 6px; }
@@ -169,7 +181,7 @@
 }
 
 .home-view-switch button.active {
-  background: var(--primary);
+  background: var(--grad);
   color: white;
 }
 
@@ -191,7 +203,7 @@
 
 .home-gallery-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 14px 34px rgba(79, 70, 229, 0.16);
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.16);
 }
 
 .home-cover {
@@ -292,10 +304,13 @@
 .home-tl-head h3 { margin: 0 0 3px; font-size: 16px; color: #111827; }
 .home-tl-head > div { flex: 1; }
 .home-tl-head .home-tl-link { flex: none; align-self: center; }
-.home-tl-link:hover { background: #ddd6fe; }
+.home-tl-link:hover { background: #fbcfe8; }
+
+/* 蓝粉主题：紫色徽章改粉色 */
+.home-page .badge-purple { background: #fce7f3; color: #db2777; }
 
 .home-tl-uploaded {
-  color: var(--primary);
+  color: var(--pink);
   font-weight: 800;
 }
 
@@ -442,7 +457,7 @@
   padding-top: 2px;
 }
 
-.home-work-result p { margin: 0; font-size: 14px; line-height: 1.7; color: #3730a3; font-weight: 600; }
+.home-work-result p { margin: 0; font-size: 14px; line-height: 1.7; color: #1e40af; font-weight: 600; }
 
 /* ---------- 联系 ---------- */
 .home-contact-card { display: grid; gap: 0; padding: 8px 20px; }
