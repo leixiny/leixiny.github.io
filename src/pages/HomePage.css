@@ -3,13 +3,6 @@
   max-width: 1080px;
   margin: 0 auto;
   padding: 0 20px 0;
-
-  /* 蓝粉主题（仅作用于公开主页，不影响 CRM 后台） */
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --primary-soft: #eff6ff;
-  --pink: #ec4899;
-  --grad: linear-gradient(135deg, #3b82f6, #ec4899);
 }
 
 .home-nav {
@@ -57,8 +50,8 @@
 .home-hero {
   padding: 76px 6px 64px;
   background:
-    radial-gradient(circle at 10% 0%, rgba(147, 197, 253, 0.5) 0, transparent 42%),
-    radial-gradient(circle at 90% 14%, rgba(249, 168, 212, 0.45) 0, transparent 45%);
+    radial-gradient(circle at 10% 0%, rgba(174, 228, 255, 0.6) 0, transparent 42%),
+    radial-gradient(circle at 90% 14%, rgba(255, 204, 213, 0.55) 0, transparent 45%);
   border-radius: 0 0 26px 26px;
 }
 
@@ -130,8 +123,8 @@
   transition: transform .15s ease, border-color .15s ease;
 }
 
-.home-like:hover { border-color: #93c5fd; transform: translateY(-1px); }
-.home-like.liked { border-color: #f9a8d4; color: #db2777; }
+.home-like:hover { border-color: #9cd0f5; transform: translateY(-1px); }
+.home-like.liked { border-color: #ffb9c9; color: #e04d74; }
 .home-like-heart { font-style: normal; font-size: 16px; }
 
 .home-section { padding: 56px 0 6px; }
@@ -203,7 +196,7 @@
 
 .home-gallery-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.16);
+  box-shadow: 0 14px 34px rgba(47, 157, 229, 0.16);
 }
 
 .home-cover {
@@ -304,10 +297,10 @@
 .home-tl-head h3 { margin: 0 0 3px; font-size: 16px; color: #111827; }
 .home-tl-head > div { flex: 1; }
 .home-tl-head .home-tl-link { flex: none; align-self: center; }
-.home-tl-link:hover { background: #fbcfe8; }
+.home-tl-link:hover { background: #ffd6de; }
 
-/* 蓝粉主题：紫色徽章改粉色 */
-.home-page .badge-purple { background: #fce7f3; color: #db2777; }
+/* 应援色：徽章粉色 */
+.home-page .badge-purple { background: #ffe4ec; color: #d94f79; }
 
 .home-tl-uploaded {
   color: var(--pink);
@@ -457,7 +450,7 @@
   padding-top: 2px;
 }
 
-.home-work-result p { margin: 0; font-size: 14px; line-height: 1.7; color: #1e40af; font-weight: 600; }
+.home-work-result p { margin: 0; font-size: 14px; line-height: 1.7; color: #1d6fa8; font-weight: 600; }
 
 /* ---------- 联系 ---------- */
 .home-contact-card { display: grid; gap: 0; padding: 8px 20px; }
