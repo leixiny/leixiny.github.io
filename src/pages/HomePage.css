@@ -262,6 +262,36 @@
   margin-top: 4px;
 }
 
+.home-gallery-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.home-gallery-actions .home-gallery-more { margin-top: 0; }
+
+.home-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #ffb9c9;
+  background: #fff5f8;
+  color: #d94f79;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.home-open-btn:hover {
+  background: #ffe4ec;
+  border-color: #f78ba6;
+  transform: translateY(-1px);
+}
+
 .home-work-meta { margin: 0; color: var(--muted); font-size: 13px; }
 .home-work-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
 

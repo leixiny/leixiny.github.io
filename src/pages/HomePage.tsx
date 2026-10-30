@@ -26,8 +26,7 @@ interface Project {
   summary: string
   result: string
   tags: string[]
-  linkTo?: string
-  linkLabel?: string
+  url?: string
   milestones: Milestone[]
 }
 
@@ -302,7 +301,20 @@ export default function HomePage() {
                       <span key={t} className="badge badge-neutral">{t}</span>
                     ))}
                   </div>
-                  <span className="home-gallery-more">查看孵化过程 →</span>
+                  <div className="home-gallery-actions">
+                    <span className="home-gallery-more">查看孵化过程 →</span>
+                    {p.url && (
+                      <a
+                        className="home-open-btn"
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        打开作品 ↗
+                      </a>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}
@@ -322,10 +334,10 @@ export default function HomePage() {
                       <span className="home-tl-uploaded">{formatDateCN(p.uploadedAt)} 上传</span>
                     </p>
                   </div>
-                  {p.linkTo && (
-                    <Link className="badge badge-purple home-tl-link" to={p.linkTo}>
-                      {p.linkLabel || '打开'} ↗
-                    </Link>
+                  {p.url && (
+                    <a className="badge badge-purple home-tl-link" href={p.url} target="_blank" rel="noopener noreferrer">
+                      打开作品 ↗
+                    </a>
                   )}
                 </header>
                 <ol className="home-tl-nodes">
@@ -445,10 +457,10 @@ export default function HomePage() {
                 {active.tags.map((t) => (
                   <span key={t} className="badge badge-neutral">{t}</span>
                 ))}
-                {active.linkTo && (
-                  <Link className="badge badge-purple" to={active.linkTo} onClick={() => setActive(null)}>
-                    {active.linkLabel || '打开'} ↗
-                  </Link>
+                {active.url && (
+                  <a className="badge badge-purple" href={active.url} target="_blank" rel="noopener noreferrer" onClick={() => setActive(null)}>
+                    直接打开作品 ↗
+                  </a>
                 )}
               </div>
 
