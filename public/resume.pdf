@@ -1,0 +1,62 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 658 >>
+stream
+BT
+/F1 24 Tf
+60 760 Td
+(WANG SIYUAN) Tj
+/F1 11 Tf
+0 -18 Td
+(Digital Economy  |  B.Sc. Year 3) Tj
+/F1 10 Tf
+0 -18 Td
+(Email: wangsiyuan@stu.edu.cn    WeChat: siyuan_wang) Tj
+0 -18 Td
+(GitHub: github.com/siyuan-wang) Tj
+0 -18 Td
+/F1 12 Tf
+0 -18 Td
+(SKILLS) Tj
+/F1 10 Tf
+0 -18 Td
+(SQL / Python (pandas) / Excel modeling / Power BI / Tableau / Git) Tj
+0 -18 Td
+/F1 12 Tf
+0 -18 Td
+(PROJECTS) Tj
+/F1 10 Tf
+0 -18 Td
+(1. 312-sample survey -> 3 prioritized product requirements (adopted).) Tj
+0 -18 Td
+(2. Regional consumption dashboard: 31 provinces, Power BI, graded A.) Tj
+0 -18 Td
+(3. Personal digital card: static single page, content separated from code.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000950 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1020
+%%EOF

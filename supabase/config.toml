@@ -1,0 +1,6 @@
+# A string used to distinguish different Supabase projects
+project_id = "bkiqrhlthjodswqivdsn"
+
+[functions.web]
+verify_jwt = false
+auth_mode = "none"
