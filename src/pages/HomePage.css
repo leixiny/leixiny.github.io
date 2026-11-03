@@ -165,8 +165,12 @@
 }
 
 .hp-hero-mid {
-  display: grid;
-  gap: clamp(8px, 1.3vw, 18px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(12px, 2.4vw, 40px);
+  flex-wrap: wrap;
+  padding-block: clamp(6px, 1.6vh, 20px);
 }
 
 .hp-hero-glow {
@@ -201,20 +205,20 @@
 
 .hp-name {
   margin: 0;
-  /* 字身撑满视口宽度；line-height 小于 1 时字形会溢出行盒，用 padding 兜住 */
-  padding-bottom: 0.1em;
+  /* 海报式大字，但只占满宽的一部分，不把整屏吃掉 */
+  padding-bottom: 0.06em;
   /* 汉字字形自带左右边距，负 margin 让墨迹跟上方文字左对齐 */
-  margin-left: -0.04em;
-  font-size: 30vw;
+  margin-left: -0.035em;
+  font-size: clamp(62px, 15.5vw, 216px);
   font-weight: 800;
-  line-height: 0.82;
-  letter-spacing: -0.02em;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
   color: var(--rp-ink);
   animation: hpUp 0.8s 0.06s var(--rp-ease) both;
 }
 
 .hp-name-en {
-  margin: 0;
+  margin: 0 0 0.8em auto;
   font-size: clamp(10px, 0.95vw, 13px);
   font-weight: 600;
   letter-spacing: 0.34em;
@@ -782,11 +786,12 @@
   }
 
   .hp-name {
-    font-size: 28vw;
+    font-size: clamp(52px, 17vw, 96px);
   }
 
   .hp-name-en {
     letter-spacing: 0.26em;
+    margin-bottom: 0.6em;
   }
 
   .hp-stats {

@@ -190,7 +190,7 @@ export default function HomePage() {
           <div className="hp-hero-top">
             <p className="hp-kicker">
               <span className="hp-kicker-line" />
-              数字经济 · 本科三年级
+              数字经济 · 本科二年级
             </p>
 
             <div className="hp-stats">
