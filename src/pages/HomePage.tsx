@@ -58,9 +58,9 @@ function scrollToSection(id: string) {
 }
 
 const navSections = [
-  { id: 'portfolio', label: '作品集' },
-  { id: 'contact', label: '联系' },
-  { id: 'interact', label: '留言' },
+  { id: 'portfolio', label: '作品集', index: '01' },
+  { id: 'contact', label: '联系', index: '02' },
+  { id: 'interact', label: '留言', index: '03' },
 ]
 
 const baseUrl = import.meta.env.BASE_URL
@@ -80,6 +80,15 @@ export default function HomePage() {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+  const [stuck, setStuck] = useState(false)
+
+  // 导航：顶部透明，滚动后转实底（避免半透明条压在环境光上产生接缝）
+  useEffect(() => {
+    const onScroll = () => setStuck(window.scrollY > 6)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   // 作品数据：public/projects.json，内容与代码分离
   useEffect(() => {
@@ -98,6 +107,29 @@ export default function HomePage() {
       .catch(() => !cancelled && setProjectsState('error'))
     return () => { cancelled = true }
   }, [])
+
+  // 滚动进入视口时逐段淡入（尊重系统「减少动态效果」设置）
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-in)'))
+    if (!els.length) return
+    if (!('IntersectionObserver' in window)) {
+      els.forEach((el) => el.classList.add('is-in'))
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-in')
+            io.unobserve(entry.target)
+          }
+        })
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+    )
+    els.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [projectsState, view])
 
   // 详情弹层：Esc 关闭 + 锁定背景滚动
   useEffect(() => {
@@ -211,57 +243,108 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
-      <header className="home-nav">
-        <span className="home-brand">雷馨怡</span>
-        <nav className="home-links">
+      <header className={`home-nav ${stuck ? 'is-stuck' : ''}`}>
+        <Link className="home-brand" to="/home">
+          <span className="home-brand-mark">雷</span>
+          <span className="home-brand-text">
+            <strong>雷馨怡</strong>
+            <em>LEI XINYI</em>
+          </span>
+        </Link>
+        <nav className="home-links" aria-label="页面导航">
           {navSections.map((s) => (
             <button key={s.id} type="button" onClick={() => scrollToSection(s.id)}>
+              <span>{s.index}</span>
               {s.label}
             </button>
           ))}
         </nav>
-        <Link className="btn-primary home-enter" to="/">
-          进入管理系统
+        <Link className="home-enter" to="/">
+          <span>进入管理系统</span>
+          <i aria-hidden="true">→</i>
         </Link>
       </header>
 
       <section className="home-hero">
-        <p className="home-eyebrow">数字经济 · 本科三年级 · 作品集</p>
-        <h1>你好，我是雷馨怡</h1>
-        <p className="home-tagline">用数据讲清商业问题，把分析做成能落地的决策。这里收录我做过的项目，以及它们从想法到上线的孵化过程。</p>
-        <div className="home-skill-tags">
-          {skillTags.map((t) => (
-            <span key={t} className="badge badge-neutral">{t}</span>
-          ))}
+        <div className="home-hero-main">
+          <p className="home-eyebrow" data-reveal>
+            <span className="home-eyebrow-dot" />
+            数字经济 · 本科三年级 · 作品集
+          </p>
+          <h1 className="home-hero-name" data-reveal>雷馨怡</h1>
+          <p className="home-hero-en" data-reveal>LEI XINYI ／ 数字经济 · 数据分析</p>
+          <p className="home-tagline" data-reveal>
+            用数据讲清商业问题，把分析做成能落地的决策。这里收录我做过的项目，以及它们从想法到上线的孵化过程。
+          </p>
+          <div className="home-skill-tags" data-reveal>
+            {skillTags.map((t) => (
+              <span key={t} className="home-skill">{t}</span>
+            ))}
+          </div>
+          <div className="home-hero-cta" data-reveal>
+            <button type="button" className="btn-primary" onClick={() => scrollToSection('portfolio')}>
+              浏览作品集
+            </button>
+            <a className="home-cta-quiet" href={`${baseUrl}resume.pdf`} download>
+              下载简历 <i aria-hidden="true">↓</i>
+            </a>
+            <Link className="home-cta-quiet" to="/">
+              进入管理系统 <i aria-hidden="true">→</i>
+            </Link>
+          </div>
         </div>
-        <div className="home-hero-cta">
-          <button type="button" className="btn-primary" onClick={() => scrollToSection('portfolio')}>
-            浏览作品集
-          </button>
-          <Link className="btn-secondary" to="/">
-            进入管理系统
-          </Link>
-        </div>
-        <div className="home-hero-stats">
-          <span>
-            <strong>{views ?? '—'}</strong> 次访问
-          </span>
-          <button type="button" className={`home-like ${justLiked ? 'liked' : ''}`} onClick={handleLike}>
-            <i className="home-like-heart">{justLiked ? '♥' : '♡'}</i>
-            <strong>{likes ?? '—'}</strong> 人点赞
-          </button>
-        </div>
+
+        <aside className="home-dossier" data-reveal>
+          <div className="home-dossier-top">
+            <span>DOSSIER</span>
+            <span>NO. 2026—01</span>
+          </div>
+          <dl className="home-dossier-list">
+            <div>
+              <dt>专业</dt>
+              <dd>数字经济</dd>
+            </div>
+            <div>
+              <dt>年级</dt>
+              <dd>本科三年级</dd>
+            </div>
+            <div>
+              <dt>方向</dt>
+              <dd>数据分析 · 用户研究</dd>
+            </div>
+            <div>
+              <dt>作品</dt>
+              <dd>{projectsState === 'ready' ? `${projects.length} 个项目` : '—'}</dd>
+            </div>
+          </dl>
+          <div className="home-dossier-foot">
+            <div className="home-dossier-stat">
+              <strong>{views ?? '—'}</strong>
+              <span>次访问</span>
+            </div>
+            <button type="button" className={`home-like ${justLiked ? 'liked' : ''}`} onClick={handleLike}>
+              <i className="home-like-heart">{justLiked ? '♥' : '♡'}</i>
+              <strong>{likes ?? '—'}</strong>
+              <span>点赞</span>
+            </button>
+          </div>
+        </aside>
       </section>
 
       <section id="portfolio" className="home-section">
-        <div className="home-portfolio-head">
-          <div>
-            <p className="home-label">01 · 作品集</p>
+        <div className="home-sec-head" data-reveal>
+          <div className="home-sec-title">
+            <p className="home-label">
+              <span>01</span>
+              作品集
+            </p>
             <h2>项目与它们的孵化过程</h2>
           </div>
           <div className="home-view-switch" role="tablist" aria-label="作品视图切换">
             <button
               type="button"
+              role="tab"
+              aria-selected={view === 'gallery'}
               className={view === 'gallery' ? 'active' : ''}
               onClick={() => setView('gallery')}
             >
@@ -269,6 +352,8 @@ export default function HomePage() {
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={view === 'timeline'}
               className={view === 'timeline' ? 'active' : ''}
               onClick={() => setView('timeline')}
             >
@@ -277,44 +362,58 @@ export default function HomePage() {
           </div>
         </div>
 
-        {projectsState === 'loading' && <p className="muted">正在加载作品…</p>}
+        {projectsState === 'loading' && <p className="home-note">正在加载作品…</p>}
         {projectsState === 'error' && (
           <div className="alert alert-error">作品数据加载失败：projects.json 缺失或无法访问。</div>
         )}
 
         {projectsState === 'ready' && view === 'gallery' && (
-          <div className="home-gallery">
-            {projects.map((p) => (
-              <article key={p.id} className="card home-gallery-card" onClick={() => setActive(p)}>
-                <div className="home-cover">
+          <div className="home-work-list">
+            {projects.map((p, i) => (
+              <article
+                key={p.id}
+                className="home-work-row"
+                data-reveal
+                onClick={() => setActive(p)}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setActive(p)
+                  }
+                }}
+              >
+                <span className="home-work-index">{String(i + 1).padStart(2, '0')}</span>
+                <div className="home-work-thumb">
                   <img src={`${baseUrl}${p.cover}`} alt={p.title} loading="lazy" />
-                  <span className="home-cover-date" title="上传时间">
-                    <i>⇪</i> {formatDateCN(p.uploadedAt)} 上传
-                  </span>
                 </div>
-                <div className="home-gallery-body">
-                  <p className="home-work-meta">{p.role} · {p.period}</p>
+                <div className="home-work-main">
+                  <p className="home-work-meta">
+                    {p.role} <i aria-hidden="true">/</i> {p.period}
+                  </p>
                   <h3>{p.title}</h3>
-                  <p className="home-gallery-summary">{p.summary}</p>
+                  <p className="home-work-summary">{p.summary}</p>
                   <div className="home-work-tags">
                     {p.tags.map((t) => (
-                      <span key={t} className="badge badge-neutral">{t}</span>
+                      <span key={t}>{t}</span>
                     ))}
                   </div>
-                  <div className="home-gallery-actions">
-                    <span className="home-gallery-more">查看孵化过程 →</span>
-                    {p.url && (
-                      <a
-                        className="home-open-btn"
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        打开作品 ↗
-                      </a>
-                    )}
-                  </div>
+                </div>
+                <div className="home-work-aside">
+                  <time dateTime={p.uploadedAt}>{formatDateCN(p.uploadedAt)}</time>
+                  {p.url && (
+                    <a
+                      className="home-work-open"
+                      href={p.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      打开 ↗
+                    </a>
+                  )}
+                  <span className="home-work-arrow" aria-hidden="true">→</span>
                 </div>
               </article>
             ))}
@@ -323,19 +422,20 @@ export default function HomePage() {
 
         {projectsState === 'ready' && view === 'timeline' && (
           <div className="home-timeline">
-            {projects.map((p) => (
-              <section key={p.id} className="home-tl-project">
+            {projects.map((p, i) => (
+              <section key={p.id} className="home-tl-project" data-reveal>
                 <header className="home-tl-head">
+                  <span className="home-tl-index">{String(i + 1).padStart(2, '0')}</span>
                   <img className="home-tl-thumb" src={`${baseUrl}${p.cover}`} alt="" loading="lazy" />
-                  <div>
+                  <div className="home-tl-title">
                     <h3>{p.title}</h3>
                     <p className="home-work-meta">
-                      {p.role} · {p.period} ·{' '}
+                      {p.role} <i aria-hidden="true">/</i> {p.period} <i aria-hidden="true">/</i>{' '}
                       <span className="home-tl-uploaded">{formatDateCN(p.uploadedAt)} 上传</span>
                     </p>
                   </div>
                   {p.url && (
-                    <a className="badge badge-purple home-tl-link" href={p.url} target="_blank" rel="noopener noreferrer">
+                    <a className="home-work-open" href={p.url} target="_blank" rel="noopener noreferrer">
                       打开作品 ↗
                     </a>
                   )}
@@ -358,25 +458,46 @@ export default function HomePage() {
       </section>
 
       <section id="contact" className="home-section">
-        <p className="home-label">02 · 联系</p>
-        <h2>随时可以找我</h2>
-        <div className="card home-contact-card">
-          {contacts.map((c) => (
-            <div key={c.label} className="home-contact-row">
-              <span className="home-contact-label">{c.label}</span>
-              {c.href ? (
-                <a href={c.href} download={c.download}>{c.value}</a>
-              ) : (
-                <span>{c.value}</span>
-              )}
-            </div>
-          ))}
+        <div className="home-sec-head" data-reveal>
+          <div className="home-sec-title">
+            <p className="home-label">
+              <span>02</span>
+              联系
+            </p>
+            <h2>随时可以找我</h2>
+          </div>
+          <p className="home-sec-note">邮件通常当天回复</p>
+        </div>
+        <div className="home-contact-grid">
+          {contacts.map((c) =>
+            c.href ? (
+              <a key={c.label} className="home-contact-item" href={c.href} download={c.download} data-reveal>
+                <span className="home-contact-label">{c.label}</span>
+                <span className="home-contact-value">{c.value}</span>
+                <span className="home-contact-arrow" aria-hidden="true">↗</span>
+              </a>
+            ) : (
+              <div key={c.label} className="home-contact-item is-static" data-reveal>
+                <span className="home-contact-label">{c.label}</span>
+                <span className="home-contact-value">{c.value}</span>
+                <span className="home-contact-arrow" aria-hidden="true">·</span>
+              </div>
+            ),
+          )}
         </div>
       </section>
 
       <section id="interact" className="home-section">
-        <p className="home-label">03 · 互动</p>
-        <h2>这一页是活的：留言和点赞都会被记住</h2>
+        <div className="home-sec-head" data-reveal>
+          <div className="home-sec-title">
+            <p className="home-label">
+              <span>03</span>
+              互动
+            </p>
+            <h2>这一页是活的：留言和点赞都会被记住</h2>
+          </div>
+          <p className="home-sec-note">{messages.length ? `${messages.length} 条留言` : '还没有留言'}</p>
+        </div>
         {interactDisabled && (
           <div className="alert alert-info home-offline">
             {guestbookState === 'offline'
@@ -385,7 +506,7 @@ export default function HomePage() {
           </div>
         )}
         <div className="home-interact-grid">
-          <form className="card home-gb-form" onSubmit={handleSubmit}>
+          <form className="home-gb-form" onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="home-gb-name">怎么称呼你？（可留空）</label>
               <input
@@ -417,10 +538,10 @@ export default function HomePage() {
               {submitting ? '发布中…' : '发布留言'}
             </button>
           </form>
-          <div className="card home-gb-list">
-            {guestbookState === 'loading' && <p className="muted">正在加载留言…</p>}
+          <div className="home-gb-list">
+            {guestbookState === 'loading' && <p className="home-note">正在加载留言…</p>}
             {guestbookState === 'ready' && messages.length === 0 && (
-              <p className="muted">还没有留言，来做第一个吧。</p>
+              <p className="home-note">还没有留言，来做第一个吧。</p>
             )}
             {messages.map((m) => (
               <article key={m.id} className="home-gb-item">
@@ -436,29 +557,33 @@ export default function HomePage() {
       </section>
 
       <footer className="home-footer">
-        © 2026 雷馨怡 · 数字经济专业 · 由 SupaProject 驱动
+        <span>© 2026 雷馨怡 · 数字经济专业</span>
+        <span className="home-footer-mid">由 SupaProject 驱动</span>
+        <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          回到顶部 ↑
+        </button>
       </footer>
 
       {active && (
         <div className="home-modal-mask" onClick={() => setActive(null)}>
-          <article className="card home-modal" onClick={(e) => e.stopPropagation()}>
+          <article className="home-modal" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="home-modal-close" aria-label="关闭" onClick={() => setActive(null)}>
               ×
             </button>
             <img className="home-modal-cover" src={`${baseUrl}${active.cover}`} alt={active.title} />
             <div className="home-modal-body">
               <p className="home-work-meta">
-                {active.role} · {active.period} ·{' '}
+                {active.role} <i aria-hidden="true">/</i> {active.period} <i aria-hidden="true">/</i>{' '}
                 <span className="home-tl-uploaded">{formatDateCN(active.uploadedAt)} 上传</span>
               </p>
               <h3>{active.title}</h3>
               <p className="home-modal-summary">{active.summary}</p>
               <div className="home-work-tags">
                 {active.tags.map((t) => (
-                  <span key={t} className="badge badge-neutral">{t}</span>
+                  <span key={t}>{t}</span>
                 ))}
                 {active.url && (
-                  <a className="badge badge-purple" href={active.url} target="_blank" rel="noopener noreferrer" onClick={() => setActive(null)}>
+                  <a className="home-work-open" href={active.url} target="_blank" rel="noopener noreferrer" onClick={() => setActive(null)}>
                     直接打开作品 ↗
                   </a>
                 )}
