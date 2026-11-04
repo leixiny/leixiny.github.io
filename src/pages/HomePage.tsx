@@ -35,12 +35,14 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：leixiny 一个个从屏幕右侧滚进来，撞上后自己颤完，下一个才入场 ---------- */
+/* ---------- 首屏字标：leixiny 一个个从屏幕右侧滚进来，撞得前一个抖，自己也在抖 ---------- */
 const WORD = 'leixiny'
-const LETTER_START = 240 // 第一个字母之前留一点空
+const LETTER_START = 160 // 第一个字母之前留一点空
 const SLAM = 0.16 // 撞上去压进去的深度（em）
-const SHAKE_MS = 420 // 撞完自己颤多久
-const GAP_MS = 40 // 颤完到下一个字母入场之间的呼吸
+const SHAKE_MS = 400 // 撞完自己颤多久
+const KNOCK = 0.11 // 被撞的字母往左退多深（em）
+const NEXT_AT = 0.45 // 下一个字母在前一个颤到 45% 时就起步，两段时间有重合
+const GAP_MS = 20 // 起步点之后再补的一点呼吸
 
 type SlamSpec = { startEm: number; rollMs: number; shakeMs: number }
 
@@ -78,15 +80,42 @@ function slamFrames({ startEm, rollMs, shakeMs }: SlamSpec): Keyframe[] {
     // 撞上去：横向压扁、撞进前一个字母一点点
     { transform: pose(-SLAM, 0.68, 1.34), opacity: 1, offset: at, easing: 'cubic-bezier(.14,.94,.3,1.1)' },
     { transform: pose(-SLAM * 0.9, 0.75, 1.27), opacity: 1, offset: s(0.06) },
-    // 只有这一个字母自己来回颤，幅度一路衰减，别的字母不动
-    { transform: pose(SLAM * 0.42, 1.14, 0.88), opacity: 1, offset: s(0.2), easing: 'cubic-bezier(.3,.9,.4,1)' },
-    { transform: pose(-SLAM * 0.34, 0.9, 1.08), opacity: 1, offset: s(0.4), easing: 'cubic-bezier(.3,.9,.4,1)' },
-    { transform: pose(SLAM * 0.24, 1.06, 0.95), opacity: 1, offset: s(0.58), easing: 'cubic-bezier(.35,.9,.45,1)' },
-    { transform: pose(-SLAM * 0.15, 0.965, 1.03), opacity: 1, offset: s(0.74) },
-    { transform: pose(SLAM * 0.085, 1.02, 0.985), opacity: 1, offset: s(0.87) },
+    // 撞人的那个自己也来回颤，幅度一路衰减
+    { transform: pose(SLAM * 0.42, 1.14, 0.88), opacity: 1, offset: s(0.18), easing: 'cubic-bezier(.3,.9,.4,1)' },
+    { transform: pose(-SLAM * 0.34, 0.9, 1.08), opacity: 1, offset: s(0.38), easing: 'cubic-bezier(.3,.9,.4,1)' },
+    { transform: pose(SLAM * 0.24, 1.06, 0.95), opacity: 1, offset: s(0.56), easing: 'cubic-bezier(.35,.9,.45,1)' },
+    { transform: pose(-SLAM * 0.15, 0.965, 1.03), opacity: 1, offset: s(0.72) },
+    { transform: pose(SLAM * 0.085, 1.02, 0.985), opacity: 1, offset: s(0.86) },
     { transform: pose(-SLAM * 0.04, 0.99, 1.01), opacity: 1, offset: s(0.94) },
     // 末帧必须显式给 opacity，否则会回落到 CSS 里的 0
     { transform: 'translateX(0) rotate(0deg) scale(1, 1)', opacity: 1, offset: 1 },
+  ]
+}
+
+// 被撞的那个字母：被顶得往左退一格、压扁，再一路颤着回位（叠在自己的入场动画上）
+function knockFrames(amp: number): Keyframe[] {
+  return [
+    { transform: 'translateX(0) scale(1, 1)', offset: 0 },
+    {
+      transform: `translateX(${-amp}em) scale(${1 + amp * 1.7}, ${1 - amp * 1.05})`,
+      offset: 0.16,
+      easing: 'cubic-bezier(.2,.8,.4,1)',
+    },
+    {
+      transform: `translateX(${amp * 0.5}em) scale(${1 - amp * 0.85}, ${1 + amp * 0.55})`,
+      offset: 0.38,
+      easing: 'cubic-bezier(.3,.9,.4,1)',
+    },
+    {
+      transform: `translateX(${-amp * 0.26}em) scale(${1 + amp * 0.45}, ${1 - amp * 0.3})`,
+      offset: 0.58,
+      easing: 'cubic-bezier(.3,.9,.4,1)',
+    },
+    {
+      transform: `translateX(${amp * 0.12}em) scale(${1 - amp * 0.2}, ${1 + amp * 0.15})`,
+      offset: 0.76,
+    },
+    { transform: 'translateX(0) scale(1, 1)', offset: 1 },
   ]
 }
 
@@ -124,25 +153,40 @@ function JellyWord() {
       return
     }
 
-    // 一个一个来：这个字母从屏幕右侧滚进来 → 撞上 → 自己颤完 → 下一个才滚进来
+    // 滚一个、撞一下、两个一起颤；下个字母不等它颤完就起步，两段时间有重合
     const fs = parseFloat(getComputedStyle(wrap).fontSize) || 100
     const vw = window.innerWidth
     let cursor = LETTER_START
-    letters.forEach((el) => {
+    let endAt = LETTER_START
+    letters.forEach((el, i) => {
       const r = el.getBoundingClientRect()
-      // 起手位置：字母整个停在屏幕右边缘外面（再留 18px 余量）
-      const startEm = Math.max(1.6, (vw - r.left + 18) / fs)
-      // 距离越远滚得越久，但滚动速度大致一致
-      const rollMs = Math.round(Math.min(700, Math.max(380, 210 + startEm * 88)))
+      // 起手位置：整块停在屏幕右边缘外面（再留 18px 余量）
+      const distPx = vw - r.left + 18
+      const startEm = Math.max(1.4, distPx / fs)
+      // 匀速滚：按像素距离给时长，远了多花点时间，但别慢下来
+      const rollMs = Math.round(Math.min(560, Math.max(300, distPx * 0.42)))
+      const total = rollMs + SHAKE_MS
       el.animate(slamFrames({ startEm, rollMs, shakeMs: SHAKE_MS }), {
-        duration: rollMs + SHAKE_MS,
+        duration: total,
         delay: cursor,
         easing: 'linear',
         fill: 'both',
       })
-      cursor += rollMs + SHAKE_MS + GAP_MS
+
+      const impact = cursor + rollMs
+      // 被撞的前一个字母：跟着一起抖（叠在它已经落定的状态上）
+      if (i > 0) {
+        letters[i - 1].animate(knockFrames(KNOCK), {
+          duration: Math.round(SHAKE_MS * 0.95),
+          delay: impact,
+          easing: 'linear',
+          composite: 'add',
+        })
+      }
+      // 下一个字母在颤动还没结束时就起步
+      cursor = impact + SHAKE_MS * NEXT_AT + GAP_MS
+      endAt = Math.max(endAt, cursor + total - rollMs * 0.15)
     })
-    const endAt = cursor
 
     // 鼠标扫过某个字母，它就软软地弹一下
     const started = performance.now()
