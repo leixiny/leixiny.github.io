@@ -40,7 +40,7 @@ const WORD = 'leixiny'
 const LETTER_START = 160 // 第一个字母之前留一点空
 const SLAM = 0.16 // 撞上去压进去的深度（em）
 const SHAKE_MS = 400 // 撞完自己颤多久
-const KNOCK = 0.11 // 被撞的字母往左退多深（em）
+const KNOCK = 0.18 // 被撞的字母往左退多深（em）
 const NEXT_AT = 0.45 // 下一个字母在前一个颤到 45% 时就起步，两段时间有重合
 const GAP_MS = 20 // 起步点之后再补的一点呼吸
 
@@ -81,12 +81,12 @@ function slamFrames({ startEm, rollMs, shakeMs }: SlamSpec): Keyframe[] {
     { transform: pose(-SLAM, 0.68, 1.34), opacity: 1, offset: at, easing: 'cubic-bezier(.14,.94,.3,1.1)' },
     { transform: pose(-SLAM * 0.9, 0.75, 1.27), opacity: 1, offset: s(0.06) },
     // 撞人的那个自己也来回颤，幅度一路衰减
-    { transform: pose(SLAM * 0.42, 1.14, 0.88), opacity: 1, offset: s(0.18), easing: 'cubic-bezier(.3,.9,.4,1)' },
-    { transform: pose(-SLAM * 0.34, 0.9, 1.08), opacity: 1, offset: s(0.38), easing: 'cubic-bezier(.3,.9,.4,1)' },
-    { transform: pose(SLAM * 0.24, 1.06, 0.95), opacity: 1, offset: s(0.56), easing: 'cubic-bezier(.35,.9,.45,1)' },
-    { transform: pose(-SLAM * 0.15, 0.965, 1.03), opacity: 1, offset: s(0.72) },
-    { transform: pose(SLAM * 0.085, 1.02, 0.985), opacity: 1, offset: s(0.86) },
-    { transform: pose(-SLAM * 0.04, 0.99, 1.01), opacity: 1, offset: s(0.94) },
+    { transform: pose(SLAM * 0.72, 1.24, 0.79), opacity: 1, offset: s(0.18), easing: 'cubic-bezier(.3,.9,.4,1)' },
+    { transform: pose(-SLAM * 0.58, 0.83, 1.16), opacity: 1, offset: s(0.38), easing: 'cubic-bezier(.3,.9,.4,1)' },
+    { transform: pose(SLAM * 0.42, 1.13, 0.89), opacity: 1, offset: s(0.56), easing: 'cubic-bezier(.35,.9,.45,1)' },
+    { transform: pose(-SLAM * 0.26, 0.93, 1.07), opacity: 1, offset: s(0.72) },
+    { transform: pose(SLAM * 0.15, 1.045, 0.965), opacity: 1, offset: s(0.86) },
+    { transform: pose(-SLAM * 0.07, 0.98, 1.02), opacity: 1, offset: s(0.94) },
     // 末帧必须显式给 opacity，否则会回落到 CSS 里的 0
     { transform: 'translateX(0) rotate(0deg) scale(1, 1)', opacity: 1, offset: 1 },
   ]
@@ -102,17 +102,17 @@ function knockFrames(amp: number): Keyframe[] {
       easing: 'cubic-bezier(.2,.8,.4,1)',
     },
     {
-      transform: `translateX(${amp * 0.5}em) scale(${1 - amp * 0.85}, ${1 + amp * 0.55})`,
+      transform: `translateX(${amp * 0.58}em) scale(${1 - amp * 0.9}, ${1 + amp * 0.6})`,
       offset: 0.38,
       easing: 'cubic-bezier(.3,.9,.4,1)',
     },
     {
-      transform: `translateX(${-amp * 0.26}em) scale(${1 + amp * 0.45}, ${1 - amp * 0.3})`,
+      transform: `translateX(${-amp * 0.32}em) scale(${1 + amp * 0.5}, ${1 - amp * 0.34})`,
       offset: 0.58,
       easing: 'cubic-bezier(.3,.9,.4,1)',
     },
     {
-      transform: `translateX(${amp * 0.12}em) scale(${1 - amp * 0.2}, ${1 + amp * 0.15})`,
+      transform: `translateX(${amp * 0.16}em) scale(${1 - amp * 0.24}, ${1 + amp * 0.18})`,
       offset: 0.76,
     },
     { transform: 'translateX(0) scale(1, 1)', offset: 1 },
