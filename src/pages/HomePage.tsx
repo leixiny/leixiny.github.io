@@ -35,63 +35,92 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：leixiny 逐个从右边撞进来，撞得前面的字母往左退 ---------- */
+/* ---------- 首屏字标：leixiny 滚着撞进来，撞得前面的字母颤一阵 ---------- */
 const WORD = 'leixiny'
-const LETTER_STAGGER = 255 // 每个字母之间的间隔
-const LETTER_DURATION = 760
-const LETTER_START = 240
+const LETTER_STAGGER = 360 // 每个字母之间的间隔（慢一点）
+const LETTER_DURATION = 1080
+const LETTER_START = 320
 const IMPACT_AT = 0.46 // 撞上的那一瞬在关键帧里的位置
 const SLAM = 0.16 // 撞进前一个字母的深度（em）
 const KNOCK = 0.15 // 被撞的字母往左退的深度（em）
+const KNOCK_DURATION = 1150 // 被撞之后颤多久
 
-// 撞进来的那个字母：横向压扁、纵向拉长，再回弹站直
+// 撞进来的那个字母：一路滚进来，落地时摆正、横向压扁，再回弹站直
 const JELLY_SLAM: Keyframe[] = [
   {
-    // 从右边更高处抛进来，落到基线上再撞上去
-    transform: `translate(${SLAM * 6.6}em, ${-SLAM * 1.5}em) scale(0.9, 1.08)`,
+    // 从右侧偏高处滚着过来，绕基线转大半圈
+    transform: `translate(${SLAM * 7.2}em, ${-SLAM * 0.4}em) rotate(-168deg) scale(0.88, 0.96)`,
     opacity: 0,
     offset: 0,
-    easing: 'cubic-bezier(.6,0,.92,.35)',
+    easing: 'cubic-bezier(.5,0,.9,.4)',
   },
-  { transform: `translate(${SLAM * 5.6}em, ${-SLAM * 1.3}em) scale(0.92, 1.06)`, opacity: 1, offset: 0.07 },
-  { transform: `translate(${SLAM * 3}em, ${-SLAM * 0.7}em) scale(0.94, 1.04)`, opacity: 1, offset: 0.26 },
   {
-    transform: `translateX(${-SLAM}em) scale(0.7, 1.32)`,
+    transform: `translate(${SLAM * 5.9}em, ${-SLAM * 0.34}em) rotate(-140deg) scale(0.89, 0.97)`,
+    opacity: 1,
+    offset: 0.09,
+  },
+  {
+    transform: `translate(${SLAM * 3.3}em, ${-SLAM * 0.19}em) rotate(-94deg) scale(0.9, 0.98)`,
+    opacity: 1,
+    offset: 0.26,
+  },
+  {
+    transform: `translate(${SLAM * 1.05}em, ${-SLAM * 0.05}em) rotate(-41deg) scale(0.92, 1)`,
+    opacity: 1,
+    offset: 0.4,
+  },
+  {
+    // 落定摆正的一瞬就撞上去
+    transform: `translateX(${-SLAM}em) rotate(0deg) scale(0.68, 1.34)`,
     opacity: 1,
     offset: IMPACT_AT,
-    easing: 'cubic-bezier(.12,.96,.3,1.16)',
+    easing: 'cubic-bezier(.14,.94,.3,1.1)',
   },
   {
-    transform: `translateX(${-SLAM * 0.86}em) scale(0.76, 1.26)`,
+    transform: `translateX(${-SLAM * 0.84}em) rotate(0deg) scale(0.75, 1.27)`,
     opacity: 1,
-    offset: IMPACT_AT + 0.06,
+    offset: IMPACT_AT + 0.07,
   },
   {
-    transform: `translateX(${SLAM * 0.34}em) scale(1.12, 0.9)`,
+    transform: `translateX(${SLAM * 0.38}em) rotate(0deg) scale(1.13, 0.89)`,
     opacity: 1,
-    offset: 0.7,
+    offset: 0.72,
     easing: 'cubic-bezier(.3,.9,.4,1)',
   },
-  { transform: `translateX(${-SLAM * 0.12}em) scale(0.98, 1.02)`, opacity: 1, offset: 0.86 },
+  { transform: `translateX(${-SLAM * 0.17}em) rotate(0deg) scale(0.955, 1.045)`, opacity: 1, offset: 0.86 },
+  { transform: `translateX(${SLAM * 0.07}em) rotate(0deg) scale(1.02, 0.985)`, opacity: 1, offset: 0.94 },
   // 末帧必须显式给 opacity，否则会回落到 CSS 里的 0
-  { transform: 'translateX(0) scale(1, 1)', opacity: 1, offset: 1 },
+  { transform: 'translateX(0) rotate(0deg) scale(1, 1)', opacity: 1, offset: 1 },
 ]
 
-// 被撞到的字母：先被顶得往左闪一格、压扁，再弹回原位
+// 被撞到的字母：顶得往左闪一格、压扁，然后来回颤好几下才停（幅度一路衰减）
 function knockFrames(amp: number): Keyframe[] {
   return [
     { transform: 'translateX(0) scale(1, 1)', offset: 0 },
     {
-      transform: `translateX(${-amp}em) scale(${1 + amp * 1.8}, ${1 - amp * 1.1})`,
-      offset: 0.16,
+      transform: `translateX(${-amp}em) scale(${1 + amp * 1.9}, ${1 - amp * 1.15})`,
+      offset: 0.13,
       easing: 'cubic-bezier(.2,.8,.4,1)',
     },
     {
-      transform: `translateX(${amp * 0.36}em) scale(${1 - amp * 0.8}, ${1 + amp * 0.55})`,
-      offset: 0.44,
+      transform: `translateX(${amp * 0.52}em) scale(${1 - amp * 0.9}, ${1 + amp * 0.6})`,
+      offset: 0.36,
       easing: 'cubic-bezier(.3,.9,.4,1)',
     },
-    { transform: `translateX(${-amp * 0.12}em) scale(1.012, 0.99)`, offset: 0.72 },
+    {
+      transform: `translateX(${-amp * 0.27}em) scale(${1 + amp * 0.55}, ${1 - amp * 0.35})`,
+      offset: 0.56,
+      easing: 'cubic-bezier(.3,.9,.4,1)',
+    },
+    {
+      transform: `translateX(${amp * 0.13}em) scale(${1 - amp * 0.3}, ${1 + amp * 0.2})`,
+      offset: 0.74,
+      easing: 'cubic-bezier(.35,.9,.45,1)',
+    },
+    {
+      transform: `translateX(${-amp * 0.05}em) scale(${1 + amp * 0.12}, ${1 - amp * 0.08})`,
+      offset: 0.89,
+    },
     { transform: 'translateX(0) scale(1, 1)', offset: 1 },
   ]
 }
@@ -103,6 +132,12 @@ const SHADE_PINK = [224, 138, 156]
 function shadeAt(t: number) {
   return SHADE_BLUE.map((b, k) => Math.round(b + (SHADE_PINK[k] - b) * t)).join(', ')
 }
+
+// 每个字母字形自己占多高（em）：高光与沉底要贴着字形铺，不能按行框均分，
+// 否则光带会落在字形外面的空白里，字就显得平。
+const GLYPH_H: Record<string, number> = { l: 0.813, e: 0.576, i: 0.798, x: 0.547, n: 0.561, y: 0.813 }
+// 字形下缘到行框底部的距离（em），背景要以基线为底边对齐
+const GLYPH_DESC: Record<string, number> = { y: 0.266 }
 
 const JELLY_TAP: Keyframe[] = [
   { transform: 'translateY(0) scale(1, 1)' },
@@ -141,10 +176,10 @@ function JellyWord() {
       for (let d = 1; d <= 4; d++) {
         const j = i - d
         if (j < 0) break
-        const amp = KNOCK * Math.pow(0.68, d - 1)
+        const amp = KNOCK * Math.pow(0.7, d - 1)
         letters[j].animate(knockFrames(amp), {
-          duration: 620 - d * 60,
-          delay: impact + (d - 1) * 38,
+          duration: KNOCK_DURATION - d * 90,
+          delay: impact + (d - 1) * 62,
           easing: 'linear',
           // 叠加在字母自己的入场动画上：入场管“站到哪”，这一下管“被撞退多少”
           composite: 'add',
@@ -156,8 +191,8 @@ function JellyWord() {
     // 鼠标扫过某个字母，它就软软地弹一下
     const started = performance.now()
     const onEnter = (el: HTMLElement) => () => {
-      if (performance.now() - started < LETTER_START + letters.length * LETTER_STAGGER + 500) return
-      el.animate(JELLY_TAP, { duration: 560, easing: 'cubic-bezier(.3,.9,.4,1)' })
+      if (performance.now() - started < LETTER_START + letters.length * LETTER_STAGGER + 700) return
+      el.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
     }
     const handlers = letters.map((el) => {
       const fn = onEnter(el)
@@ -179,6 +214,8 @@ function JellyWord() {
             {
               '--i': i,
               '--lm-shade': shadeAt(i / (WORD.length - 1)),
+              '--lm-gh': GLYPH_H[ch] ?? 0.8,
+              '--lm-gd': GLYPH_DESC[ch] ?? 0.232,
             } as React.CSSProperties
           }
         >
