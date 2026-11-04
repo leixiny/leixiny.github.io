@@ -149,15 +149,55 @@
   padding-block: clamp(26px, 4.4vh, 58px);
   overflow: hidden;
   /* 整屏深色灯牌：应援色只有落在暗底上才亮得起来 */
-  background: #07080e;
+  background:
+    radial-gradient(120% 92% at 50% 42%, #0f2731 0%, #08161c 54%, #040b10 100%);
   color: #fff;
   isolation: isolate;
+}
+
+/* 水雾玻璃：整块蒙在首屏上，只有中间被“擦干净”的那块透出来
+   — 水珠贴图 + 一层奶白水雾，用 wipe.svg 当遮罩挖掉中间 */
+.hp-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-color: rgba(6, 20, 27, 0.64);
+  background-image:
+    url('../assets/frost.svg'),
+    url('../assets/frost.svg'),
+    radial-gradient(64% 48% at 18% 26%, rgba(150, 210, 228, 0.1), transparent 74%),
+    radial-gradient(58% 44% at 84% 74%, rgba(122, 188, 212, 0.09), transparent 74%),
+    linear-gradient(180deg, rgba(186, 228, 242, 0.16), rgba(120, 170, 190, 0.075) 34%, rgba(2, 10, 14, 0.42)),
+    linear-gradient(180deg, rgba(2, 9, 13, 0.62) 0%, rgba(2, 9, 13, 0) 24%, rgba(2, 9, 13, 0) 76%, rgba(2, 9, 13, 0.68) 100%);
+  background-size: 480px 480px, 216px 216px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 0 0, 92px 138px, 0 0, 0 0, 0 0, 0 0;
+  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  filter: blur(0.4px);
+  -webkit-mask-image: url('../assets/wipe.svg');
+  mask-image: url('../assets/wipe.svg');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* 擦净区域的边缘：雾薄一点的过渡圈，让“擦过”的痕迹更真 */
+.hp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(31% 27% at 50% 47%, transparent 0 74%, rgba(214, 244, 255, 0.075) 90%, transparent 100%);
 }
 
 /* 上（说明 + 数据）／中（姓名）／下（简介 + 按钮）三段撑满整屏 */
 .hp-hero-inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -183,13 +223,14 @@
   isolation: isolate;
 }
 
-/* 灯海：满屏铺开的蓝粉灯光，压在字母后面 */
+/* 灯海：满屏铺开的蓝粉灯光，压在字母后面（中间那块水雾被擦掉，这里才会露出来） */
 .hp-hero-glow {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
+    radial-gradient(36% 32% at 50% 47%, rgba(206, 242, 255, 0.22), rgba(255, 214, 225, 0.12) 46%, transparent 78%),
     radial-gradient(40% 46% at 4% 14%, rgba(174, 228, 255, 0.34), transparent 72%),
     radial-gradient(36% 42% at 94% 8%, rgba(255, 204, 213, 0.3), transparent 72%),
     radial-gradient(44% 50% at 50% 100%, rgba(174, 228, 255, 0.2), transparent 74%),
@@ -205,7 +246,7 @@
   margin: 0;
   /* 七个小写字母，比原来的汉字字标略窄，留出呼吸 */
   margin-left: -0.045em;
-  font-size: clamp(74px, min(25vw, 38vh), 440px);
+  font-size: clamp(48px, min(14vw, 21vh), 240px);
   font-weight: 800;
   /* 行高留够降部（y 的尾巴），否则会被灯牌区裁掉 */
   line-height: 1.2;
@@ -333,7 +374,15 @@
 
 /* ---------- 首屏在深底上：文字与按钮一律反白 ---------- */
 .hp-hero .hp-kicker {
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* 底子是带水珠的玻璃，文字要托一层暗影才压得住噪点 */
+.hp-hero .hp-kicker,
+.hp-hero .hp-lead,
+.hp-hero .hp-stat,
+.hp-hero .hp-link-quiet {
+  text-shadow: 0 1px 14px rgba(2, 10, 14, 0.92), 0 0 3px rgba(2, 10, 14, 0.7);
 }
 
 .hp-hero .hp-stat strong {
@@ -341,7 +390,7 @@
 }
 
 .hp-hero .hp-stat span {
-  color: rgba(255, 255, 255, 0.46);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .hp-hero .hp-stat--like:hover span {
@@ -349,7 +398,7 @@
 }
 
 .hp-hero .hp-lead {
-  color: rgba(255, 255, 255, 0.66);
+  color: rgba(255, 255, 255, 0.84);
 }
 
 .hp-hero .hp-hero-foot {
@@ -379,7 +428,7 @@
 }
 
 .hp-hero .hp-link-quiet {
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(255, 255, 255, 0.74);
   border-bottom-color: rgba(255, 255, 255, 0.22);
 }
 
@@ -930,7 +979,19 @@
   }
 
   .hp-word {
-    font-size: clamp(58px, 29vw, 168px);
+    font-size: clamp(36px, 16.5vw, 96px);
+  }
+
+  /* 手机上首屏又窄又高，方形遮罩拉过来会把擦净区拉成竖长条，
+     改用椭圆遮罩，擦痕还是横着一条 */
+  .hp-hero::after {
+    -webkit-mask-image: radial-gradient(56% 22% at 50% 47%, transparent 0 60%, #000 86%);
+    mask-image: radial-gradient(56% 22% at 50% 47%, transparent 0 60%, #000 86%);
+  }
+
+  .hp-hero::before {
+    background:
+      radial-gradient(58% 23% at 50% 47%, transparent 0 84%, rgba(214, 244, 255, 0.07) 94%, transparent 100%);
   }
 
   .hp-stats {
