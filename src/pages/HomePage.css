@@ -145,14 +145,19 @@
 .hp-hero {
   position: relative;
   display: flex;
-  min-height: calc(100svh - 69px);
-  padding-block: clamp(26px, 4.2vh, 54px);
+  min-height: calc(100svh - 72px);
+  padding-block: clamp(26px, 4.4vh, 58px);
   overflow: hidden;
+  /* 整屏深色灯牌：应援色只有落在暗底上才亮得起来 */
+  background: #07080e;
+  color: #fff;
+  isolation: isolate;
 }
 
 /* 上（说明 + 数据）／中（姓名）／下（简介 + 按钮）三段撑满整屏 */
 .hp-hero-inner {
   position: relative;
+  z-index: 1;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -167,43 +172,28 @@
   gap: 24px;
 }
 
-/* 字标所在的灯牌区：应援色太浅，只有落在深底上才像灯牌，也才有对比度 */
+/* 字标区：撑满首屏上下两段文字之间的全部空间，字母居中 */
 .hp-hero-mid {
   position: relative;
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   align-items: center;
-  margin-inline: calc(50% - 50vw);
-  padding: clamp(26px, 3.6vh, 48px) clamp(20px, 4.5vw, 72px) clamp(36px, 4.8vh, 60px);
-  background: #07080e;
+  justify-content: center;
+  min-height: 0;
   isolation: isolate;
-  overflow: hidden;
 }
 
-/* 灯海：左右各一片蓝、粉的光，压在字母后面 */
-.hp-hero-mid::before {
-  content: '';
+/* 灯海：满屏铺开的蓝粉灯光，压在字母后面 */
+.hp-hero-glow {
   position: absolute;
-  inset: -40% -10%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(26% 62% at 4% 62%, rgba(174, 228, 255, 0.4), transparent 72%),
-    radial-gradient(22% 54% at 22% 26%, rgba(255, 204, 213, 0.2), transparent 74%),
-    radial-gradient(30% 66% at 58% 70%, rgba(255, 204, 213, 0.26), transparent 72%),
-    radial-gradient(24% 56% at 92% 34%, rgba(174, 228, 255, 0.3), transparent 74%);
-  filter: blur(10px);
-}
-
-.hp-hero-glow {
-  position: absolute;
-  inset: -22% -12% auto -12%;
-  height: 132%;
-  pointer-events: none;
-  background:
-    radial-gradient(34% 42% at 9% 12%, rgba(174, 228, 255, 0.62), transparent 68%),
-    radial-gradient(30% 38% at 88% 6%, rgba(255, 204, 213, 0.6), transparent 68%),
-    radial-gradient(24% 30% at 54% 98%, rgba(174, 228, 255, 0.24), transparent 70%);
+    radial-gradient(40% 46% at 4% 14%, rgba(174, 228, 255, 0.34), transparent 72%),
+    radial-gradient(36% 42% at 94% 8%, rgba(255, 204, 213, 0.3), transparent 72%),
+    radial-gradient(44% 50% at 50% 100%, rgba(174, 228, 255, 0.2), transparent 74%),
+    radial-gradient(30% 38% at 76% 64%, rgba(255, 204, 213, 0.14), transparent 76%);
 }
 
 /* ---------- 首屏字标：leixiny（橹穆蓝粉灯牌色） ---------- */
@@ -215,7 +205,7 @@
   margin: 0;
   /* 七个小写字母，比原来的汉字字标略窄，留出呼吸 */
   margin-left: -0.045em;
-  font-size: clamp(74px, 21.6vw, 372px);
+  font-size: clamp(74px, min(25vw, 38vh), 440px);
   font-weight: 800;
   /* 行高留够降部（y 的尾巴），否则会被灯牌区裁掉 */
   line-height: 1.2;
@@ -333,6 +323,63 @@
   align-items: center;
   justify-content: flex-end;
   gap: 14px 18px;
+}
+
+/* ---------- 首屏在深底上：文字与按钮一律反白 ---------- */
+.hp-hero .hp-kicker {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hp-hero .hp-stat strong {
+  color: #fff;
+}
+
+.hp-hero .hp-stat span {
+  color: rgba(255, 255, 255, 0.46);
+}
+
+.hp-hero .hp-stat--like:hover span {
+  color: #ffccd5;
+}
+
+.hp-hero .hp-lead {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.hp-hero .hp-hero-foot {
+  border-top-color: rgba(255, 255, 255, 0.13);
+}
+
+.hp-hero .hp-btn--solid {
+  background: #fff;
+  color: #0a0b11;
+}
+
+.hp-hero .hp-btn--solid:hover {
+  background-image: var(--rp-grad);
+  color: #fff;
+  box-shadow: 0 18px 40px -16px rgba(174, 228, 255, 0.55);
+}
+
+.hp-hero .hp-btn--ghost {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.hp-hero .hp-btn--ghost:hover {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hp-hero .hp-link-quiet {
+  color: rgba(255, 255, 255, 0.56);
+  border-bottom-color: rgba(255, 255, 255, 0.22);
+}
+
+.hp-hero .hp-link-quiet:hover {
+  color: #fff;
+  border-color: #fff;
 }
 
 .hp-btn {
@@ -820,7 +867,7 @@
 /* ---------- 响应式 ---------- */
 @media (max-width: 900px) {
   .hp-hero {
-    min-height: calc(100svh - 60px);
+    min-height: calc(100svh - 72px);
   }
 
   .hp-hero-foot {
@@ -864,16 +911,20 @@
   }
 
   .hp-hero {
-    min-height: auto;
-    padding-block: 30px 38px;
+    min-height: calc(100svh - 63px);
+    padding-block: 20px 24px;
+  }
+
+  .hp-hero-inner {
+    gap: 15px;
   }
 
   .hp-hero-mid {
-    padding-block: 22px;
+    padding-block: 10px;
   }
 
   .hp-word {
-    font-size: clamp(62px, 24vw, 140px);
+    font-size: clamp(58px, 29vw, 168px);
   }
 
   .hp-stats {
