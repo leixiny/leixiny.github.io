@@ -58,8 +58,18 @@ export default function WorksPage() {
   const trackRef = useRef<HTMLDivElement>(null)
   const idxRef = useRef(0)
   idxRef.current = idx
-  const drag = useRef({ down: false, startX: 0, lastX: 0, startScroll: 0, moved: false, slide: -1 })
-  const wheelLock = useRef(0)
+  const drag = useRef({
+    down: false,
+    mode: 'flip' as 'flip' | 'pan',
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    startScroll: 0,
+    moved: false,
+    slide: -1,
+    ox: 0,
+    oy: 0,
+  })
   const suppressClick = useRef(0)
 
   const goTo = useCallback(
@@ -80,35 +90,83 @@ export default function WorksPage() {
     if (i !== idxRef.current) setIdx(i)
   }
 
-  // 滚轮 / 触控板：整屏翻页
+  /* ---------- 页内预览缩放：滚轮即缩放，放大后拖动看局部 ---------- */
+  const slideImgRef = useRef<HTMLImageElement>(null)
+  const [pzoom, setPzoom] = useState({ scale: 1, x: 0, y: 0 })
+  const pzoomRef = useRef(pzoom)
+  pzoomRef.current = pzoom
+
+  const applyPzoom = useCallback((scale: number, x: number, y: number) => {
+    const s = clamp(scale, MIN_SCALE, MAX_SCALE)
+    const el = slideImgRef.current
+    if (!el) {
+      setPzoom({ scale: s, x: 0, y: 0 })
+      return
+    }
+    const maxX = (el.offsetWidth * (s - 1)) / 2
+    const maxY = (el.offsetHeight * (s - 1)) / 2
+    setPzoom({ scale: s, x: clamp(x, -maxX, maxX), y: clamp(y, -maxY, maxY) })
+  }, [])
+
+  // 以指针为锚点缩放：指针底下的那一点始终不动
+  const pzoomAt = useCallback(
+    (clientX: number, clientY: number, factor: number) => {
+      const el = slideImgRef.current
+      if (!el) return
+      const z = pzoomRef.current
+      const next = clamp(z.scale * factor, MIN_SCALE, MAX_SCALE)
+      if (Math.abs(next - z.scale) < 0.001) return
+      const rect = el.getBoundingClientRect()
+      const c0x = rect.left + rect.width / 2 - z.x
+      const c0y = rect.top + rect.height / 2 - z.y
+      const k = next / z.scale
+      applyPzoom(next, k * z.x + (1 - k) * (clientX - c0x), k * z.y + (1 - k) * (clientY - c0y))
+    },
+    [applyPzoom],
+  )
+
+  const resetPzoom = useCallback(() => setPzoom({ scale: 1, x: 0, y: 0 }), [])
+
+  // 滚轮 / 触控板：直接缩放当前作品
   useEffect(() => {
     if (state !== 'ready' || activeIdx != null) return
     const el = trackRef.current
     if (!el) return
     const onWheel = (e: WheelEvent) => {
-      const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX
-      if (Math.abs(d) < 2) return
       e.preventDefault()
-      if (Date.now() < wheelLock.current) return
-      wheelLock.current = Date.now() + 560
-      goTo(idxRef.current + (d > 0 ? 1 : -1))
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1
+      const d = e.deltaY * unit
+      if (Math.abs(d) < 0.5) return
+      // 指数映射：滚轮一格与触控板一次滑动的手感接近
+      pzoomAt(e.clientX, e.clientY, clamp(Math.exp(-d * 0.0018), 0.75, 1.3))
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [state, activeIdx, goTo])
+  }, [state, activeIdx, pzoomAt])
+
+  // 换作品时回到原始比例
+  useEffect(() => {
+    resetPzoom()
+  }, [idx, resetPzoom])
 
   const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'mouse' || e.button !== 0) return
     const el = trackRef.current
     if (!el) return
     const slide = (e.target as HTMLElement).closest<HTMLElement>('.wk-slide')
+    const z = pzoomRef.current
     drag.current = {
       down: true,
+      // 放大状态：拖动是平移看图；未放大：拖动是翻页
+      mode: z.scale > 1 ? 'pan' : 'flip',
       startX: e.clientX,
+      startY: e.clientY,
       lastX: e.clientX,
       startScroll: el.scrollLeft,
       moved: false,
       slide: slide ? Array.from(el.querySelectorAll('.wk-slide')).indexOf(slide) : -1,
+      ox: z.x,
+      oy: z.y,
     }
     el.setPointerCapture(e.pointerId)
     el.classList.add('is-drag')
@@ -119,7 +177,12 @@ export default function WorksPage() {
     if (!d.down) return
     d.lastX = e.clientX
     const dx = e.clientX - d.startX
-    if (Math.abs(dx) > 5) d.moved = true
+    const dy = e.clientY - d.startY
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) d.moved = true
+    if (d.mode === 'pan') {
+      applyPzoom(pzoomRef.current.scale, d.ox + dx, d.oy + dy)
+      return
+    }
     if (trackRef.current) trackRef.current.scrollLeft = d.startScroll - dx
   }
 
@@ -130,6 +193,10 @@ export default function WorksPage() {
     const el = trackRef.current
     el?.classList.remove('is-drag')
     if (!el) return
+    if (d.mode === 'pan') {
+      if (d.moved) suppressClick.current = Date.now()
+      return
+    }
     const w = Math.max(1, el.clientWidth)
     const dx = d.lastX - d.startX
     // 拖动超过 12% 就翻到相邻一张，否则回弹
@@ -144,6 +211,8 @@ export default function WorksPage() {
   // pointer capture 会把 click 重定向到轨道，用按下时记的卡片兜底
   const onTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (Date.now() - suppressClick.current < 150) return
+    // 放大状态下点击不跳转，避免看着细节时突然被踢进全屏预览
+    if (pzoomRef.current.scale > 1) return
     const el = trackRef.current
     if (!el) return
     const slide = (e.target as HTMLElement).closest?.('.wk-slide')
@@ -160,13 +229,15 @@ export default function WorksPage() {
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault()
         goTo(idxRef.current - 1)
+      } else if (e.key === '0') {
+        resetPzoom()
       } else if (e.key === 'Enter') {
         setActiveIdx(idxRef.current)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [state, activeIdx, goTo])
+  }, [state, activeIdx, goTo, resetPzoom])
 
   /* ---------- 全屏预览：缩放 + 平移 ---------- */
   const stageRef = useRef<HTMLDivElement>(null)
@@ -284,7 +355,7 @@ export default function WorksPage() {
         <>
           <div
             ref={trackRef}
-            className="wk-track"
+            className={`wk-track ${pzoom.scale > 1 ? 'is-zoomed' : ''}`}
             onScroll={onTrackScroll}
             onPointerDown={onTrackPointerDown}
             onPointerMove={onTrackPointerMove}
@@ -304,11 +375,17 @@ export default function WorksPage() {
                   style={{ backgroundImage: `url(${baseUrl}${p.cover})` }}
                 />
                 <img
+                  ref={i === idx ? slideImgRef : undefined}
                   className="wk-slide-img"
                   src={`${baseUrl}${p.cover}`}
                   alt={p.title}
                   draggable={false}
                   loading={i === 0 ? 'eager' : 'lazy'}
+                  style={
+                    i === idx
+                      ? { transform: `translate3d(${pzoom.x}px, ${pzoom.y}px, 0) scale(${pzoom.scale})` }
+                      : undefined
+                  }
                 />
                 <div className="wk-slide-veil" aria-hidden="true" />
                 <div className="wk-slide-text">
@@ -332,6 +409,18 @@ export default function WorksPage() {
               ⤢
             </button>
           </div>
+
+          {pzoom.scale > 1.005 && (
+            <button
+              type="button"
+              className="wk-zoom-pill"
+              onClick={resetPzoom}
+              aria-label="还原为原始大小"
+              title="还原为原始大小"
+            >
+              {Math.round(pzoom.scale * 100)}%
+            </button>
+          )}
 
           <div className="wk-dots" role="tablist" aria-label="切换作品">
             {projects.map((p, i) => (

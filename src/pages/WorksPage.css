@@ -142,6 +142,86 @@
   transition-delay: 0.1s;
 }
 
+/* ---------- 页内预览：滚轮放大后，文字与暗角让位，只留图 ---------- */
+.wk-track.is-zoomed .wk-slide-text > * {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.26s var(--ease),
+    transform 0.26s var(--ease);
+}
+
+.wk-track.is-zoomed .wk-slide.is-active .wk-slide-img {
+  /* 缩放要跟手，不能再沿用入场时那 1.8s 的缓动 */
+  transition: none;
+  will-change: transform;
+}
+
+.wk-track.is-zoomed .wk-slide.is-active .wk-slide-veil {
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+
+.wk-slide.is-active .wk-slide-veil {
+  transition: opacity 0.3s var(--ease);
+}
+
+/* 进入看图状态时，按钮和进度条退到背景里，不打扰画面 */
+.wk-chrome,
+.wk-dots {
+  transition: opacity 0.32s var(--ease);
+}
+
+.wk-track.is-zoomed ~ .wk-chrome,
+.wk-track.is-zoomed ~ .wk-dots {
+  opacity: 0.12;
+}
+
+.wk-track.is-zoomed ~ .wk-chrome:hover,
+.wk-track.is-zoomed ~ .wk-dots:hover {
+  opacity: 1;
+}
+
+/* 缩放比例：点一下回原始大小 */.wk-zoom-pill {
+  position: absolute;
+  right: clamp(16px, 3vw, 40px);
+  bottom: clamp(18px, 3vh, 34px);
+  z-index: 7;
+  padding: 7px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(10, 10, 12, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  animation: wkPillIn 0.22s var(--ease);
+  transition:
+    background 0.25s var(--ease),
+    color 0.25s var(--ease),
+    border-color 0.25s var(--ease);
+}
+
+.wk-zoom-pill:hover {
+  background: #fff;
+  border-color: #fff;
+  color: var(--ink);
+}
+
+@keyframes wkPillIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---------- 顶部两个图标按钮 ---------- */
 .wk-chrome {
   position: absolute;
