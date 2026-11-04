@@ -35,21 +35,74 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：leixiny 逐字落下，落地压扁、回弹，撞得前面的字母抖一下 ---------- */
+/* ---------- 首屏字标：leixiny 逐个从右边撞进来，撞得前面的字母往左退 ---------- */
 const WORD = 'leixiny'
-const LETTER_STAGGER = 185 // 每个字母之间的间隔
-const LETTER_DURATION = 560
-const LETTER_START = 260
-const IMPACT_AT = 0.58 // 落地瞬间在关键帧里的位置
+const LETTER_STAGGER = 255 // 每个字母之间的间隔
+const LETTER_DURATION = 760
+const LETTER_START = 240
+const IMPACT_AT = 0.46 // 撞上的那一瞬在关键帧里的位置
+const SLAM = 0.16 // 撞进前一个字母的深度（em）
+const KNOCK = 0.15 // 被撞的字母往左退的深度（em）
 
-const JELLY_DROP: Keyframe[] = [
-  { transform: 'translateY(-0.56em) scale(0.84, 0.9)', opacity: 0, offset: 0, easing: 'cubic-bezier(.5,0,.86,.4)' },
-  { transform: 'translateY(-0.24em) scale(0.93, 0.96)', opacity: 1, offset: 0.34 },
-  { transform: 'translateY(0) scale(1.12, 0.83)', opacity: 1, offset: IMPACT_AT, easing: 'cubic-bezier(.2,.9,.3,1.15)' },
-  { transform: 'translateY(-0.045em) scale(.95, 1.06)', offset: 0.74, easing: 'cubic-bezier(.3,.9,.3,1)' },
-  { transform: 'translateY(0) scale(1.025, 0.975)', offset: 0.87, easing: 'cubic-bezier(.3,.9,.3,1)' },
-  { transform: 'translateY(0) scale(1, 1)', offset: 1 },
+// 撞进来的那个字母：横向压扁、纵向拉长，再回弹站直
+const JELLY_SLAM: Keyframe[] = [
+  {
+    // 从右边更高处抛进来，落到基线上再撞上去
+    transform: `translate(${SLAM * 6.6}em, ${-SLAM * 1.5}em) scale(0.9, 1.08)`,
+    opacity: 0,
+    offset: 0,
+    easing: 'cubic-bezier(.6,0,.92,.35)',
+  },
+  { transform: `translate(${SLAM * 5.6}em, ${-SLAM * 1.3}em) scale(0.92, 1.06)`, opacity: 1, offset: 0.07 },
+  { transform: `translate(${SLAM * 3}em, ${-SLAM * 0.7}em) scale(0.94, 1.04)`, opacity: 1, offset: 0.26 },
+  {
+    transform: `translateX(${-SLAM}em) scale(0.7, 1.32)`,
+    opacity: 1,
+    offset: IMPACT_AT,
+    easing: 'cubic-bezier(.12,.96,.3,1.16)',
+  },
+  {
+    transform: `translateX(${-SLAM * 0.86}em) scale(0.76, 1.26)`,
+    opacity: 1,
+    offset: IMPACT_AT + 0.06,
+  },
+  {
+    transform: `translateX(${SLAM * 0.34}em) scale(1.12, 0.9)`,
+    opacity: 1,
+    offset: 0.7,
+    easing: 'cubic-bezier(.3,.9,.4,1)',
+  },
+  { transform: `translateX(${-SLAM * 0.12}em) scale(0.98, 1.02)`, opacity: 1, offset: 0.86 },
+  // 末帧必须显式给 opacity，否则会回落到 CSS 里的 0
+  { transform: 'translateX(0) scale(1, 1)', opacity: 1, offset: 1 },
 ]
+
+// 被撞到的字母：先被顶得往左闪一格、压扁，再弹回原位
+function knockFrames(amp: number): Keyframe[] {
+  return [
+    { transform: 'translateX(0) scale(1, 1)', offset: 0 },
+    {
+      transform: `translateX(${-amp}em) scale(${1 + amp * 1.8}, ${1 - amp * 1.1})`,
+      offset: 0.16,
+      easing: 'cubic-bezier(.2,.8,.4,1)',
+    },
+    {
+      transform: `translateX(${amp * 0.36}em) scale(${1 - amp * 0.8}, ${1 + amp * 0.55})`,
+      offset: 0.44,
+      easing: 'cubic-bezier(.3,.9,.4,1)',
+    },
+    { transform: `translateX(${-amp * 0.12}em) scale(1.012, 0.99)`, offset: 0.72 },
+    { transform: 'translateX(0) scale(1, 1)', offset: 1 },
+  ]
+}
+
+// 每个字母下缘的压深用它自己那一端的颜色，而不是一律压黑，果冻才有颜色
+const SHADE_BLUE = [74, 148, 198]
+const SHADE_PINK = [224, 138, 156]
+
+function shadeAt(t: number) {
+  return SHADE_BLUE.map((b, k) => Math.round(b + (SHADE_PINK[k] - b) * t)).join(', ')
+}
 
 const JELLY_TAP: Keyframe[] = [
   { transform: 'translateY(0) scale(1, 1)' },
@@ -67,13 +120,13 @@ function JellyWord() {
     if (!wrap) return
     const letters = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-letter'))
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      letters.forEach((el) => el.style.removeProperty('opacity'))
+      letters.forEach((el) => { el.style.opacity = '1' })
       return
     }
 
-    // 先让每个字母落下（互相之间不干预，动画自带压扁与回弹）
+    // 一个一个撞进来：每个字母从右侧滑入，撞上前一个，再被弹回自己的格子
     letters.forEach((el, i) => {
-      el.animate(JELLY_DROP, {
+      el.animate(JELLY_SLAM, {
         duration: LETTER_DURATION,
         delay: LETTER_START + i * LETTER_STAGGER,
         easing: 'linear',
@@ -81,22 +134,23 @@ function JellyWord() {
       })
     })
 
-    // 再让落地瞬间的冲击波传给左边最近的两个字母，形成连锁的碰撞
+    // 撞击的力沿着这一行往左传：越远越轻、越晚，像多米诺
     letters.forEach((_, i) => {
       if (i === 0) return
       const impact = LETTER_START + i * LETTER_STAGGER + LETTER_DURATION * IMPACT_AT
-      for (let j = Math.max(0, i - 2); j < i; j++) {
-        const dist = i - j
-        letters[j].animate(
-          [
-            { transform: 'translateY(0) scale(1, 1)' },
-            { transform: `translateY(${2 + dist}px) scale(${1.06 - dist * 0.015}, ${0.93 + dist * 0.015})` },
-            { transform: 'translateY(0) scale(.975, 1.035)' },
-            { transform: 'translateY(0) scale(1, 1)' },
-          ],
-          { duration: 470, delay: impact + (dist - 1) * 24, easing: 'cubic-bezier(.3,.8,.4,1)' },
-        )
+      for (let d = 1; d <= 4; d++) {
+        const j = i - d
+        if (j < 0) break
+        const amp = KNOCK * Math.pow(0.68, d - 1)
+        letters[j].animate(knockFrames(amp), {
+          duration: 620 - d * 60,
+          delay: impact + (d - 1) * 38,
+          easing: 'linear',
+          // 叠加在字母自己的入场动画上：入场管“站到哪”，这一下管“被撞退多少”
+          composite: 'add',
+        })
       }
+
     })
 
     // 鼠标扫过某个字母，它就软软地弹一下
@@ -121,7 +175,12 @@ function JellyWord() {
           className="hp-letter"
           data-ch={ch}
           aria-hidden="true"
-          style={{ '--i': i } as React.CSSProperties}
+          style={
+            {
+              '--i': i,
+              '--lm-shade': shadeAt(i / (WORD.length - 1)),
+            } as React.CSSProperties
+          }
         >
           {ch}
         </span>
