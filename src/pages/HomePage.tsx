@@ -48,24 +48,24 @@ const KNOCK_DURATION = 1150 // 被撞之后颤多久
 // 撞进来的那个字母：一路滚进来，落地时摆正、横向压扁，再回弹站直
 const JELLY_SLAM: Keyframe[] = [
   {
-    // 从右侧偏高处滚着过来，绕基线转大半圈
-    transform: `translate(${SLAM * 7.2}em, ${-SLAM * 0.4}em) rotate(-168deg) scale(0.88, 0.96)`,
+    // 从右侧偏高处滚着过来，绕基线转小半圈（滚幅收着点，别横冲直撞）
+    transform: `translate(${SLAM * 3.4}em, ${-SLAM * 0.26}em) rotate(-118deg) scale(0.9, 0.97)`,
     opacity: 0,
     offset: 0,
     easing: 'cubic-bezier(.5,0,.9,.4)',
   },
   {
-    transform: `translate(${SLAM * 5.9}em, ${-SLAM * 0.34}em) rotate(-140deg) scale(0.89, 0.97)`,
+    transform: `translate(${SLAM * 2.8}em, ${-SLAM * 0.22}em) rotate(-100deg) scale(0.9, 0.98)`,
     opacity: 1,
     offset: 0.09,
   },
   {
-    transform: `translate(${SLAM * 3.3}em, ${-SLAM * 0.19}em) rotate(-94deg) scale(0.9, 0.98)`,
+    transform: `translate(${SLAM * 1.6}em, ${-SLAM * 0.12}em) rotate(-68deg) scale(0.91, 0.99)`,
     opacity: 1,
     offset: 0.26,
   },
   {
-    transform: `translate(${SLAM * 1.05}em, ${-SLAM * 0.05}em) rotate(-41deg) scale(0.92, 1)`,
+    transform: `translate(${SLAM * 0.5}em, ${-SLAM * 0.03}em) rotate(-28deg) scale(0.92, 1)`,
     opacity: 1,
     offset: 0.4,
   },

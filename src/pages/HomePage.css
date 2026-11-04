@@ -205,7 +205,7 @@
   margin: 0;
   /* 七个小写字母，比原来的汉字字标略窄，留出呼吸 */
   margin-left: -0.045em;
-  font-size: clamp(74px, min(25vw, 38vh), 440px);
+  font-size: clamp(62px, min(19vw, 29vh), 336px);
   font-weight: 800;
   /* 行高留够降部（y 的尾巴），否则会被灯牌区裁掉 */
   line-height: 1.2;
@@ -930,7 +930,7 @@
   }
 
   .hp-word {
-    font-size: clamp(58px, 29vw, 168px);
+    font-size: clamp(46px, 22vw, 128px);
   }
 
   .hp-stats {
