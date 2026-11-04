@@ -56,6 +56,11 @@
   cursor: grabbing;
 }
 
+/* 触控板横向滑动：滑动途中不吸附，停手后由脚本吸附到最近一张 */
+.wk-track.is-glide {
+  scroll-snap-type: none;
+}
+
 /* 左右边缘渐隐：长条在两侧淡出，而不是被屏幕硬切 */
 .wk-edges {
   position: absolute;

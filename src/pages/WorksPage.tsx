@@ -71,6 +71,16 @@ export default function WorksPage() {
     oy: 0,
   })
   const suppressClick = useRef(0)
+  const glideTimer = useRef(0)
+
+  // 翻页动画期间先关掉 scroll-snap，否则松手瞬间会被吸回原处
+  const holdSnap = useCallback((ms = 560) => {
+    const el = trackRef.current
+    if (!el) return
+    window.clearTimeout(glideTimer.current)
+    el.classList.add('is-glide')
+    glideTimer.current = window.setTimeout(() => el.classList.remove('is-glide'), ms)
+  }, [])
 
   // 相邻两张中心之间的距离（卡片宽 + 间距）
   const stepOf = useCallback(() => {
@@ -172,22 +182,43 @@ export default function WorksPage() {
 
   const resetPzoom = useCallback(() => setPzoom({ scale: 1, x: 0, y: 0 }), [])
 
-  // 滚轮 / 触控板：直接缩放当前作品
+  // 滚轮 / 触控板：横向滑＝翻页，纵向滚＝缩放当前作品
   useEffect(() => {
     if (state !== 'ready' || activeIdx != null) return
     const el = trackRef.current
     if (!el) return
+    let snapTimer = 0
+    const settle = () => {
+      window.clearTimeout(snapTimer)
+      snapTimer = window.setTimeout(() => {
+        goTo(Math.round(el.scrollLeft / Math.max(1, stepOf())))
+        holdSnap()
+      }, 130)
+    }
     const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1
-      const d = e.deltaY * unit
-      if (Math.abs(d) < 0.5) return
+      const dx = e.deltaX * unit
+      const dy = e.deltaY * unit
+      // 横向滚动更明显时，让长条跟着滑，停下再吸附
+      if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 1) {
+        e.preventDefault()
+        el.classList.add('is-glide')
+        el.scrollLeft += dx
+        schedulePaint()
+        settle()
+        return
+      }
+      e.preventDefault()
+      if (Math.abs(dy) < 0.5) return
       // 指数映射：滚轮一格与触控板一次滑动的手感接近
-      pzoomAt(e.clientX, e.clientY, clamp(Math.exp(-d * 0.0018), 0.75, 1.3))
+      pzoomAt(e.clientX, e.clientY, clamp(Math.exp(-dy * 0.0018), 0.75, 1.3))
     }
     el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [state, activeIdx, pzoomAt])
+    return () => {
+      window.clearTimeout(snapTimer)
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [state, activeIdx, pzoomAt, goTo, stepOf, schedulePaint, holdSnap])
 
   // 换作品时回到原始比例
   useEffect(() => {
@@ -237,14 +268,21 @@ export default function WorksPage() {
     if (!d.down) return
     d.down = false
     const el = trackRef.current
-    el?.classList.remove('is-drag')
     if (!el) return
+    // 先读位置：一旦恢复 scroll-snap 重新布局，浏览器会立刻把长条吸回原处
+    const landed = el.scrollLeft
+    el.classList.remove('is-drag')
     if (d.mode === 'pan') {
       if (d.moved) suppressClick.current = Date.now()
       return
     }
-    // 连续长条：松手后吸附到离得最近的一张，而不是按阈值硬跳一页
-    goTo(Math.round(el.scrollLeft / Math.max(1, stepOf())))
+    // 连续长条：轻轻一推就翻页——位移超过 14% 按方向翻一张，推得远就多翻几张
+    const stepLen = Math.max(1, stepOf())
+    const from = Math.round(d.startScroll / stepLen)
+    const ratio = (landed - d.startScroll) / stepLen
+    const pages = Math.round(ratio) || (Math.abs(ratio) > 0.14 ? Math.sign(ratio) : 0)
+    if (pages !== 0) holdSnap()
+    goTo(from + pages)
     if (d.moved) suppressClick.current = Date.now()
     schedulePaint()
   }
