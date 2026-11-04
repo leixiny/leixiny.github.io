@@ -223,61 +223,67 @@
   /* 动画开始前先藏起来，避免首帧闪出完整的字 */
   opacity: 0;
   will-change: transform, opacity;
-  /* 每个字母取整段渐变的不同切片，拼起来是一整条蓝→粉的应援色 */
-  background-image: linear-gradient(
-    102deg,
-    #aee4ff 0%,
-    #b2e3ff 40%,
-    #d8ddf8 50%,
-    #ffd6e1 60%,
-    #ffccd5 100%
-  );
-  background-size: 700% 100%;
-  background-position: calc(var(--i) * 16.6667%) 0;
+  /* 应援色本身很浅，靠“顶亮—中透—底沉—底边透光”做出胶体厚度；
+     size 用每个字母自己的字形高度（--lm-gh），底边对齐基线 */
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(255, 255, 255, 0.34) 5%,
+      rgba(255, 255, 255, 0.09) 11%,
+      rgba(255, 255, 255, 0) 17%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(var(--lm-shade), 0) 40%,
+      rgba(var(--lm-shade), 0.26) 64%,
+      rgba(var(--lm-shade), 0.72) 85%,
+      rgba(var(--lm-shade), 0.52) 93%,
+      rgba(var(--lm-shade), 0.26) 97%,
+      rgba(255, 255, 255, 0.26) 100%
+    ),
+    linear-gradient(
+      102deg,
+      #aee4ff 0%,
+      #b2e3ff 40%,
+      #d8ddf8 50%,
+      #ffd6e1 60%,
+      #ffccd5 100%
+    );
+  background-size:
+    100% calc(var(--lm-gh, 0.8) * 1em),
+    100% calc(var(--lm-gh, 0.8) * 1em),
+    700% 100%;
+  background-position:
+    left 0 bottom calc(var(--lm-gd, 0.232) * 1em),
+    left 0 bottom calc(var(--lm-gd, 0.232) * 1em),
+    calc(var(--i) * 16.6667%) bottom;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 18px rgba(174, 228, 255, 0.26))
-    drop-shadow(0 8px 22px rgba(255, 204, 213, 0.18));
+  /* 2px 的硬投影是胶体的"底面"，软投影让它浮在灯海之上 */
+  filter: saturate(1.34) drop-shadow(0 2px 0 rgba(8, 24, 62, 0.72))
+    drop-shadow(0 14px 26px rgba(8, 20, 48, 0.6))
+    drop-shadow(0 0 10px rgba(174, 228, 255, 0.16));
   transition: filter 0.35s var(--rp-ease);
 }
 
-/* 果冻的立体感：上缘高光 + 下缘一点压深 */
-.hp-letter::before,
+/* 玻璃壳：一圈极细的高光边，让字像有厚度的胶体而不是平面色块 */
 .hp-letter::after {
+  content: attr(data-ch);
   position: absolute;
   inset: 0;
   color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
+  -webkit-text-stroke: 0.9px rgba(255, 255, 255, 0.22);
   pointer-events: none;
-}
-
-.hp-letter::before {
-  content: attr(data-ch);
-  background-image: linear-gradient(
-    0deg,
-    rgba(var(--lm-shade), 0.92) 2%,
-    rgba(var(--lm-shade), 0.42) 26%,
-    rgba(var(--lm-shade), 0) 56%
-  );
-}
-
-.hp-letter::after {
-  content: attr(data-ch);
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0) 12%,
-    rgba(255, 255, 255, 0.38) 22%,
-    rgba(255, 255, 255, 0.12) 32%,
-    rgba(255, 255, 255, 0) 46%
-  );
-  mix-blend-mode: soft-light;
+  mix-blend-mode: screen;
 }
 
 .hp-letter:hover {
-  filter: drop-shadow(0 0 30px rgba(174, 228, 255, 0.6))
-    drop-shadow(0 12px 30px rgba(255, 204, 213, 0.42));
+  filter: saturate(1.2) drop-shadow(0 2px 0 rgba(8, 24, 62, 0.72))
+    drop-shadow(0 14px 26px rgba(8, 20, 48, 0.6))
+    drop-shadow(0 0 34px rgba(174, 228, 255, 0.62))
+    drop-shadow(0 0 60px rgba(255, 204, 213, 0.34));
 }
 
 .hp-kicker {
