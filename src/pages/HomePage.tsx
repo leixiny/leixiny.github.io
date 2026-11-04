@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import './HomePage.css'
@@ -33,6 +33,101 @@ function formatDateTime(ts: string) {
 
 function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+}
+
+/* ---------- 首屏字标：leixiny 逐字落下，落地压扁、回弹，撞得前面的字母抖一下 ---------- */
+const WORD = 'leixiny'
+const LETTER_STAGGER = 185 // 每个字母之间的间隔
+const LETTER_DURATION = 560
+const LETTER_START = 260
+const IMPACT_AT = 0.58 // 落地瞬间在关键帧里的位置
+
+const JELLY_DROP: Keyframe[] = [
+  { transform: 'translateY(-0.56em) scale(0.84, 0.9)', opacity: 0, offset: 0, easing: 'cubic-bezier(.5,0,.86,.4)' },
+  { transform: 'translateY(-0.24em) scale(0.93, 0.96)', opacity: 1, offset: 0.34 },
+  { transform: 'translateY(0) scale(1.12, 0.83)', opacity: 1, offset: IMPACT_AT, easing: 'cubic-bezier(.2,.9,.3,1.15)' },
+  { transform: 'translateY(-0.045em) scale(.95, 1.06)', offset: 0.74, easing: 'cubic-bezier(.3,.9,.3,1)' },
+  { transform: 'translateY(0) scale(1.025, 0.975)', offset: 0.87, easing: 'cubic-bezier(.3,.9,.3,1)' },
+  { transform: 'translateY(0) scale(1, 1)', offset: 1 },
+]
+
+const JELLY_TAP: Keyframe[] = [
+  { transform: 'translateY(0) scale(1, 1)' },
+  { transform: 'translateY(3px) scale(1.12, 0.86)' },
+  { transform: 'translateY(0) scale(.94, 1.07)' },
+  { transform: 'translateY(0) scale(1.02, .98)' },
+  { transform: 'translateY(0) scale(1, 1)' },
+]
+
+function JellyWord() {
+  const wrapRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    const wrap = wrapRef.current
+    if (!wrap) return
+    const letters = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-letter'))
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      letters.forEach((el) => el.style.removeProperty('opacity'))
+      return
+    }
+
+    // 先让每个字母落下（互相之间不干预，动画自带压扁与回弹）
+    letters.forEach((el, i) => {
+      el.animate(JELLY_DROP, {
+        duration: LETTER_DURATION,
+        delay: LETTER_START + i * LETTER_STAGGER,
+        easing: 'linear',
+        fill: 'both',
+      })
+    })
+
+    // 再让落地瞬间的冲击波传给左边最近的两个字母，形成连锁的碰撞
+    letters.forEach((_, i) => {
+      if (i === 0) return
+      const impact = LETTER_START + i * LETTER_STAGGER + LETTER_DURATION * IMPACT_AT
+      for (let j = Math.max(0, i - 2); j < i; j++) {
+        const dist = i - j
+        letters[j].animate(
+          [
+            { transform: 'translateY(0) scale(1, 1)' },
+            { transform: `translateY(${2 + dist}px) scale(${1.06 - dist * 0.015}, ${0.93 + dist * 0.015})` },
+            { transform: 'translateY(0) scale(.975, 1.035)' },
+            { transform: 'translateY(0) scale(1, 1)' },
+          ],
+          { duration: 470, delay: impact + (dist - 1) * 24, easing: 'cubic-bezier(.3,.8,.4,1)' },
+        )
+      }
+    })
+
+    // 鼠标扫过某个字母，它就软软地弹一下
+    const started = performance.now()
+    const onEnter = (el: HTMLElement) => () => {
+      if (performance.now() - started < LETTER_START + letters.length * LETTER_STAGGER + 500) return
+      el.animate(JELLY_TAP, { duration: 560, easing: 'cubic-bezier(.3,.9,.4,1)' })
+    }
+    const handlers = letters.map((el) => {
+      const fn = onEnter(el)
+      el.addEventListener('pointerenter', fn)
+      return [el, fn] as const
+    })
+    return () => handlers.forEach(([el, fn]) => el.removeEventListener('pointerenter', fn))
+  }, [])
+
+  return (
+    <h1 className="hp-word" ref={wrapRef} aria-label={WORD}>
+      {WORD.split('').map((ch, i) => (
+        <span
+          key={i}
+          className="hp-letter"
+          data-ch={ch}
+          aria-hidden="true"
+          style={{ '--i': i } as React.CSSProperties}
+        >
+          {ch}
+        </span>
+      ))}
+    </h1>
+  )
 }
 
 export default function HomePage() {
@@ -213,8 +308,7 @@ export default function HomePage() {
           </div>
 
           <div className="hp-hero-mid">
-            <h1 className="hp-name">雷馨怡</h1>
-            <p className="hp-name-en">LEI XINYI</p>
+            <JellyWord />
           </div>
 
           <div className="hp-hero-foot">

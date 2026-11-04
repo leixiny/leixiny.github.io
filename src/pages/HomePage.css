@@ -167,9 +167,6 @@
 .hp-hero-mid {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: clamp(12px, 2.4vw, 40px);
-  flex-wrap: wrap;
   padding-block: clamp(6px, 1.6vh, 20px);
 }
 
@@ -182,6 +179,84 @@
     radial-gradient(34% 42% at 9% 12%, rgba(47, 157, 229, 0.2), transparent 68%),
     radial-gradient(30% 38% at 88% 6%, rgba(242, 105, 140, 0.17), transparent 68%),
     radial-gradient(24% 30% at 54% 98%, rgba(47, 157, 229, 0.08), transparent 70%);
+}
+
+/* ---------- 首屏字标：leixiny（蓝→紫→粉的果冻字） ---------- */
+.hp-word {
+  display: flex;
+  align-items: baseline;
+  margin: 0;
+  /* 七个小写字母，比原来的汉字字标略窄，留出呼吸 */
+  margin-left: -0.045em;
+  font-size: clamp(74px, 21.6vw, 372px);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hp-letter {
+  position: relative;
+  display: inline-block;
+  /* 压扁/回弹的支点落在基线上，而不是字框中心 */
+  transform-origin: 50% 86%;
+  will-change: transform, opacity;
+  /* 每个字母取整段渐变的不同切片，拼起来是一整条蓝粉渐变 */
+  background-image: linear-gradient(
+    102deg,
+    #2b93dd 0%,
+    #4f7ef2 20%,
+    #8060ee 40%,
+    #cf63bb 62%,
+    #ee5f88 82%,
+    #ff96bf 100%
+  );
+  background-size: 700% 100%;
+  background-position: calc(var(--i) * 16.6667%) 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 9px 20px rgba(111, 123, 247, 0.16));
+  transition: filter 0.35s var(--rp-ease);
+}
+
+/* 果冻的立体感：上缘高光 + 下缘一点压深 */
+.hp-letter::before,
+.hp-letter::after {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  pointer-events: none;
+}
+
+.hp-letter::before {
+  content: attr(data-ch);
+  background-image: linear-gradient(
+    0deg,
+    rgba(52, 20, 84, 0.3) 1%,
+    rgba(52, 20, 84, 0.1) 26%,
+    rgba(52, 20, 84, 0) 52%
+  );
+}
+
+.hp-letter::after {
+  content: attr(data-ch);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 14%,
+    rgba(255, 255, 255, 0.85) 23%,
+    rgba(255, 255, 255, 0.4) 33%,
+    rgba(255, 255, 255, 0) 46%
+  );
+  mix-blend-mode: soft-light;
+}
+
+.hp-letter:hover {
+  filter: drop-shadow(0 14px 26px rgba(217, 111, 192, 0.3));
 }
 
 .hp-kicker {
@@ -201,29 +276,6 @@
   height: 2px;
   border-radius: 2px;
   background: var(--rp-grad);
-}
-
-.hp-name {
-  margin: 0;
-  /* 海报式大字，但只占满宽的一部分，不把整屏吃掉 */
-  padding-bottom: 0.06em;
-  /* 汉字字形自带左右边距，负 margin 让墨迹跟上方文字左对齐 */
-  margin-left: -0.035em;
-  font-size: clamp(62px, 15.5vw, 216px);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.01em;
-  color: var(--rp-ink);
-  animation: hpUp 0.8s 0.06s var(--rp-ease) both;
-}
-
-.hp-name-en {
-  margin: 0 0 0.8em auto;
-  font-size: clamp(10px, 0.95vw, 13px);
-  font-weight: 600;
-  letter-spacing: 0.34em;
-  color: var(--rp-faint);
-  animation: hpUp 0.8s 0.12s var(--rp-ease) both;
 }
 
 .hp-hero-foot {
@@ -785,13 +837,8 @@
     padding-block: 30px 38px;
   }
 
-  .hp-name {
-    font-size: clamp(52px, 17vw, 96px);
-  }
-
-  .hp-name-en {
-    letter-spacing: 0.26em;
-    margin-bottom: 0.6em;
+  .hp-word {
+    font-size: clamp(58px, 21vw, 134px);
   }
 
   .hp-stats {
