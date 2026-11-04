@@ -188,11 +188,18 @@ export default function WorksPage() {
     const el = trackRef.current
     if (!el) return
     let snapTimer = 0
+    let gliding = false
+    let glideFrom = 0
     const settle = () => {
       window.clearTimeout(snapTimer)
       snapTimer = window.setTimeout(() => {
-        goTo(Math.round(el.scrollLeft / Math.max(1, stepOf())))
+        // 和拖拽同一套规则：滑过 12% 就翻一张，滑得远多翻几张，否则回原位
+        const stepLen = Math.max(1, stepOf())
+        const ratio = (el.scrollLeft - glideFrom * stepLen) / stepLen
+        const pages = Math.round(ratio) || (Math.abs(ratio) > 0.12 ? Math.sign(ratio) : 0)
+        goTo(glideFrom + pages)
         holdSnap()
+        gliding = false
       }, 130)
     }
     const onWheel = (e: WheelEvent) => {
@@ -202,6 +209,15 @@ export default function WorksPage() {
       // 横向滚动更明显时，让长条跟着滑，停下再吸附
       if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 1) {
         e.preventDefault()
+        // 放大状态下横向滑＝平移画面，不翻页
+        if (pzoomRef.current.scale > 1) {
+          applyPzoom(pzoomRef.current.scale, pzoomRef.current.x - dx, pzoomRef.current.y)
+          return
+        }
+        if (!gliding) {
+          gliding = true
+          glideFrom = idxRef.current
+        }
         el.classList.add('is-glide')
         el.scrollLeft += dx
         schedulePaint()
@@ -218,7 +234,7 @@ export default function WorksPage() {
       window.clearTimeout(snapTimer)
       el.removeEventListener('wheel', onWheel)
     }
-  }, [state, activeIdx, pzoomAt, goTo, stepOf, schedulePaint, holdSnap])
+  }, [state, activeIdx, pzoomAt, applyPzoom, goTo, stepOf, schedulePaint, holdSnap])
 
   // 换作品时回到原始比例
   useEffect(() => {
