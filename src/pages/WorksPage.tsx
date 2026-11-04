@@ -72,23 +72,68 @@ export default function WorksPage() {
   })
   const suppressClick = useRef(0)
 
+  // 相邻两张中心之间的距离（卡片宽 + 间距）
+  const stepOf = useCallback(() => {
+    const el = trackRef.current
+    if (!el) return 1
+    const slides = el.querySelectorAll<HTMLElement>('.wk-slide')
+    if (slides.length > 1) return slides[1].offsetLeft - slides[0].offsetLeft
+    return slides[0]?.offsetWidth || el.clientWidth
+  }, [])
+
   const goTo = useCallback(
     (i: number) => {
       const el = trackRef.current
       if (!el) return
       const target = clamp(i, 0, total - 1)
-      el.scrollTo({ left: target * el.clientWidth, behavior: 'smooth' })
+      el.scrollTo({ left: target * stepOf(), behavior: 'smooth' })
       setIdx(target)
     },
-    [total],
+    [total, stepOf],
   )
 
   const onTrackScroll = () => {
     const el = trackRef.current
     if (!el) return
-    const i = clamp(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)), 0, total - 1)
+    const i = clamp(Math.round(el.scrollLeft / Math.max(1, stepOf())), 0, total - 1)
     if (i !== idxRef.current) setIdx(i)
+    schedulePaint()
   }
+
+  /* ---------- 连续滑动：按「离屏幕中心的距离」给每张做虚化 ---------- */
+  const blurRaf = useRef(0)
+  const paintSlides = useCallback(() => {
+    const el = trackRef.current
+    if (!el) return
+    const dragging = el.classList.contains('is-drag')
+    const vw = window.innerWidth
+    const step = Math.max(1, stepOf())
+    // 拖动中虚化更重，停下后收敛一点，保留一点层次
+    const maxBlur = dragging ? 13 : 9
+    el.querySelectorAll<HTMLElement>('.wk-slide').forEach((s) => {
+      const r = s.getBoundingClientRect()
+      const d = Math.min(1, Math.abs(r.left + r.width / 2 - vw / 2) / step)
+      const e = Math.pow(d, 1.35)
+      s.style.setProperty('--wk-blur', `${(e * maxBlur).toFixed(2)}px`)
+      s.style.setProperty('--wk-dim', `${(e * 0.3).toFixed(3)}`)
+      s.style.setProperty('--wk-scale', `${(1 - e * 0.05).toFixed(4)}`)
+    })
+  }, [stepOf])
+
+  const schedulePaint = useCallback(() => {
+    if (blurRaf.current) return
+    blurRaf.current = requestAnimationFrame(() => {
+      blurRaf.current = 0
+      paintSlides()
+    })
+  }, [paintSlides])
+
+  useEffect(() => {
+    if (state !== 'ready') return
+    paintSlides()
+    window.addEventListener('resize', schedulePaint)
+    return () => window.removeEventListener('resize', schedulePaint)
+  }, [state, paintSlides, schedulePaint])
 
   /* ---------- 页内预览缩放：滚轮即缩放，放大后拖动看局部 ---------- */
   const slideImgRef = useRef<HTMLImageElement>(null)
@@ -170,6 +215,7 @@ export default function WorksPage() {
     }
     el.setPointerCapture(e.pointerId)
     el.classList.add('is-drag')
+    schedulePaint()
   }
 
   const onTrackPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -197,15 +243,10 @@ export default function WorksPage() {
       if (d.moved) suppressClick.current = Date.now()
       return
     }
-    const w = Math.max(1, el.clientWidth)
-    const dx = d.lastX - d.startX
-    // 拖动超过 12% 就翻到相邻一张，否则回弹
-    const target =
-      Math.abs(dx) > w * 0.12
-        ? Math.round(d.startScroll / w) + (dx < 0 ? 1 : -1)
-        : Math.round(el.scrollLeft / w)
-    goTo(target)
+    // 连续长条：松手后吸附到离得最近的一张，而不是按阈值硬跳一页
+    goTo(Math.round(el.scrollLeft / Math.max(1, stepOf())))
     if (d.moved) suppressClick.current = Date.now()
+    schedulePaint()
   }
 
   // pointer capture 会把 click 重定向到轨道，用按下时记的卡片兜底
@@ -409,6 +450,8 @@ export default function WorksPage() {
               ⤢
             </button>
           </div>
+
+          <div className="wk-edges" aria-hidden="true" />
 
           {pzoom.scale > 1.005 && (
             <button

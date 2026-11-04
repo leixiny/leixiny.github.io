@@ -23,11 +23,18 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
-/* ---------- 轨道 ---------- */
+/* ---------- 轨道：一条连续的长条，中央聚焦 ---------- */
 .wk-track {
+  --wk-gap: clamp(16px, 2.2vw, 44px);
+  --wk-card-w: min(78vw, 1180px);
+
   display: flex;
+  align-items: center;
+  gap: var(--wk-gap);
   width: 100%;
   height: 100%;
+  /* 左右留出半个屏宽，让首尾两张也能停在正中 */
+  padding-inline: calc((100vw - var(--wk-card-w)) / 2);
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
@@ -49,15 +56,46 @@
   cursor: grabbing;
 }
 
-/* ---------- 单屏 ---------- */
+/* 左右边缘渐隐：长条在两侧淡出，而不是被屏幕硬切 */
+.wk-edges {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #08080a 0%, rgba(8, 8, 10, 0.78) 40%, rgba(8, 8, 10, 0) 100%)
+      left center / clamp(60px, 10vw, 152px) 100% no-repeat,
+    linear-gradient(270deg, #08080a 0%, rgba(8, 8, 10, 0.78) 40%, rgba(8, 8, 10, 0) 100%)
+      right center / clamp(60px, 10vw, 152px) 100% no-repeat;
+}
+
+/* ---------- 单张 ---------- */
 .wk-slide {
   position: relative;
-  flex: 0 0 100%;
-  height: 100%;
+  flex: 0 0 var(--wk-card-w);
+  height: min(74vh, 720px);
+  border-radius: clamp(14px, 1.2vw, 22px);
   overflow: hidden;
-  scroll-snap-align: start;
+  scroll-snap-align: center;
   scroll-snap-stop: always;
-  background: #08080a;
+  background: #111114;
+  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95);
+  /* 离屏幕中心越远越虚、越暗、越小，拖动时由 JS 实时写入这三个变量 */
+  filter: blur(var(--wk-blur, 0px)) brightness(calc(1 - var(--wk-dim, 0)));
+  transform: scale(var(--wk-scale, 1));
+  transition:
+    filter 0.5s var(--ease),
+    transform 0.5s var(--ease);
+  will-change: filter, transform;
+}
+
+/* 拖动中要跟手，不能有过渡 */
+.wk-track.is-drag .wk-slide {
+  transition: none;
+}
+
+.wk-track.is-drag .wk-slide-img {
+  transition: none;
 }
 
 .wk-slide-img {
@@ -83,16 +121,13 @@
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(6, 6, 8, 0.55) 0%,
-    rgba(6, 6, 8, 0.1) 18%,
-    rgba(6, 6, 8, 0) 38%,
-    rgba(6, 6, 8, 0.5) 64%,
-    rgba(6, 6, 8, 0.86) 84%,
-    rgba(6, 6, 8, 0.96) 100%
+    rgba(6, 6, 8, 0) 34%,
+    rgba(6, 6, 8, 0.34) 68%,
+    rgba(6, 6, 8, 0.82) 100%
   );
 }
 
-/* 窄屏用同一张图做虚化底，避免大片黑边 */
+/* 窄屏不再需要虚化垫底 */
 .wk-slide-bg {
   display: none;
 }
@@ -103,14 +138,14 @@
   right: 0;
   bottom: 0;
   max-width: 74ch;
-  padding: 0 clamp(22px, 5vw, 72px) clamp(40px, 7vh, 74px);
+  padding: 0 clamp(20px, 2.6vw, 44px) clamp(22px, 3.2vw, 46px);
 }
 
 .wk-slide-text h1 {
-  margin: 0 0 12px;
-  font-size: clamp(26px, 3.2vw, 50px);
+  margin: 0 0 10px;
+  font-size: clamp(22px, 2.2vw, 36px);
   font-weight: 750;
-  line-height: 1.14;
+  line-height: 1.16;
   letter-spacing: -0.02em;
   color: #fff;
   text-shadow: 0 2px 28px rgba(0, 0, 0, 0.42);
@@ -119,9 +154,9 @@
 .wk-slide-text p {
   margin: 0;
   max-width: 40em;
-  font-size: clamp(14px, 1.05vw, 17px);
+  font-size: clamp(13px, 0.95vw, 15px);
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.88);
   text-shadow: 0 1px 18px rgba(0, 0, 0, 0.45);
 }
 
@@ -452,67 +487,34 @@
   }
 }
 
-/* ---------- 窄屏：图上文下 ---------- */
+/* ---------- 窄屏 ---------- */
 @media (max-width: 820px) {
+  .wk-track {
+    --wk-card-w: 84vw;
+    --wk-gap: 14px;
+  }
+
   .wk-slide {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: clamp(16px, 3.4vh, 26px);
-    padding-bottom: 9svh;
-  }
-
-  .wk-slide-bg {
-    display: block;
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    filter: blur(34px) saturate(1.2);
-    transform: scale(1.25);
-    opacity: 0.78;
-  }
-
-  .wk-slide-img {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    transform: none;
-  }
-
-  .wk-slide-veil {
-    background: linear-gradient(
-      180deg,
-      rgba(8, 8, 10, 0.42) 0%,
-      rgba(8, 8, 10, 0.18) 46%,
-      rgba(8, 8, 10, 0.7) 100%
-    );
+    height: min(62vh, 560px);
+    border-radius: 16px;
   }
 
   .wk-slide-text {
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    max-width: none;
-    padding: 0 22px;
+    padding: 0 18px 20px;
   }
 
   .wk-slide-text h1 {
-    font-size: clamp(22px, 6.2vw, 30px);
+    font-size: clamp(19px, 5.4vw, 26px);
     margin-bottom: 8px;
   }
 
   .wk-slide-text p {
-    font-size: 14px;
-    line-height: 1.62;
+    font-size: 13.5px;
+    line-height: 1.6;
   }
 
   .wk-dots {
-    right: 4px;
+    right: 2px;
   }
 
   .wk-dots button {
