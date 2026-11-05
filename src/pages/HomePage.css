@@ -281,13 +281,199 @@
 }
 
 /* ---------- 玻璃上的水 ---------- */
-/* 整屏那层：字以外的空白里也有零星水珠，玻璃才是湿的 */
-.hp-drips {
-  position: absolute;
+/* 常驻水层：满屏固定，滚动到哪儿都在淌，出了首屏由 JS 淡掉 */
+.hp-wet {
+  position: fixed;
   inset: 0;
-  z-index: 5;
+  z-index: 6;
   pointer-events: none;
   overflow: hidden;
+  contain: layout style;
+}
+
+/* 一条水 = 一截固定长度的湿痕 + 挂在末端的水珠，整条从屏幕上方滑到屏幕下方。
+   长度有限才不像贯穿全屏的雨丝；起止都在屏幕外，循环重启时不会跳。 */
+.hp-flow {
+  position: absolute;
+  left: var(--x, 50%);
+  top: calc(var(--len, 260px) * -1);
+  width: calc(var(--w, 2px) * 7);
+  height: var(--len, 260px);
+  margin-left: calc(var(--w, 2px) * -3.5);
+  /* 绝对笔直的水痕一眼假，整条给一点倾角 */
+  transform: skewX(var(--skew, 0deg));
+  transform-origin: 50% 100%;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: hp-wet-fall var(--dur, 16s) linear var(--delay, 0s) infinite;
+}
+
+/* 湿痕：一条被水冲开的雾，中间透、边上化开，越往下越湿。
+   宽度只有水珠的三分之一、alpha 只有零点几，才不会变成一根 1px 的白线 */
+.hp-flow-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: calc(var(--w, 2px) * 3.4);
+  height: 100%;
+  margin-left: calc(var(--w, 2px) * -1.7);
+  border-radius: 999px;
+  /* 上端细、下端宽：水越往下积得越多 */
+  clip-path: polygon(43% 0%, 57% 0%, 100% 100%, 0% 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(212, 238, 255, 0) 0%,
+    rgba(224, 244, 255, 0.3) 22%,
+    rgba(240, 252, 255, 0.44) 50%,
+    rgba(224, 244, 255, 0.3) 78%,
+    rgba(212, 238, 255, 0) 100%
+  );
+  /* 纵向压一层：顶端化掉（水痕是从上面淌过来的），越往下越湿 */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.3) 14%,
+    rgba(0, 0, 0, 0.72) 46%,
+    #000 78%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.3) 14%,
+    rgba(0, 0, 0, 0.72) 46%,
+    #000 78%,
+    #000 100%
+  );
+  filter: blur(1.4px);
+}
+
+/* 亮芯：湿痕中间那道被光线打穿的高光，比湿痕窄得多 */
+.hp-flow-core {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: calc(var(--w, 2px) * 0.7);
+  height: 100%;
+  margin-left: calc(var(--w, 2px) * -0.35);
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 24%,
+    rgba(255, 255, 255, 0.42) 62%,
+    rgba(255, 255, 255, 0.72) 90%,
+    rgba(255, 255, 255, 0.86) 100%
+  );
+  filter: blur(0.55px);
+}
+
+/* 水痕旁边甩出去的一条细支流：有了分叉才不像一根划痕 */
+.hp-flow-core::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--w, 2px) * 2.2);
+  top: 42%;
+  width: calc(var(--w, 2px) * 0.5);
+  height: 44%;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(230, 246, 255, 0) 0%,
+    rgba(240, 250, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
+  filter: blur(0.9px);
+}
+
+/* 水珠：挂在湿痕下端，跟字上那套同一份光学 —— 中间透、一圈水膜亮环、左上一点天光 */
+.hp-flow-head {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--w, 2px) * -3);
+  width: calc(var(--w, 2px) * 8.6);
+  height: calc(var(--w, 2px) * 9.4);
+  margin-left: calc(var(--w, 2px) * -4.3);
+  border-radius: 50% 50% 48% 48% / 58% 58% 42% 42%;
+  background:
+    radial-gradient(circle at 33% 24%, rgba(255, 255, 255, 0.95) 0 6%, rgba(255, 255, 255, 0) 21%),
+    radial-gradient(circle at 66% 78%, rgba(255, 255, 255, 0.4) 0 5%, rgba(255, 255, 255, 0) 20%),
+    radial-gradient(
+      circle at 50% 54%,
+      rgba(6, 20, 32, 0.42) 0 34%,
+      rgba(14, 34, 50, 0.36) 52%,
+      rgba(96, 150, 184, 0.16) 66%,
+      rgba(255, 255, 255, 0.82) 76%,
+      rgba(255, 255, 255, 0.34) 85%,
+      rgba(255, 255, 255, 0) 96%
+    );
+}
+
+/* 粗一点的那几道：把背后的雾“看清”一点 —— 水填平了雾，玻璃在这个位置是透的。
+   这一下比再刷一层白有用得多，浅色雾面上也能看见水痕 */
+.hp-flow--glass .hp-flow-line {
+  -webkit-backdrop-filter: blur(1.1px) brightness(1.04) contrast(1.07) saturate(1.06);
+  backdrop-filter: blur(1.1px) brightness(1.04) contrast(1.07) saturate(1.06);
+}
+
+/* 小水珠：一截很短的湿痕，走得快，像被大水甩下来、自己往下滚的一颗 */
+.hp-flow--bead .hp-flow-line {
+  filter: blur(1px);
+}
+
+/* 小屏：条数减半、关掉背景滤镜，手机上也别掉帧 */
+@media (max-width: 760px) {
+  .hp-flow:nth-child(even) {
+    display: none;
+  }
+
+  .hp-flow--glass .hp-flow-line {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 关掉动效的偏好：这层水直接不要，静态页面要干净 */
+@media (prefers-reduced-motion: reduce) {
+  .hp-wet {
+    display: none;
+  }
+}
+
+/* 一条水的生死：淡入 → 走走停停往下滑 → 滑出屏幕再淡掉，交给下一条接上 */
+@keyframes hp-wet-fall {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  5% {
+    opacity: var(--o, 0.8);
+  }
+  8% {
+    transform: translate3d(0, calc((100vh + var(--len, 260px)) * 0.03), 0);
+  }
+  14% {
+    transform: translate3d(0, calc((100vh + var(--len, 260px)) * 0.045), 0);
+  }
+  42% {
+    transform: translate3d(0, calc((100vh + var(--len, 260px)) * 0.44), 0);
+  }
+  48% {
+    transform: translate3d(0, calc((100vh + var(--len, 260px)) * 0.455), 0);
+  }
+  76% {
+    transform: translate3d(0, calc((100vh + var(--len, 260px)) * 0.82), 0);
+  }
+  82% {
+    transform: translate3d(0, calc((100vh + var(--len, 260px)) * 0.835), 0);
+  }
+  94% {
+    opacity: var(--o, 0.8);
+  }
+  100% {
+    transform: translate3d(0, calc(100vh + var(--len, 260px)), 0);
+    opacity: 0;
+  }
 }
 
 /* 字标自己那层水：盒子和 SVG 的 viewBox 一样大，坐标换算完就贴着字走 */
@@ -356,36 +542,6 @@
       rgba(255, 255, 255, 0) 92%
     );
   box-shadow: 0 1px 4px rgba(2, 12, 20, 0.32);
-}
-
-/* ---------- 背景里那几道：一直慢慢地淌，反复循环 ---------- */
-.hp-drip--hero {
-  height: var(--len, 120px);
-  transform-origin: 50% 100%;
-  animation: hp-drip var(--dur, 9s) cubic-bezier(0.42, 0.02, 0.58, 0.98) var(--delay, 2s) infinite;
-}
-
-@keyframes hp-drip {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
-  }
-  12% {
-    opacity: 0.85;
-    transform: translate3d(0, calc(var(--travel, 42vh) * 0.08), 0) rotate(var(--rot, 0deg));
-  }
-  45% {
-    opacity: 0.74;
-    transform: translate3d(calc(var(--drift, 8px) * 0.35), calc(var(--travel, 42vh) * 0.44), 0) rotate(var(--rot, 0deg));
-  }
-  76% {
-    opacity: 0.56;
-    transform: translate3d(calc(var(--drift, 8px) * 0.78), calc(var(--travel, 42vh) * 0.78), 0) rotate(var(--rot, 0deg));
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(var(--drift, 8px), var(--travel, 42vh), 0) rotate(var(--rot, 0deg));
-  }
 }
 
 /* ---------- 字上的水 ---------- */

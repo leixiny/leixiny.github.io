@@ -60,12 +60,56 @@ const ART_H = ART_W / ART_RATIO
 const ART_X = LEI_LEFT + LEI_W * 0.5 - ART_W * ART_FOCUS_X
 const ART_Y = LEI_TOP + LEI_H * 0.5 - ART_H * ART_FOCUS_Y
 
-// 玻璃上淌下来的水：粗细、长短、快慢、倾斜都错开，看着才像真的在淌而不是一排冰柱
-// 只留在字标两侧的空白里，不跟笔迹抢戏
-const DRIPS = [
-  { left: '7%', top: '18%', w: 1.3, len: 138, dur: '15s', delay: '2.4s', drift: '14px', travel: '46vh', rot: '-2.2deg' },
-  { left: '93%', top: '26%', w: 1.5, len: 104, dur: '17s', delay: '6.8s', drift: '-12px', travel: '42vh', rot: '1.8deg' },
-  { left: '86%', top: '12%', w: 1.1, len: 168, dur: '19s', delay: '11.2s', drift: '-6px', travel: '50vh', rot: '-1.4deg' },
+/* ---------- 动态壁纸：玻璃上一直有水在往下淌 ---------- */
+// 跟笔画无关的常驻水：视口里永远有几道水痕在慢慢往下走，走走停停，末端坠着一颗水珠。
+// 水痕是“长出来”的（顶端留在原地、底端往下延伸），所以看着是水在流，不是一坨雾在平移。
+type WetFlow = {
+  /** 横向位置（%） */
+  x: number
+  /** 水痕粗细（px） */
+  w: number
+  /** 走完全程要多久（s） */
+  dur: number
+  delay: number
+  /** 水痕有多长（px）：固定长度的一截水流，整条往下滑，比拉满全屏的线像水 */
+  len: number
+  /** 整体浓淡：中间那片压淡，别跟字抢 */
+  o: number
+  /** 轻微倾斜：绝对笔直的水痕一眼假 */
+  skew: number
+}
+
+// 主水流：12 道，横跨整屏，慢的二十几秒、快的十几秒，延时错开，任何时刻都有六七道在走
+const WET_STREAMS: WetFlow[] = [
+  { x: 3.5, w: 3.0, dur: 22, delay: 0, len: 340, o: 1, skew: 0.55 },
+  { x: 6.2, w: 1.9, dur: 15, delay: 6.4, len: 210, o: 0.8, skew: -0.35 },
+  { x: 9.4, w: 2.4, dur: 19, delay: 2.8, len: 295, o: 0.92, skew: 0.7 },
+  { x: 15.5, w: 1.5, dur: 13, delay: 10.2, len: 160, o: 0.64, skew: -0.5 },
+  { x: 24, w: 1.8, dur: 11, delay: 5.8, len: 200, o: 0.7, skew: 0.9 },
+  { x: 33, w: 1.8, dur: 17, delay: 4.1, len: 240, o: 0.62, skew: 0.28 },
+  { x: 39.5, w: 2.0, dur: 9.4, delay: 14.6, len: 150, o: 0.72, skew: -0.8 },
+  { x: 47, w: 1.8, dur: 24, delay: 12.8, len: 370, o: 0.62, skew: -0.6 },
+  { x: 54, w: 1.6, dur: 12.5, delay: 2.2, len: 230, o: 0.6, skew: 0.75 },
+  { x: 61, w: 1.9, dur: 14, delay: 7.6, len: 185, o: 0.64, skew: 0.4 },
+  { x: 66.5, w: 1.9, dur: 10.5, delay: 16.9, len: 178, o: 0.66, skew: -0.9 },
+  { x: 72, w: 2.6, dur: 26, delay: 1.6, len: 320, o: 0.96, skew: -0.45 },
+  { x: 83, w: 1.8, dur: 16, delay: 9.4, len: 225, o: 0.72, skew: 0.35 },
+  { x: 88.5, w: 2.2, dur: 12, delay: 3.3, len: 175, o: 0.85, skew: -0.7 },
+  { x: 91.8, w: 3.4, dur: 21, delay: 8.1, len: 350, o: 1, skew: 0.5 },
+  { x: 95.5, w: 2.0, dur: 18, delay: 5.2, len: 265, o: 0.82, skew: -0.3 },
+]
+
+// 小水珠：被主水流带着一路滚下去，短、快、落在主水流旁边，像从那条水里甩出来的
+const WET_BEADS: WetFlow[] = [
+  { x: 4.8, w: 2.2, dur: 5.4, delay: 1.1, len: 96, o: 0.7, skew: 0.4 },
+  { x: 7.8, w: 1.8, dur: 4.6, delay: 7.3, len: 72, o: 0.58, skew: -0.5 },
+  { x: 18, w: 2.4, dur: 6.2, delay: 3.6, len: 112, o: 0.62, skew: 0.3 },
+  { x: 27, w: 2.0, dur: 4.2, delay: 2.7, len: 88, o: 0.62, skew: 0.6 },
+  { x: 44, w: 1.7, dur: 5.0, delay: 9.8, len: 84, o: 0.55, skew: -0.4 },
+  { x: 58, w: 1.9, dur: 3.8, delay: 6.1, len: 76, o: 0.58, skew: -0.7 },
+  { x: 79, w: 2.1, dur: 5.6, delay: 0.5, len: 104, o: 0.62, skew: 0.45 },
+  { x: 86, w: 2.2, dur: 4.4, delay: 8.9, len: 92, o: 0.64, skew: 0.5 },
+  { x: 93.4, w: 2.5, dur: 6.6, delay: 4.8, len: 120, o: 0.68, skew: -0.35 },
 ]
 
 /* ---------- 水从字上淌下来 ---------- */
@@ -323,6 +367,32 @@ export default function HomePage() {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+  const wetRef = useRef<HTMLDivElement>(null)
+
+  // 水层是满屏固定的（滚动时也一直淌），出了首屏就淡掉、并停掉动画，别让白底页面上挂着一道水
+  useEffect(() => {
+    const el = wetRef.current
+    if (!el) return
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const span = Math.max(1, window.innerHeight)
+      const p = Math.min(1, Math.max(0, window.scrollY / (span * 0.85)))
+      el.style.opacity = String(+((1 - p) ** 1.4).toFixed(3))
+      el.classList.toggle('is-idle', p > 0.985)
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
 
   // 滚动进入视口时淡入
   useEffect(() => {
@@ -446,6 +516,52 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
+      {/* 动态壁纸的水：满屏一层，一直在往下淌 */}
+      <div className="hp-wet" ref={wetRef} aria-hidden="true">
+        {WET_STREAMS.map((f, i) => (
+          <span
+            key={`stream-${i}`}
+            className={`hp-flow${f.w >= 2 ? ' hp-flow--glass' : ''}`}
+            style={
+              {
+                '--x': `${f.x}%`,
+                '--w': `${f.w}px`,
+                '--dur': `${f.dur}s`,
+                '--delay': `${f.delay}s`,
+                '--len': `${f.len}px`,
+                '--o': f.o,
+                '--skew': `${f.skew}deg`,
+              } as CSSProperties
+            }
+          >
+            <i className="hp-flow-line" />
+            <i className="hp-flow-core" />
+            <i className="hp-flow-head" />
+          </span>
+        ))}
+        {WET_BEADS.map((f, i) => (
+          <span
+            key={`bead-${i}`}
+            className="hp-flow hp-flow--bead"
+            style={
+              {
+                '--x': `${f.x}%`,
+                '--w': `${f.w}px`,
+                '--dur': `${f.dur}s`,
+                '--delay': `${f.delay}s`,
+                '--len': `${f.len}px`,
+                '--o': f.o,
+                '--skew': `${f.skew}deg`,
+              } as CSSProperties
+            }
+          >
+            <i className="hp-flow-line" />
+            <i className="hp-flow-core" />
+            <i className="hp-flow-head" />
+          </span>
+        ))}
+      </div>
+
       <header className="hp-nav">
         <Link className="hp-brand" to="/home">
           <span className="hp-brand-dot" />
@@ -463,27 +579,6 @@ export default function HomePage() {
       </header>
 
       <section className="hp-hero">
-        <div className="hp-drips" aria-hidden="true">
-          {DRIPS.map((d, i) => (
-            <span
-              key={i}
-              className="hp-drip hp-drip--hero"
-              style={
-                {
-                  left: d.left,
-                  top: d.top,
-                  '--w': `${d.w}px`,
-                  '--len': `${d.len}px`,
-                  '--dur': d.dur,
-                  '--delay': d.delay,
-                  '--drift': d.drift,
-                  '--travel': d.travel,
-                  '--rot': d.rot,
-                } as React.CSSProperties
-              }
-            />
-          ))}
-        </div>
         <div className="hp-hero-scrim" aria-hidden="true" />
         <div className="hp-wrap hp-hero-inner">
           <div className="hp-hero-top">
