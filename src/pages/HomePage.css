@@ -206,17 +206,30 @@
 }
 
 /* ---------- 字标：玻璃上一笔一笔擦出来的字母（按书写顺序 L → e → i） ---------- */
+/* 手写体（Sriracha，SIL OFL）：像有人拿手指在雾玻璃上一笔写下来的 */
+@font-face {
+  font-family: 'HP Hand';
+  src: url('../assets/hand.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
 .hp-word {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: baseline;
   margin: 0;
-  margin-left: -0.02em;
-  font-size: clamp(54px, min(25vw, 36vh), 380px);
-  font-weight: 800;
-  line-height: 1.04;
-  letter-spacing: 0.005em;
+  /* 字距会在最后一个字母后面多留一份，右边补回来才真的居中 */
+  margin-right: -0.06em;
+  font-family: 'HP Hand', 'Segoe Script', 'Bradley Hand', cursive;
+  /* 手写字天生比无衬线窄，字号要顶上来才有分量 */
+  font-size: clamp(72px, min(40vw, 62vh), 660px);
+  font-weight: 400;
+  /* 行高压到 0.86：手写的墨迹本来就只有 0.6em 高，盒子不必按字身撑满一屏 */
+  line-height: 0.86;
+  letter-spacing: 0.06em;
   white-space: nowrap;
   user-select: none;
   -webkit-user-select: none;
@@ -234,17 +247,22 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  /* 玻璃切口一圈极细的高光边 */
-  -webkit-text-stroke: 1.1px rgba(255, 255, 255, 0.4);
+  /* 玻璃切口一圈极细的高光边（手写体笔画细，边也跟着收细） */
+  -webkit-text-stroke: 0.9px rgba(255, 255, 255, 0.42);
   /* 一笔擦过：蒙版就是那道笔触前沿，在本字母的范围里从左往右扫 */
   -webkit-mask-image: url('../assets/wipe-edge.webp');
   mask-image: url('../assets/wipe-edge.webp');
-  -webkit-mask-size: 260% 100%;
-  mask-size: 260% 100%;
+  /* 蒙版比字母盒高一圈，行压扁之后上下也不会切到笔锋 */
+  -webkit-mask-size: 260% 160%;
+  mask-size: 260% 160%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  -webkit-mask-position: 90% 0;
-  mask-position: 90% 0;
+  -webkit-mask-position: 90% 50%;
+  mask-position: 90% 50%;
+}
+
+/* 字体到位才开始写；否则会先写一遍默认字体，等手写体回来字又变一次宽 */
+.hp-word.is-ready .hp-letter {
   animation: hp-sweep 900ms cubic-bezier(0.36, 0.05, 0.42, 0.98) both;
   /* 书写顺序：前一个擦到七成才开下一个，有个连贯的“写下去”的手感 */
   animation-delay: calc(var(--i, 0) * 820ms + 240ms);
@@ -252,13 +270,13 @@
 
 @keyframes hp-sweep {
   from {
-    -webkit-mask-position: 90% 0;
-    mask-position: 90% 0;
+    -webkit-mask-position: 90% 50%;
+    mask-position: 90% 50%;
   }
   to {
     /* 27% 时前沿刚好越过本字母的右边缘：最后一点是被擦完的，不是被动画剪断的 */
-    -webkit-mask-position: 27% 0;
-    mask-position: 27% 0;
+    -webkit-mask-position: 27% 50%;
+    mask-position: 27% 50%;
   }
 }
 
@@ -338,10 +356,11 @@
 
 /* 系统里关了动效：不做擦拭、不淌水，直接给擦干净的字 */
 @media (prefers-reduced-motion: reduce) {
-  .hp-letter {
+  .hp-letter,
+  .hp-word.is-ready .hp-letter {
     animation: none;
-    -webkit-mask-position: 27% 0;
-    mask-position: 27% 0;
+    -webkit-mask-position: 27% 50%;
+    mask-position: 27% 50%;
   }
 
   .hp-drip {
@@ -1002,7 +1021,7 @@
   }
 
   .hp-word {
-    font-size: clamp(58px, min(52vw, 26vh), 220px);
+    font-size: clamp(72px, min(62vw, 30vh), 300px);
   }
 
   /* 竖屏比例差别大：往画面中间挪一点，避开底部那块最亮的水光 */

@@ -99,11 +99,30 @@ function WipeWord() {
     fit()
     const ro = new ResizeObserver(fit)
     ro.observe(wrap)
-    if (document.fonts) document.fonts.ready.then(fit).catch(() => {})
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     // 三个字母擦完之前不响应鼠标
-    const readyAt = performance.now() + SWEEP_FIRST + SWEEP_STEP * (WORD.length - 1) + 900 + 300
+    let readyAt = Number.POSITIVE_INFINITY
+    // 手写体到位才开始“写”：先写默认字体、等字体回来再变一次宽度会很跳
+    const start = () => {
+      if (wrap.classList.contains('is-ready')) return
+      wrap.classList.add('is-ready')
+      fit()
+      readyAt = performance.now() + SWEEP_FIRST + SWEEP_STEP * (WORD.length - 1) + 900 + 300
+    }
+    const fonts = document.fonts
+    if (fonts) {
+      fonts
+        .load(`400 120px 'HP Hand'`)
+        .then(() => fonts.ready)
+        .then(start)
+        .catch(start)
+      // 兜底：字体迟迟不来也别一直空着
+      setTimeout(start, 2200)
+    } else {
+      start()
+    }
+
     const onEnter = () => {
       if (reduce || performance.now() < readyAt) return
       wrap.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
