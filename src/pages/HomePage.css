@@ -332,7 +332,8 @@
   filter: blur(0.5px);
 }
 
-/* 水珠本体：一颗圆滚滚的珠子，左上一块高光、右下一点暗，才不像白点 */
+/* 水珠本体：和那片水膜同一套质感 —— 中心透、一圈细暗环、左上一点高光。
+   通体刷白的话压在白色笔画上就是个模糊的白点，根本看不出是颗水珠 */
 .hp-drip::after {
   content: '';
   position: absolute;
@@ -342,16 +343,19 @@
   height: calc(var(--w, 2px) * 6.2);
   margin-left: calc(var(--w, 2px) * -2.8);
   border-radius: 50% 50% 48% 48% / 58% 58% 42% 42%;
+  /* 和水膜同一套光学：中间透（填平了雾，比周围暗）、边上一圈折射亮环、左上一点天光 */
   background:
-    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 1) 0 14%, rgba(255, 255, 255, 0) 48%),
-    radial-gradient(circle at 68% 76%, rgba(6, 24, 36, 0.5) 0 22%, rgba(6, 24, 36, 0) 68%),
-    linear-gradient(180deg, rgba(244, 253, 255, 0.95) 0%, rgba(170, 210, 234, 0.8) 100%);
-  box-shadow:
-    0 1px 4px rgba(2, 12, 20, 0.45),
-    0 0 5px rgba(236, 250, 255, 0.55),
-    0 0 16px rgba(200, 232, 255, 0.34);
-  /* 珠子单独再压一道横向光，边缘才圆得起来 */
-  filter: blur(0.3px);
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 1) 0 9%, rgba(255, 255, 255, 0) 32%),
+    radial-gradient(circle at 64% 76%, rgba(255, 255, 255, 0.5) 0 7%, rgba(255, 255, 255, 0) 26%),
+    radial-gradient(
+      circle at 50% 52%,
+      rgba(12, 30, 44, 0.4) 0 30%,
+      rgba(18, 40, 58, 0.34) 50%,
+      rgba(120, 172, 205, 0.2) 64%,
+      rgba(255, 255, 255, 0.6) 76%,
+      rgba(255, 255, 255, 0) 92%
+    );
+  box-shadow: 0 1px 4px rgba(2, 12, 20, 0.32);
 }
 
 /* ---------- 背景里那几道：一直慢慢地淌，反复循环 ---------- */
@@ -385,9 +389,9 @@
 }
 
 /* ---------- 字上的水 ---------- */
-/* 笔尖刚擦过就在那一点攒出一颗水珠，挂不住之后顺着玻璃往下滑。
-   水痕不是“整条平移”，而是从起滴点一点点长高、水珠始终挂在末端 ——
-   这样珠子一直是圆的，拖尾也才是真的从字上拖出来的。 */
+/* 水不是“挂”上去的，是擦出来的：布把水雾推到笔画边缘，聚成一小片水膜，
+   水膜靠表面张力收成一颗粒，挂不住才顺着玻璃往下淌 ——
+   所以时间轴先给“聚”，再给“滴”，拖尾是珠子滑过的路径。 */
 .hp-drip--word {
   top: 0;
   height: 0;
@@ -397,31 +401,252 @@
 }
 
 .hp-word.is-ready .hp-drip--word {
-  animation: hp-drip-flow var(--dur, 3.4s) cubic-bezier(0.42, 0.03, 0.6, 1) var(--delay, 1200ms) 1 forwards;
+  animation: hp-drip-flow var(--dur, 3.4s) cubic-bezier(0.4, 0.03, 0.58, 1) var(--delay, 1200ms) 1 both;
+}
+
+/* 1) 聚水：擦过之后，笔画边上一小片雾水被推到一起。
+      它的做法不是“摊开”，而是**从一大片往中间缩**：
+      收缩本身就是“聚”的动势，比摊开一眼就懂。 */
+.hp-pool {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: calc(var(--pw, 0.1em) * 1.18);
+  height: calc(var(--pw, 0.1em) * 0.74);
+  margin-left: calc(var(--pw, 0.1em) * -0.59);
+  margin-top: calc(var(--pw, 0.1em) * -0.37);
+  border-radius: 50%;
+  background:
+    /* 天光：左上那一小块亮斑 */
+    radial-gradient(ellipse 15% 18% at 33% 29%, rgba(255, 255, 255, 0.98) 0 22%, rgba(255, 255, 255, 0) 78%),
+    radial-gradient(ellipse 34% 30% at 31% 28%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 76%),
+    /* 水是透的：中心几乎不着色（透过它能看到背后的东西），
+       真正成形靠内缘一道暗折射 + 外面那圈亮环 */
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(12, 30, 46, 0.06) 0 34%,
+      rgba(20, 44, 62, 0.22) 52%,
+      rgba(255, 255, 255, 0.5) 68%,
+      rgba(226, 246, 255, 0.16) 84%,
+      rgba(226, 246, 255, 0) 100%
+    );
+  /* 糊一点：水是软的，边缘有硬线就成贴纸了 */
+  filter: blur(calc(var(--pw, 0.1em) * 0.036));
+  opacity: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
+/* 旁边还有两颗更小的水，一路被吸过来、越靠越小，最后被主水团吃掉 ——
+   这一步就是“水雾被擦到一起”最直白的证据 */
+.hp-pool::before,
+.hp-pool::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  background:
+    /* 一颗珠最要紧的是那点高光：没有它就是个灰泡 */
+    radial-gradient(circle at 33% 26%, rgba(255, 255, 255, 1) 0 7%, rgba(255, 255, 255, 0) 24%),
+    radial-gradient(
+      circle at 36% 34%,
+      rgba(10, 28, 42, 0.04) 0 36%,
+      rgba(18, 40, 56, 0.34) 56%,
+      rgba(255, 255, 255, 0.62) 76%,
+      rgba(255, 255, 255, 0.14) 90%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.hp-pool::before {
+  width: calc(var(--pw, 0.1em) * 0.52);
+  height: calc(var(--pw, 0.1em) * 0.5);
+  margin: calc(var(--pw, 0.1em) * -0.26) 0 0 calc(var(--pw, 0.1em) * -0.25);
+  animation-delay: var(--delay, 1200ms);
+}
+
+.hp-pool::after {
+  width: calc(var(--pw, 0.1em) * 0.4);
+  height: calc(var(--pw, 0.1em) * 0.44);
+  margin: calc(var(--pw, 0.1em) * -0.22) 0 0 calc(var(--pw, 0.1em) * -0.2);
+  animation-delay: var(--delay, 1200ms);
+}
+
+.hp-word.is-ready .hp-pool::before {
+  animation: hp-merge-left calc(var(--dur, 3.4s) * 0.55) cubic-bezier(0.3, 0.1, 0.3, 1) 1 both;
+}
+
+.hp-word.is-ready .hp-pool::after {
+  animation: hp-merge-right calc(var(--dur, 3.4s) * 0.55) cubic-bezier(0.3, 0.1, 0.3, 1) 1 both;
+}
+
+@keyframes hp-merge-left {
+  0% {
+    opacity: 0;
+    transform: translate3d(calc(var(--pw, 0.1em) * -1.05), calc(var(--pw, 0.1em) * -0.16), 0) scale(0.55);
+  }
+  14% {
+    opacity: 0.8;
+    transform: translate3d(calc(var(--pw, 0.1em) * -0.92), calc(var(--pw, 0.1em) * -0.14), 0) scale(0.9);
+  }
+  /* 挂了一会儿，才开始被吸 */
+  48% {
+    opacity: 0.78;
+    transform: translate3d(calc(var(--pw, 0.1em) * -0.66), calc(var(--pw, 0.1em) * -0.1), 0) scale(0.92);
+  }
+  78% {
+    opacity: 0.44;
+    transform: translate3d(calc(var(--pw, 0.1em) * -0.2), 0, 0) scale(0.66);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.22);
+  }
+}
+
+@keyframes hp-merge-right {
+  0% {
+    opacity: 0;
+    transform: translate3d(calc(var(--pw, 0.1em) * 1.02), calc(var(--pw, 0.1em) * 0.14), 0) scale(0.5);
+  }
+  18% {
+    opacity: 0.72;
+    transform: translate3d(calc(var(--pw, 0.1em) * 0.88), calc(var(--pw, 0.1em) * 0.12), 0) scale(0.86);
+  }
+  52% {
+    opacity: 0.7;
+    transform: translate3d(calc(var(--pw, 0.1em) * 0.62), calc(var(--pw, 0.1em) * 0.08), 0) scale(0.88);
+  }
+  80% {
+    opacity: 0.4;
+    transform: translate3d(calc(var(--pw, 0.1em) * 0.18), 0, 0) scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.2);
+  }
+}
+
+.hp-word.is-ready .hp-pool {
+  /* 聚水占整段的前 55%，之后水就被珠子带走了 */
+  animation: hp-pool-gather calc(var(--dur, 3.4s) * 0.55) cubic-bezier(0.36, 0.06, 0.34, 1)
+    var(--delay, 1200ms) 1 both;
+}
+
+@keyframes hp-pool-gather {
+  /* 刚从笔尖底下被推出来：一大片，还散着 */
+  0% {
+    opacity: 0;
+    transform: rotate(var(--p-ang, 0deg)) scale(1.24, 1.1);
+  }
+  10% {
+    opacity: 0.9;
+    transform: rotate(var(--p-ang, 0deg)) scale(1.16, 1.04);
+  }
+  /* 收：外围的水被一点点吸向中间，这是最关键的一段 */
+  46% {
+    opacity: 1;
+    transform: rotate(var(--p-ang, 0deg)) scale(0.72, 0.76);
+  }
+  74% {
+    opacity: 0.82;
+    transform: rotate(var(--p-ang, 0deg)) scale(0.4, 0.5);
+  }
+  /* 最后一点被中间那颗珠子吃掉 */
+  94% {
+    opacity: 0.3;
+    transform: rotate(var(--p-ang, 0deg)) scale(0.26, 0.34);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--p-ang, 0deg)) scale(0.22, 0.3);
+  }
+}
+
+/* 2) 凝珠：从摊平的膜里鼓成一颗圆珠，鼓的时候略微过冲一下（水才有张力感） */
+.hp-word.is-ready .hp-drip--word::after {
+  animation: hp-bead-form var(--dur, 3.4s) cubic-bezier(0.34, 0.02, 0.5, 1) var(--delay, 1200ms) 1 both;
+}
+
+@keyframes hp-bead-form {
+  /* 前段水还在边上挂着，中间还没有珠子 */
+  0% {
+    opacity: 0;
+    transform: translateX(0) scale(0.2, 0.24);
+  }
+  46% {
+    opacity: 0;
+    transform: translateX(0) scale(0.28, 0.3);
+  }
+  /* 那一串水聚过来了，珠子从里面鼓起来，先涨过头一点 */
+  62% {
+    opacity: 0.85;
+    transform: translateX(0) scale(0.7, 0.66);
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(0) scale(1.14, 1.08);
+  }
+  80% {
+    transform: translateX(0) scale(0.97, 1);
+  }
+  /* 挂不住了往下滑，被拉长、随玻璃轻微偏一点 */
+  100% {
+    transform: translateX(calc(var(--drift, 0px) * 0.85)) scale(1.05, 1.2);
+  }
+}
+
+/* 3) 拖尾：珠子滑过才留下，所以晚于聚水出现，越往下越湿润 */
+.hp-word.is-ready .hp-drip--word::before {
+  animation: hp-trail-grow var(--dur, 3.4s) linear var(--delay, 1200ms) 1 both;
+}
+
+@keyframes hp-trail-grow {
+  0%,
+  56% {
+    opacity: 0;
+    transform: scaleX(0.5);
+  }
+  72% {
+    opacity: 0.6;
+    transform: scaleX(0.88);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }
 
 @keyframes hp-drip-flow {
+  /* 前 5 成时间：原地聚水，位置一动不动 —— 水是在笔画边上攒出来的 */
   0% {
     height: 0;
     opacity: 0;
   }
-  /* 先在笔画上鼓出一颗珠，往下一沉 */
-  7% {
-    height: calc(var(--travel) * 0.03);
-    opacity: 0.94;
+  6% {
+    height: 0;
+    opacity: 1;
   }
-  /* 挂不住了，开始滑：起步慢，越走越快 */
-  22% {
-    height: calc(var(--travel) * 0.1);
-    opacity: 0.92;
+  52% {
+    height: 0;
+    opacity: 1;
   }
-  55% {
-    height: calc(var(--travel) * 0.44);
-    opacity: 0.8;
+  /* 珠子成了，往下一沉 */
+  60% {
+    height: calc(var(--travel) * 0.04);
+    opacity: 1;
   }
-  84% {
-    height: calc(var(--travel) * 0.8);
-    opacity: 0.55;
+  /* 起步慢、越滑越快，拖尾一路长出来 */
+  76% {
+    height: calc(var(--travel) * 0.28);
+    opacity: 0.95;
+  }
+  90% {
+    height: calc(var(--travel) * 0.7);
+    opacity: 0.62;
   }
   100% {
     height: var(--travel);

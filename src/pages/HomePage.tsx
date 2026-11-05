@@ -88,25 +88,33 @@ type WordDrip = {
   dur: number
   drift: number
   rot: number
+  /** 水膜是被擦向哪一侧聚起来的（em，正=从右推来，负=从左推来） */
+  from: number
+  /** 那一段水带的长度（em）：顺着笔画方向铺开，才像被推出来的一条水 */
+  pw: number
+  /** 笔画在这一点的走向（deg）：水带要顺着它，不能横着插在笔画上 */
+  pAng: number
 }
 
 const WORD_DRIPS: WordDrip[] = [
+  // 起滴点就压在笔画外缘上：水是被擦着推到边上的，一半压在字上（看不见）、
+  // 一半摊在雾面那一侧（看得见）—— 那个被笔画切掉的半月形才是“水从字上挤出来”的证据
   // L 的竖笔：笔锋一路往下，水就顺着笔杆往下淌
-  { letter: 0, at: 0.3, lag: 60, x: 152, y: -318, w: 0.00408, dur: 3.6, drift: 8, rot: -1.4 },
-  { letter: 0, at: 0.52, lag: 150, x: 116, y: -186, w: 0.00456, dur: 3.2, drift: -10, rot: 1.6 },
-  { letter: 0, at: 0.7, lag: 90, x: 118, y: -76, w: 0.00360, dur: 2.8, drift: 6, rot: -0.9 },
-  // L 的横笔收尾，水从笔画末端坠下去
-  { letter: 0, at: 0.99, lag: 220, x: 430, y: -88, w: 0.00480, dur: 3.4, drift: 12, rot: 1.2 },
+  { letter: 0, at: 0.3, lag: 60, x: 39.0037, y: -374.249, w: 0.00408, dur: 3.6, drift: 8, rot: -1.4, from: 0.050, pw: 0.0965, pAng: -76.0 },
+  { letter: 0, at: 0.52, lag: 150, x: 229.475, y: -152.506, w: 0.00456, dur: 3.2, drift: -10, rot: 1.6, from: -0.045, pw: 0.0924, pAng: -76.4 },
+  { letter: 0, at: 0.7, lag: 90, x: 73.4132, y: -136.591, w: 0.00360, dur: 2.8, drift: 6, rot: -0.9, from: 0.045, pw: 0.0940, pAng: -12.1 },
+  // L 的横笔收尾，水被推到笔画末端坠下去
+  { letter: 0, at: 0.99, lag: 220, x: 420.668, y: 5.51762, w: 0.00480, dur: 3.4, drift: 12, rot: 1.2, from: -0.050, pw: 0.0740, pAng: -12.9 },
   // e 的左半个圈
-  { letter: 1, at: 0.6, lag: 80, x: 610, y: -232, w: 0.00408, dur: 3.8, drift: -7, rot: -1.8 },
+  { letter: 1, at: 0.6, lag: 80, x: 501.219, y: -262.515, w: 0.00408, dur: 3.8, drift: -7, rot: -1.8, from: 0.050, pw: 0.0882, pAng: -79.9 },
   // e 写到圈底，水积在那儿
-  { letter: 1, at: 0.79, lag: 120, x: 664, y: -30, w: 0.00504, dur: 3.1, drift: 9, rot: 1 },
+  { letter: 1, at: 0.79, lag: 120, x: 589.944, y: 53.6722, w: 0.00504, dur: 3.1, drift: 9, rot: 1, from: -0.050, pw: 0.0840, pAng: 23.7 },
   // e 的尾巴
-  { letter: 1, at: 0.99, lag: 190, x: 888, y: -112, w: 0.00384, dur: 3.6, drift: 13, rot: 2 },
+  { letter: 1, at: 0.99, lag: 190, x: 951.497, y: -33.653, w: 0.00384, dur: 3.6, drift: 13, rot: 2, from: -0.050, pw: 0.0740, pAng: -48.0 },
   // i 的竖笔
-  { letter: 2, at: 0.74, lag: 70, x: 1168, y: -130, w: 0.00432, dur: 3.3, drift: -8, rot: -1.2 },
-  // i 的点：写完点，水珠从点上顺着玻璃滑下来
-  { letter: 2, at: 0.99, lag: 240, x: 1266, y: -586, w: 0.00360, dur: 4.4, drift: 7, rot: 1.4 },
+  { letter: 2, at: 0.74, lag: 70, x: 1067.58, y: -174.084, w: 0.00432, dur: 3.3, drift: -8, rot: -1.2, from: 0.045, pw: 0.0882, pAng: -78.7 },
+  // i 的点：点被擦开，水从点边上聚成珠滑下来
+  { letter: 2, at: 0.99, lag: 240, x: 1271.5, y: -473.8, w: 0.00360, dur: 4.4, drift: 7, rot: 1.4, from: -0.045, pw: 0.0840, pAng: -80.0 },
 ]
 
 // 字体单位 -> 字标盒子里的百分比：水滴层和 SVG 用的是同一个 viewBox，换算完就贴着字走
@@ -289,9 +297,15 @@ function WipeWord() {
                   '--dur': `${d.dur}s`,
                   '--drift': `${d.drift}px`,
                   '--rot': `${d.rot}deg`,
+                  '--pool-from': `${d.from}em`,
+                  '--pw': `${d.pw}em`,
+                  '--p-ang': `${d.pAng}deg`,
                 } as CSSProperties
               }
-            />
+            >
+              {/* 擦拭会把水雾推到一处：先摊成一小片水膜，再靠表面张力收成珠 */}
+              <i className="hp-pool" />
+            </span>
           )
         })}
       </div>
