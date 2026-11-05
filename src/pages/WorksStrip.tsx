@@ -6,7 +6,6 @@ interface Project {
   id: string
   title: string
   cover: string
-  summary: string
   uploadedAt: string
 }
 
@@ -19,8 +18,6 @@ const SIZE_KEY = 'hp:works:size'
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
-const yearOf = (ts: string) => (ts || '').slice(0, 4)
-
 export default function WorksStrip() {
   const [projects, setProjects] = useState<Project[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -32,8 +29,6 @@ export default function WorksStrip() {
 
   // 滚动条：pos 是进度，size 是可视比例（拇指长度）
   const [bar, setBar] = useState({ pos: 0, size: 1 })
-  // 实际落地的卡片宽（小屏会被视口压窄），滑杆旁边显示的是它
-  const [cardW, setCardW] = useState(size)
   const [edge, setEdge] = useState({ start: true, end: true })
   const [dragging, setDragging] = useState(false)
 
@@ -88,7 +83,6 @@ export default function WorksStrip() {
     const w = Math.max(200, Math.min(size, viewport - peek))
     el.style.setProperty('--hpw-w', `${Math.round(w)}px`)
     el.style.setProperty('--hpw-gap', `${gap}px`)
-    setCardW(Math.round(w))
     sync()
   }, [size, sync])
 
@@ -144,7 +138,8 @@ export default function WorksStrip() {
     const el = trackRef.current
     if (!el) return
     drag.current = { down: true, x: e.clientX, left: el.scrollLeft, moved: false }
-    el.setPointerCapture(e.pointerId)
+    // 注意：这里不能立刻 setPointerCapture —— 一旦捕获，后续的 click 会被改派到轨道上，
+    // 点图片就再也打不开大图了。等真的拖起来（位移超过阈值）再捕获。
     // 点在空白处时把焦点收到轨道上，之后就能用左右方向键翻着看
     if (e.target === e.currentTarget) el.focus({ preventScroll: true })
   }
@@ -157,11 +152,12 @@ export default function WorksStrip() {
     if (!d.moved && Math.abs(dx) > 4) {
       d.moved = true
       setDragging(true)
+      el.setPointerCapture(e.pointerId)
     }
     if (d.moved) el.scrollLeft = d.left - dx
   }
 
-  const endDrag = () => {
+  const endDrag = (e?: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current
     if (!d.down) return
     d.down = false
@@ -171,6 +167,8 @@ export default function WorksStrip() {
         blockClick.current = false
       }, 80)
     }
+    const el = trackRef.current
+    if (el && e && el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
     setDragging(false)
   }
 
@@ -273,35 +271,6 @@ export default function WorksStrip() {
 
   return (
     <section id="works" className="hp-works" aria-label="作品集">
-      <div className="hp-wrap">
-        <div className="hpw-head" data-reveal>
-          <div>
-            <p className="hp-sec-label">01 — 作品</p>
-            <h2>做过的事，一件接一件</h2>
-            <p className="hpw-lead">一条横着铺开，不翻页，左右拖动看全部。</p>
-          </div>
-
-          <div className="hpw-size">
-            <label className="hpw-size-label" htmlFor="hpw-size">
-              尺寸
-            </label>
-            <input
-              id="hpw-size"
-              className="hpw-range"
-              type="range"
-              min={MIN_W}
-              max={MAX_W}
-              step={10}
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-              aria-label="调整作品尺寸"
-              aria-valuetext={`卡片宽 ${size} 像素`}
-            />
-            <span className="hpw-size-val">{cardW}px</span>
-          </div>
-        </div>
-      </div>
-
       {state === 'loading' && (
         <div className="hp-wrap">
           <div className="hpw-skeleton" aria-hidden="true" />
@@ -362,13 +331,6 @@ export default function WorksStrip() {
                 ⤢
               </span>
             </button>
-
-            <div className="hpw-meta">
-              <span className="hpw-no">{String(i + 1).padStart(2, '0')}</span>
-              <h3>{p.title}</h3>
-              <span className="hpw-year">{yearOf(p.uploadedAt)}</span>
-            </div>
-            <p className="hpw-sum">{p.summary}</p>
           </article>
         ))}
       </div>
@@ -376,9 +338,6 @@ export default function WorksStrip() {
       {state === 'ready' && (
         <div className="hp-wrap">
           <div className="hpw-foot">
-            <span className="hpw-hint" aria-hidden="true">
-              <i>↔</i> 拖动 / 滑动
-            </span>
             <div
               ref={scrubRef}
               className="hpw-scrub"
@@ -407,7 +366,19 @@ export default function WorksStrip() {
                 }}
               />
             </div>
-            <span className="hpw-total">共 {projects.length} 件</span>
+
+            <input
+              className="hpw-range"
+              type="range"
+              min={MIN_W}
+              max={MAX_W}
+              step={10}
+              value={size}
+              onChange={(e) => setSize(Number(e.target.value))}
+              aria-label="调整作品尺寸"
+              aria-valuetext={`卡片宽 ${size} 像素`}
+              title="调整作品尺寸"
+            />
           </div>
         </div>
       )}
@@ -479,11 +450,6 @@ export default function WorksStrip() {
               →
             </button>
           )}
-          <div className="hpw-view-cap">
-            <span className="hpw-no">{String((open ?? 0) + 1).padStart(2, '0')}</span>
-            <strong>{active.title}</strong>
-            <span>{yearOf(active.uploadedAt)}</span>
-          </div>
           {zoom.s > 1.02 && <span className="hpw-view-pct">{Math.round(zoom.s * 100)}%</span>}
         </div>
       )}

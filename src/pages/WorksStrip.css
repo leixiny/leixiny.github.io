@@ -1,11 +1,11 @@
 /* ==========================================================================
    作品集 · 一个独立的横向板块
-   不翻页、不分格：所有作品排在一条横轨上，拖着走，走多远由内容决定。
-   尺寸由右上角那根滑杆统一调，底下那根细线是这条轨道的进度条。
+   这里只有作品本身：没有标题、没有说明、没有年份标签。
+   所有图排在一条横轨上，不翻页、不换行，拖着走，走多远由内容决定。
    ========================================================================== */
 
 .hp-works {
-  padding-block: clamp(56px, 7vw, 104px);
+  padding-block: clamp(40px, 4.6vw, 74px);
   /* 独立板块：技能条是浅灰、下面是黑块，这里用白底夹在中间，
      上下各一条细线，一眼能看出是一整块 */
   background: var(--rp-paper);
@@ -13,94 +13,6 @@
   border-bottom: 1px solid var(--rp-line);
 }
 
-.hpw-lead {
-  margin: 14px 0 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--rp-mute);
-}
-
-.hpw-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: clamp(18px, 3vw, 48px);
-  flex-wrap: wrap;
-}
-
-.hpw-head h2 {
-  margin: 12px 0 0;
-  font-size: clamp(30px, 4.2vw, 54px);
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-}
-
-/* ---------- 尺寸调节 ---------- */
-.hpw-size {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 6px;
-}
-
-.hpw-size-label {
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--rp-faint);
-  text-transform: uppercase;
-}
-
-/* 一根细线就是滑杆本体，别做成系统默认那个厚槽 */
-.hpw-range {
-  -webkit-appearance: none;
-  appearance: none;
-  width: clamp(120px, 16vw, 210px);
-  height: 2px;
-  border-radius: 999px;
-  background: var(--rp-line-2);
-  cursor: ew-resize;
-  outline: none;
-}
-
-.hpw-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: var(--rp-ink);
-  box-shadow: 0 0 0 1px var(--rp-ink);
-  transition: transform 0.18s var(--rp-ease);
-}
-
-.hpw-range::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-}
-
-.hpw-range::-moz-range-thumb {
-  width: 10px;
-  height: 10px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: var(--rp-ink);
-  box-shadow: 0 0 0 1px var(--rp-ink);
-}
-
-.hpw-range:focus-visible {
-  background: var(--rp-ink-2);
-}
-
-.hpw-size-val {
-  min-width: 3.6em;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--rp-mute);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ---------- 长串 ---------- */
 /* ---------- 横轨 ---------- */
 /* 整条轨道铺满视口宽，两端留出跟正文一样的边距；
    滚动条藏掉，改用底下那根细线，画面里就只剩作品本身 */
@@ -110,7 +22,6 @@
   align-items: flex-start;
   gap: var(--hpw-gap, 26px);
   width: 100%;
-  margin-top: clamp(26px, 3.4vw, 48px);
   padding-inline: clamp(20px, 4.5vw, 72px);
   overflow-x: auto;
   overflow-y: hidden;
@@ -121,7 +32,7 @@
   cursor: grab;
   outline: none;
   will-change: scroll-position;
-  /* 两侧化开：告诉人这条还在往外延伸；走到头就收干净，不切卡片 */
+  /* 两侧化开：告诉人这条还在往外延伸；走到头就收干净，不切图 */
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0,
@@ -155,9 +66,7 @@
 .hpw-item {
   /* 宽度由滑杆给，永远不换行 —— 这就是「不翻页」 */
   flex: 0 0 var(--hpw-w, 620px);
-  display: grid;
-  align-content: start;
-  gap: 10px;
+  display: block;
   /* 一张比一张晚一点出来，像一件件被摆上去 */
   transition-delay: calc(var(--hpw-i, 0) * 60ms);
 }
@@ -220,75 +129,12 @@
   outline-offset: -3px;
 }
 
-.hpw-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-top: 2px;
-}
-
-.hpw-no {
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--rp-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.hpw-meta h3 {
-  flex: 1;
-  margin: 0;
-  font-size: clamp(16px, 1.4vw, 20px);
-  line-height: 1.25;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  /* 标题占两行的高度：一行两行都对齐，摘要才不会一高一低 */
-  min-height: 2.5em;
-}
-
-.hpw-year {
-  font-size: 12.5px;
-  color: var(--rp-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.hpw-sum {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--rp-mute);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: calc(2 * 1.65em);
-}
-
-/* ---------- 轨道进度条 ---------- */
+/* ---------- 轨道底下的两根线：进度条 + 尺寸滑杆 ---------- */
 .hpw-foot {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: clamp(20px, 2.2vw, 30px);
-}
-
-.hpw-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  flex: 0 0 auto;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--rp-faint);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.hpw-hint i {
-  font-style: normal;
-  font-size: 13px;
-  letter-spacing: 0;
+  gap: clamp(14px, 2vw, 28px);
+  margin-top: clamp(18px, 2.2vw, 30px);
 }
 
 .hpw-scrub {
@@ -324,18 +170,58 @@
   margin-top: -2.5px;
 }
 
-.hpw-total {
+/* 一根细线就是滑杆本体，别做成系统默认那个厚槽；
+   平时压暗，鼠标过来才亮起来，不抢作品的画面。
+   手柄是白芯黑环，跟左边那根纯黑的进度条分得开 */
+.hpw-range {
+  -webkit-appearance: none;
+  appearance: none;
   flex: 0 0 auto;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--rp-mute);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  width: clamp(96px, 12vw, 168px);
+  height: 2px;
+  border-radius: 999px;
+  background: var(--rp-line-2);
+  opacity: 0.7;
+  cursor: ew-resize;
+  outline: none;
+  transition: opacity 0.24s var(--rp-ease);
+}
+
+.hpw-range:hover,
+.hpw-range:focus-visible {
+  opacity: 1;
+}
+
+.hpw-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0 1.6px var(--rp-ink),
+    0 1px 3px rgba(10, 10, 11, 0.16);
+  transition: transform 0.18s var(--rp-ease);
+}
+
+.hpw-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.hpw-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0 1.6px var(--rp-ink),
+    0 1px 3px rgba(10, 10, 11, 0.16);
 }
 
 .hpw-skeleton {
   height: clamp(200px, 26vw, 340px);
-  margin-top: clamp(26px, 3.4vw, 48px);
   border-radius: 2px;
   background: var(--rp-soft);
   animation: hpw-pulse 1.6s ease-in-out infinite;
@@ -454,75 +340,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 预览底下的标题：深底上只用白字，别抢画面 */
-.hpw-view-cap {
-  position: absolute;
-  left: clamp(18px, 3vw, 40px);
-  bottom: 20px;
-  z-index: 2;
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  max-width: 62vw;
-  padding: 8px 16px 8px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  background: rgba(10, 11, 13, 0.52);
-  -webkit-backdrop-filter: blur(12px) saturate(1.1);
-  backdrop-filter: blur(12px) saturate(1.1);
-  color: #fff;
-  pointer-events: none;
-}
-
-.hpw-view-cap .hpw-no {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.hpw-view-cap strong {
-  font-size: clamp(15px, 1.4vw, 19px);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.hpw-view-cap span:last-child {
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.45);
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---------- 小屏 ---------- */
 @media (max-width: 760px) {
-  .hpw-head {
-    align-items: flex-start;
-  }
-
-  .hpw-size {
-    width: 100%;
-    padding-bottom: 0;
-  }
-
-  .hpw-hint {
-    display: none;
-  }
-
-  /* 窄屏一行放一张，标题不再需要预留两行 */
-  .hpw-meta h3 {
-    min-height: 0;
-  }
-
-  .hpw-sum {
-    min-height: 0;
-  }
-
-  .hpw-foot {
-    gap: 12px;
-  }
-
-  .hpw-range {
-    flex: 1;
-    width: auto;
-  }
-
   .hpw-shot-cue {
     opacity: 1;
     transform: none;
@@ -532,14 +351,17 @@
     bottom: 8px;
   }
 
-  .hpw-view-arrow {
-    display: none;
+  .hpw-foot {
+    gap: 12px;
   }
 
-  .hpw-view-cap {
-    left: 16px;
-    bottom: 14px;
-    max-width: 86vw;
+  /* 小屏两根线挤在一起看不清，滑杆固定窄一点 */
+  .hpw-range {
+    width: 92px;
+  }
+
+  .hpw-view-arrow {
+    display: none;
   }
 }
 
