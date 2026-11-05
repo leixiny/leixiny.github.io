@@ -224,11 +224,12 @@
 .hp-hero-scrim {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  /* 必须压在水雾玻璃（z-index:1 的 ::after）之上，才能真的压暗首尾 */
+  z-index: 2;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(3, 11, 16, 0.72) 0%, rgba(3, 11, 16, 0.46) 8%, rgba(3, 11, 16, 0.12) 17%, rgba(3, 11, 16, 0) 24%),
-    linear-gradient(0deg, rgba(3, 11, 16, 0.74) 0%, rgba(3, 11, 16, 0.4) 7%, rgba(3, 11, 16, 0) 16%);
+    linear-gradient(180deg, rgba(3, 11, 16, 0.80) 0%, rgba(3, 11, 16, 0.60) 9%, rgba(3, 11, 16, 0.22) 17%, rgba(3, 11, 16, 0) 25%),
+    linear-gradient(0deg, rgba(3, 11, 16, 0.86) 0%, rgba(3, 11, 16, 0.56) 8%, rgba(3, 11, 16, 0.1) 15%, rgba(3, 11, 16, 0) 20%);
 }
 
 /* 水雾玻璃：整块蒙在首屏上，只有中间被“擦干净”的那块透出来
@@ -243,15 +244,15 @@
   background-color: #050f14;
   background-image:
     url('../assets/glass.webp'),
-    linear-gradient(0deg, rgba(206, 232, 240, 0.10), rgba(206, 232, 240, 0.10)),
+    linear-gradient(0deg, rgba(206, 232, 240, 0.035), rgba(206, 232, 240, 0.035)),
     linear-gradient(104deg, transparent 0 18%, rgba(226, 248, 255, 0.07) 35%, rgba(226, 248, 255, 0.02) 46%, transparent 60%),
     radial-gradient(118% 88% at 50% 44%, rgba(4, 16, 22, 0) 0 36%, rgba(3, 11, 16, 0.34) 74%, rgba(2, 8, 12, 0.68) 100%),
     linear-gradient(180deg, rgba(2, 9, 13, 0.86) 0%, rgba(2, 9, 13, 0.62) 12%, rgba(2, 9, 13, 0.22) 27%, rgba(2, 9, 13, 0.26) 56%, rgba(2, 9, 13, 0.70) 84%, rgba(2, 9, 13, 0.90) 100%);
   background-size: cover, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
   background-position: center, 0 0, 0 0, 0 0, 0 0;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  -webkit-mask-image: url('../assets/wipe2.png');
-  mask-image: url('../assets/wipe2.png');
+  -webkit-mask-image: url('../assets/wipe3.png');
+  mask-image: url('../assets/wipe3.png');
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -266,7 +267,7 @@
   z-index: 1;
   pointer-events: none;
   background-image:
-    url('../assets/wipe2-edge.png'),
+    url('../assets/wipe3-edge.png'),
     radial-gradient(30% 60% at 20% 66%, rgba(255, 206, 170, 0.22), transparent 72%),
     radial-gradient(26% 52% at 79% 36%, rgba(176, 226, 255, 0.20), transparent 74%),
     linear-gradient(100deg, transparent 0 10%, rgba(255, 255, 255, 0.06) 20%, transparent 32%, rgba(255, 255, 255, 0.04) 46%, transparent 60%, rgba(255, 255, 255, 0.05) 74%, transparent 88%),
@@ -274,8 +275,8 @@
   background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
   background-position: 0 0, 0 0, 0 0, 0 0, center;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  -webkit-mask-image: url('../assets/wipe2-inverse.png');
-  mask-image: url('../assets/wipe2-inverse.png');
+  -webkit-mask-image: url('../assets/wipe3-inverse.png');
+  mask-image: url('../assets/wipe3-inverse.png');
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -1067,8 +1068,8 @@
 
   /* 手机屏又窄又高：同一条抹痕按比例压扁，仍然横着穿过整屏 */
   .hp-hero::after {
-    -webkit-mask-image: url('../assets/wipe2-mobile.png');
-    mask-image: url('../assets/wipe2-mobile.png');
+    -webkit-mask-image: url('../assets/wipe3-mobile.png');
+    mask-image: url('../assets/wipe3-mobile.png');
     background-size: 1300px auto, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
     background-position: center top, 0 0, 0 0, 0 0, 0 0;
   }
@@ -1076,8 +1077,8 @@
   .hp-hero::before {
     background-size: 100% 100%;
     background-position: 0 0;
-    -webkit-mask-image: url('../assets/wipe2-mobile-inverse.png');
-    mask-image: url('../assets/wipe2-mobile-inverse.png');
+    -webkit-mask-image: url('../assets/wipe3-mobile-inverse.png');
+    mask-image: url('../assets/wipe3-mobile-inverse.png');
   }
 
 
