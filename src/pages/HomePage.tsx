@@ -35,8 +35,8 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：一笔把 lei 擦出来，字里透出来的就是底图 ---------- */
-const WORD = 'lei'
+/* ---------- 首屏字标：一笔把 Lei 擦出来，字里透出来的就是底图 ---------- */
+const WORD = 'Lei'
 
 // 底图（插画）的宽高比，用来按首屏尺寸算 cover
 const ART_RATIO = 1000 / 1213
@@ -86,7 +86,7 @@ function WipeWord() {
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     // 擦完之前不响应鼠标
-    const readyAt = performance.now() + 1700
+    const readyAt = performance.now() + 3900
     const onEnter = () => {
       if (reduce || performance.now() < readyAt) return
       wrap.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
