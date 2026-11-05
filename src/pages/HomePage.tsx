@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
+import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
 
 interface GuestbookRow {
@@ -35,7 +38,7 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：玻璃上一笔一笔擦出 Lei，字里透出来的就是底图 ---------- */
+/* ---------- 首屏字标：玻璃上按笔顺一笔一笔写出来的 Lei，字里透出来的就是底图 ---------- */
 const WORD = 'Lei'
 
 // 底图（插画）的宽高比，用来按字标尺寸算取景
@@ -46,9 +49,16 @@ const ART_SPAN = 0.78
 const ART_FOCUS_X = 0.5
 const ART_FOCUS_Y = 0.45
 
-// 擦拭节奏，和 CSS 里的 hp-sweep 对齐
-const SWEEP_STEP = 820 // 写完一个字母隔多久写下一个
-const SWEEP_FIRST = 240 // 第一个字母起手
+// 笔尖：走多快（字体单位/秒）、两个字母之间停多久、最后把剩下的一点抹匀要多久
+const PEN_SPEED = 620
+const PEN_GAP = 170
+const PEN_SETTLE = 460
+
+// 底图在字体坐标系里的铺法：比字标宽一圈，居中对着两张脸
+const ART_W = LEI_W / ART_SPAN
+const ART_H = ART_W / ART_RATIO
+const ART_X = LEI_LEFT + LEI_W * 0.5 - ART_W * ART_FOCUS_X
+const ART_Y = LEI_TOP + LEI_H * 0.5 - ART_H * ART_FOCUS_Y
 
 // 玻璃上淌下来的水：粗细、长短、快慢、倾斜都错开，看着才像真的在淌而不是一排冰柱
 const DRIPS = [
@@ -75,40 +85,38 @@ function WipeWord() {
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap) return
-    const letters = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-letter'))
-
-    // 把整张底图按“整块字标”的位置铺好，再分别裁进每个字母里：
-    // 每个字母拿到的就是它本该盖住的那一块，几个字母拼起来仍是一整张图。
-    const fit = () => {
-      const wr = wrap.getBoundingClientRect()
-      if (wr.width < 1 || wr.height < 1) return
-      // 手机上字窄，取景再收紧一点，字母里才看得清人
-      const span = wr.width < 420 ? 0.66 : ART_SPAN
-      const artW = wr.width / span
-      const artH = artW / ART_RATIO
-      const left = wr.width * 0.5 - artW * ART_FOCUS_X
-      const top = wr.height * 0.5 - artH * ART_FOCUS_Y
-      letters.forEach((el) => {
-        const r = el.getBoundingClientRect()
-        const dx = r.left - wr.left
-        el.style.backgroundSize = `${artW.toFixed(1)}px ${artH.toFixed(1)}px`
-        el.style.backgroundPosition = `${(left - dx).toFixed(1)}px ${top.toFixed(1)}px`
-      })
-    }
-
-    fit()
-    const ro = new ResizeObserver(fit)
-    ro.observe(wrap)
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+    const masks = Array.from(svg.querySelectorAll<SVGMaskElement>('.hp-mask'))
+    const settles = Array.from(svg.querySelectorAll<SVGRectElement>('.hp-settle'))
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    // 三个字母擦完之前不响应鼠标
+    // 字写完之前不响应鼠标
     let readyAt = Number.POSITIVE_INFINITY
-    // 手写体到位才开始“写”：先写默认字体、等字体回来再变一次宽度会很跳
+
+    // 每个字母按笔顺总长算这一笔写多久：长笔画慢一点，短的点一下子
+    const plan = () => {
+      let t = 130
+      masks.forEach((mask, i) => {
+        const dur = Math.max(420, (LEI_LETTERS[i].len / PEN_SPEED) * 1000)
+        mask.style.setProperty('--pen-start', `${Math.round(t)}ms`)
+        mask.style.setProperty('--pen-dur', `${Math.round(dur)}ms`)
+        const settle = settles[i]
+        if (settle) {
+          settle.style.setProperty('--settle-delay', `${Math.round(t + dur - 90)}ms`)
+          settle.style.setProperty('--settle-dur', `${PEN_SETTLE}ms`)
+        }
+        t += dur + PEN_GAP
+      })
+      return t + PEN_SETTLE
+    }
+
+    // 手写体到位才开始“写”：先写默认字体、等字体回来字宽一变会很跳
     const start = () => {
       if (wrap.classList.contains('is-ready')) return
+      const total = plan()
       wrap.classList.add('is-ready')
-      fit()
-      readyAt = performance.now() + SWEEP_FIRST + SWEEP_STEP * (WORD.length - 1) + 900 + 300
+      readyAt = performance.now() + total + 260
     }
     const fonts = document.fonts
     if (fonts) {
@@ -130,23 +138,80 @@ function WipeWord() {
     wrap.addEventListener('pointerenter', onEnter)
 
     return () => {
-      ro.disconnect()
       wrap.removeEventListener('pointerenter', onEnter)
     }
   }, [])
 
   return (
-    <h1 className="hp-word" ref={wrapRef} data-word={WORD} aria-label={WORD}>
-        {WORD.split('').map((ch, i) => (
-          <span
-            key={i}
-            className="hp-letter"
-            aria-hidden="true"
-            style={{ '--i': i } as React.CSSProperties}
+    <h1 className="hp-word" ref={wrapRef} aria-label={WORD} role="img">
+      <svg
+        className="hp-word-svg"
+        viewBox={`${LEI_LEFT} ${LEI_TOP} ${LEI_W} ${LEI_H}`}
+        style={{ width: `${LEI_W / 1000}em`, height: `${LEI_H / 1000}em` }}
+        aria-hidden="true"
+      >
+        <defs>
+          <pattern
+            id="hp-art"
+            patternUnits="userSpaceOnUse"
+            x={ART_X}
+            y={ART_Y}
+            width={ART_W}
+            height={ART_H}
           >
-            {ch}
-          </span>
+            {/* pattern 的内容坐标是相对 tile 的，所以图片从 0 0 铺满整块 tile */}
+            <image href={lumuUrl} x={0} y={0} width={ART_W} height={ART_H} preserveAspectRatio="none" />
+          </pattern>
+          {LEI_LETTERS.map((l, i) => (
+            <mask
+              key={l.ch}
+              id={`hp-mask-${i}`}
+              className="hp-mask"
+              maskUnits="userSpaceOnUse"
+              x={LEI_LEFT - 400}
+              y={LEI_TOP - 400}
+              width={LEI_W + 800}
+              height={LEI_H + 800}
+            >
+              {/* 笔顺：一串半径跟着笔画走的印章，按 --at 先后落笔 */}
+              {l.dabs.map((d, k) => (
+                <circle
+                  key={k}
+                  className="hp-dab"
+                  cx={d.x}
+                  cy={d.y}
+                  r={d.r}
+                  fill="#fff"
+                  style={{ '--at': d.at } as CSSProperties}
+                />
+              ))}
+              {/* 收笔后把笔锋扫不到的边角轻轻抹匀 */}
+              <rect
+                className="hp-settle"
+                x={LEI_LEFT - 400}
+                y={LEI_TOP - 400}
+                width={LEI_W + 800}
+                height={LEI_H + 800}
+                fill="#fff"
+              />
+            </mask>
+          ))}
+        </defs>
+        {LEI_LETTERS.map((l, i) => (
+          <text
+            key={l.ch}
+            x={l.x}
+            y={0}
+            mask={`url(#hp-mask-${i})`}
+            fill="url(#hp-art)"
+            stroke="rgba(255,255,255,0.42)"
+            strokeWidth={2}
+            className="hp-glyph"
+          >
+            {l.ch}
+          </text>
         ))}
+      </svg>
     </h1>
   )
 }
