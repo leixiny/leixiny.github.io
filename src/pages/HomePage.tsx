@@ -662,7 +662,7 @@ export default function HomePage() {
       <section id="contact" className="hp-contact">
         <div className="hp-wrap">
           <div className="hp-sec-head" data-reveal>
-            <p className="hp-sec-label">02 — 联系</p>
+            <p className="hp-sec-label">01 — 联系</p>
             <h2>随时可以找我</h2>
           </div>
 
@@ -689,7 +689,7 @@ export default function HomePage() {
       <section id="talk" className="hp-talk">
         <div className="hp-wrap">
           <div className="hp-sec-head" data-reveal>
-            <p className="hp-sec-label">03 — 留言</p>
+            <p className="hp-sec-label">02 — 留言</p>
             <h2>这一页是活的，说句话吧</h2>
           </div>
 
