@@ -149,11 +149,14 @@
   min-height: calc(100svh - 72px);
   padding-block: clamp(26px, 4.4vh, 58px);
   overflow: hidden;
-  background-color: #05121a;
-  background-image: url('../assets/glass-bg.webp');
-  background-size: cover;
-  background-position: center 50%;
-  background-repeat: no-repeat;
+  background-color: #0d1f28;
+  /* 第一层是主图，第二层是 28px 的极小占位图：大图下载完之前先铺一层同色调，
+     不会出现一块死黑的空白 */
+  background-image: url('../assets/glass-bg.webp'),
+    url('data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAACwBACdASocABIAPtVapkyoJSOiKA1RABqJZQDE2A9i8dz67V96PWGBbu/Z59SQAP7e7DaarsJiev38EfubruC7TlC97WzD0uJ9QbxjZYuKDN8Iq2iaQcaY1K/7Ewb8iihKUQnrkTAAAA==');
+  background-size: cover, cover;
+  background-position: center 50%, center 50%;
+  background-repeat: no-repeat, no-repeat;
   color: #fff;
   isolation: isolate;
 }
