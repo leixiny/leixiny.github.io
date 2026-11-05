@@ -149,10 +149,10 @@
   min-height: calc(100svh - 72px);
   padding-block: clamp(26px, 4.4vh, 58px);
   overflow: hidden;
-  background-color: #0b1a22;
+  background-color: #16262f;
   /* 第一层是主图，第二层是 28px 的极小占位图：大图下载完之前先铺一层同色调 */
   background-image: url('../assets/fog-glass.webp'),
-    url('data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAACwBACdASocABIAPtVapkyoJSOiKA1RABqJZQDE2A9i8dz67V96PWGBbu/Z59SQAP7e7DaarsJiev38EfubruC7TlC97WzD0uJ9QbxjZYuKDN8Iq2iaQcaY1K/7Ewb8iihKUQnrkTAAAA==');
+    url('data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAQBQCdASocABQAPrVMnEmnJKKhMBgMAOAWiWUArCDugSL0R8RvkeLvyQ0ROcEM+SdIAP5ry4EpPPS57ceue9b1JPlP2UxXiv9clHfaFLGAeLS70m6f8HbHzbgBYRFNjll2J2n2T/IcgXcLzlROda1hJcQInOmndAA=');
   background-size: cover, cover;
   background-position: center 50%, center 50%;
   background-repeat: no-repeat, no-repeat;
