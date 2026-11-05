@@ -424,9 +424,9 @@
        真正成形靠内缘一道暗折射 + 外面那圈亮环 */
     radial-gradient(
       ellipse at 50% 50%,
-      rgba(12, 30, 46, 0.06) 0 34%,
-      rgba(20, 44, 62, 0.22) 52%,
-      rgba(255, 255, 255, 0.5) 68%,
+      rgba(12, 30, 46, 0.2) 0 34%,
+      rgba(18, 42, 60, 0.34) 52%,
+      rgba(255, 255, 255, 0.64) 68%,
       rgba(226, 246, 255, 0.16) 84%,
       rgba(226, 246, 255, 0) 100%
     );
@@ -448,13 +448,16 @@
   border-radius: 50%;
   background:
     /* 一颗珠最要紧的是那点高光：没有它就是个灰泡 */
-    radial-gradient(circle at 33% 26%, rgba(255, 255, 255, 1) 0 7%, rgba(255, 255, 255, 0) 24%),
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 1) 0 6%, rgba(255, 255, 255, 0) 21%),
+    /* 坐在玻璃上，底下会有一小片反光 */
+    radial-gradient(circle at 54% 90%, rgba(255, 255, 255, 0.8) 0 7%, rgba(255, 255, 255, 0) 32%),
+    /* 球体：中心稍暗（透过去的光被收拢），边上一圈亮，再往外化开 */
     radial-gradient(
-      circle at 36% 34%,
-      rgba(10, 28, 42, 0.04) 0 36%,
-      rgba(18, 40, 56, 0.34) 56%,
-      rgba(255, 255, 255, 0.62) 76%,
-      rgba(255, 255, 255, 0.14) 90%,
+      circle at 46% 44%,
+      rgba(10, 26, 40, 0.28) 0 30%,
+      rgba(12, 30, 46, 0.42) 54%,
+      rgba(255, 255, 255, 0.86) 74%,
+      rgba(255, 255, 255, 0.12) 90%,
       rgba(255, 255, 255, 0) 100%
     );
   opacity: 0;
@@ -462,16 +465,16 @@
 }
 
 .hp-pool::before {
-  width: calc(var(--pw, 0.1em) * 0.52);
-  height: calc(var(--pw, 0.1em) * 0.5);
-  margin: calc(var(--pw, 0.1em) * -0.26) 0 0 calc(var(--pw, 0.1em) * -0.25);
+  width: calc(var(--pw, 0.1em) * 0.42);
+  height: calc(var(--pw, 0.1em) * 0.42);
+  margin: calc(var(--pw, 0.1em) * -0.21) 0 0 calc(var(--pw, 0.1em) * -0.21);
   animation-delay: var(--delay, 1200ms);
 }
 
 .hp-pool::after {
-  width: calc(var(--pw, 0.1em) * 0.4);
-  height: calc(var(--pw, 0.1em) * 0.44);
-  margin: calc(var(--pw, 0.1em) * -0.22) 0 0 calc(var(--pw, 0.1em) * -0.2);
+  width: calc(var(--pw, 0.1em) * 0.34);
+  height: calc(var(--pw, 0.1em) * 0.38);
+  margin: calc(var(--pw, 0.1em) * -0.19) 0 0 calc(var(--pw, 0.1em) * -0.17);
   animation-delay: var(--delay, 1200ms);
 }
 
@@ -486,11 +489,11 @@
 @keyframes hp-merge-left {
   0% {
     opacity: 0;
-    transform: translate3d(calc(var(--pw, 0.1em) * -1.05), calc(var(--pw, 0.1em) * -0.16), 0) scale(0.55);
+    transform: translate3d(calc(var(--pw, 0.1em) * -0.72), calc(var(--pw, 0.1em) * -0.16), 0) scale(0.55);
   }
   14% {
     opacity: 0.8;
-    transform: translate3d(calc(var(--pw, 0.1em) * -0.92), calc(var(--pw, 0.1em) * -0.14), 0) scale(0.9);
+    transform: translate3d(calc(var(--pw, 0.1em) * -0.64), calc(var(--pw, 0.1em) * -0.14), 0) scale(0.9);
   }
   /* 挂了一会儿，才开始被吸 */
   48% {
@@ -510,11 +513,11 @@
 @keyframes hp-merge-right {
   0% {
     opacity: 0;
-    transform: translate3d(calc(var(--pw, 0.1em) * 1.02), calc(var(--pw, 0.1em) * 0.14), 0) scale(0.5);
+    transform: translate3d(calc(var(--pw, 0.1em) * 0.7), calc(var(--pw, 0.1em) * 0.14), 0) scale(0.5);
   }
   18% {
     opacity: 0.72;
-    transform: translate3d(calc(var(--pw, 0.1em) * 0.88), calc(var(--pw, 0.1em) * 0.12), 0) scale(0.86);
+    transform: translate3d(calc(var(--pw, 0.1em) * 0.62), calc(var(--pw, 0.1em) * 0.12), 0) scale(0.86);
   }
   52% {
     opacity: 0.7;
