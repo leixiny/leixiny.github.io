@@ -220,42 +220,38 @@
   background: radial-gradient(circle, rgba(196, 240, 255, 0.36), transparent 68%);
 }
 
-/* 焦外光斑：玻璃后面真正的“内容”，擦净处能看清，雾里被糊掉 */
-.hp-hero-bokeh {
+/* 首尾压暗：给顶部说明、底部简介留出可读的底子，同时把玻璃框住 */
+.hp-hero-scrim {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
-  background-image: url('../assets/bokeh.webp');
-  background-size: cover;
-  background-position: center;
-  filter: blur(1.6px);
-  opacity: 0;
+  background:
+    linear-gradient(180deg, rgba(3, 11, 16, 0.72) 0%, rgba(3, 11, 16, 0.46) 8%, rgba(3, 11, 16, 0.12) 17%, rgba(3, 11, 16, 0) 24%),
+    linear-gradient(0deg, rgba(3, 11, 16, 0.74) 0%, rgba(3, 11, 16, 0.4) 7%, rgba(3, 11, 16, 0) 16%);
 }
 
 /* 水雾玻璃：整块蒙在首屏上，只有中间被“擦干净”的那块透出来
-   层次：乳白水汽（底）→ 细雾珠 → 水珠（最上，贴着玻璃） */
+   质感来自真实照片（起雾车窗 + 密集冷凝水珠），四拼成无缝贴图后平铺
+   层次：真实水珠照片 → 乳白雾膜 → 斜向反光 → 四周压暗 */
 .hp-hero::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-color: rgba(9, 27, 35, 0.06);
-  -webkit-backdrop-filter: blur(7px) saturate(1.06);
-  backdrop-filter: blur(7px) saturate(1.06);
+  background-color: #050f14;
   background-image:
-    url('../assets/drops.webp'),
-    url('../assets/haze.webp'),
-    url('../assets/haze.webp'),
-    linear-gradient(104deg, transparent 0 18%, rgba(226, 248, 255, 0.05) 34%, rgba(226, 248, 255, 0.015) 44%, transparent 58%),
-    linear-gradient(180deg, rgba(198, 232, 244, 0.03), rgba(120, 172, 196, 0.015) 42%, rgba(2, 10, 14, 0.24)),
-    linear-gradient(180deg, rgba(2, 9, 13, 0.66) 0%, rgba(2, 9, 13, 0.3) 12%, rgba(2, 9, 13, 0) 26%, rgba(2, 9, 13, 0) 66%, rgba(2, 9, 13, 0.58) 88%, rgba(2, 9, 13, 0.8) 100%);
-  background-size: clamp(540px, 38vw, 900px) clamp(540px, 38vw, 900px), 620px 620px, 1040px 1040px, 100% 100%, 100% 100%, 100% 100%;
-  background-position: 0 0, 0 0, 300px 380px, 0 0, 0 0, 0 0;
-  background-repeat: repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
-  -webkit-mask-image: url('../assets/wipe.png');
-  mask-image: url('../assets/wipe.png');
+    url('../assets/glass.webp'),
+    linear-gradient(0deg, rgba(206, 232, 240, 0.10), rgba(206, 232, 240, 0.10)),
+    linear-gradient(104deg, transparent 0 18%, rgba(226, 248, 255, 0.07) 35%, rgba(226, 248, 255, 0.02) 46%, transparent 60%),
+    radial-gradient(118% 88% at 50% 44%, rgba(4, 16, 22, 0) 0 36%, rgba(3, 11, 16, 0.34) 74%, rgba(2, 8, 12, 0.68) 100%),
+    linear-gradient(180deg, rgba(2, 9, 13, 0.86) 0%, rgba(2, 9, 13, 0.62) 12%, rgba(2, 9, 13, 0.22) 27%, rgba(2, 9, 13, 0.26) 56%, rgba(2, 9, 13, 0.70) 84%, rgba(2, 9, 13, 0.90) 100%);
+  background-size: cover, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: center, 0 0, 0 0, 0 0, 0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  -webkit-mask-image: url('../assets/wipe2.png');
+  mask-image: url('../assets/wipe2.png');
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -270,14 +266,16 @@
   z-index: 1;
   pointer-events: none;
   background-image:
-    url('../assets/drops-sparse.webp'),
-    url('../assets/wipe-edge.png');
-  background-size: 900px 900px, 100% 100%;
-  background-position: 40px -60px, 0 0;
-  background-repeat: repeat, no-repeat;
-  mix-blend-mode: normal;
-  -webkit-mask-image: url('../assets/wipe-inverse.png');
-  mask-image: url('../assets/wipe-inverse.png');
+    url('../assets/wipe2-edge.png'),
+    radial-gradient(30% 60% at 20% 66%, rgba(255, 206, 170, 0.22), transparent 72%),
+    radial-gradient(26% 52% at 79% 36%, rgba(176, 226, 255, 0.20), transparent 74%),
+    linear-gradient(100deg, transparent 0 10%, rgba(255, 255, 255, 0.06) 20%, transparent 32%, rgba(255, 255, 255, 0.04) 46%, transparent 60%, rgba(255, 255, 255, 0.05) 74%, transparent 88%),
+    url('../assets/view.webp');
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
+  background-position: 0 0, 0 0, 0 0, 0 0, center;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  -webkit-mask-image: url('../assets/wipe2-inverse.png');
+  mask-image: url('../assets/wipe2-inverse.png');
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -355,10 +353,10 @@
   background-image:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.82) 0%,
-      rgba(255, 255, 255, 0.34) 5%,
-      rgba(255, 255, 255, 0.09) 11%,
-      rgba(255, 255, 255, 0) 17%
+      rgba(255, 255, 255, 0.40) 0%,
+      rgba(255, 255, 255, 0.16) 6%,
+      rgba(255, 255, 255, 0.04) 13%,
+      rgba(255, 255, 255, 0) 19%
     ),
     linear-gradient(
       180deg,
@@ -371,11 +369,11 @@
     ),
     linear-gradient(
       102deg,
-      #aee4ff 0%,
-      #b2e3ff 40%,
-      #d8ddf8 50%,
-      #ffd6e1 60%,
-      #ffccd5 100%
+      #0d2b3c 0%,
+      #12364b 38%,
+      #1d2b4e 50%,
+      #3a2140 62%,
+      #2b1620 100%
     );
   background-size:
     100% calc(var(--lm-gh, 0.8) * 1em),
@@ -389,9 +387,8 @@
   background-clip: text;
   color: transparent;
   /* 2px 的硬投影是胶体的"底面"，软投影让它浮在灯海之上 */
-  filter: saturate(1.34) drop-shadow(0 2px 0 rgba(8, 24, 62, 0.72))
-    drop-shadow(0 14px 26px rgba(8, 20, 48, 0.6))
-    drop-shadow(0 0 10px rgba(174, 228, 255, 0.16));
+  filter: saturate(1.18) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.4))
+    drop-shadow(0 10px 18px rgba(32, 60, 74, 0.26));
   transition: filter 0.35s var(--rp-ease);
 }
 
@@ -1065,22 +1062,25 @@
   }
 
   .hp-word {
-    font-size: clamp(36px, 16.5vw, 96px);
+    font-size: clamp(34px, 15.4vw, 88px);
   }
 
   /* 手机屏又窄又高：同一条抹痕按比例压扁，仍然横着穿过整屏 */
   .hp-hero::after {
-    -webkit-mask-image: url('../assets/wipe-mobile.png');
-    mask-image: url('../assets/wipe-mobile.png');
-    background-size: 300px 300px, 340px 340px, 600px 600px, 100% 100%, 100% 100%, 100% 100%;
+    -webkit-mask-image: url('../assets/wipe2-mobile.png');
+    mask-image: url('../assets/wipe2-mobile.png');
+    background-size: 1300px auto, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-position: center top, 0 0, 0 0, 0 0, 0 0;
   }
 
   .hp-hero::before {
-    background-size: 520px 520px, 100% 100%;
-    background-position: 20px -30px, 0 0;
-    -webkit-mask-image: url('../assets/wipe-mobile-inverse.png');
-    mask-image: url('../assets/wipe-mobile-inverse.png');
+    background-size: 100% 100%;
+    background-position: 0 0;
+    -webkit-mask-image: url('../assets/wipe2-mobile-inverse.png');
+    mask-image: url('../assets/wipe2-mobile-inverse.png');
   }
+
+
 
 
 

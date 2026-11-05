@@ -385,7 +385,7 @@ export default function HomePage() {
           <span className="hp-lamp hp-lamp--e" />
           <span className="hp-lamp hp-lamp--f" />
         </div>
-        <div className="hp-hero-bokeh" aria-hidden="true" />
+        <div className="hp-hero-scrim" aria-hidden="true" />
         <div className="hp-hero-glow" aria-hidden="true" />
         <div className="hp-wrap hp-hero-inner">
           <div className="hp-hero-top">
