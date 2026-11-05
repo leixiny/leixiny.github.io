@@ -35,157 +35,73 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：LuMu，被一笔擦出来 ---------- */
-const WORD = 'LuMu'
+/* ---------- 首屏字标：一笔把 lei 擦出来，字里透出来的就是底图 ---------- */
+const WORD = 'lei'
 
-// 与 CSS 里的 hp-sweep / hp-sheen 保持一致
-const WIPE_DELAY = 260
-const WIPE_DURATION = 1400
-const WIPE_EASE = [0.25, 0.35, 0.35, 1] as const
-// 笔触前沿蒙版 240% 宽，边缘在蒙版 60% 处；位移 104% → 24% 扫过整屏
-const MASK_SCALE = 2.4
-const MASK_EDGE = 0.6
-const WIPE_FROM = 1.04
-const WIPE_TO = 0.24
+// 底图（插画）的宽高比，用来按首屏尺寸算 cover
+const ART_RATIO = 1000 / 1213
+// 底图宽度 ≈ 字的宽度：两个人物正好落在三个字母里
+const ART_SPAN = 0.78
+// 底图落在字里的对焦点（0~1），正对两张脸
+const ART_FOCUS_X = 0.5
+const ART_FOCUS_Y = 0.45
 
-// 蒙版位移 → 笔触前沿在屏幕上的横向位置（以屏宽为 1）
-const edgeAt = (position: number) => (1 - MASK_SCALE) * position + MASK_SCALE * MASK_EDGE
-// 反过来：前沿扫到 x 时，蒙版位移走到哪儿了
-const positionAt = (x: number) => (edgeAt(0) - x) / (MASK_SCALE - 1)
-
-// 缓动曲线采样表：把「进度」反查成「时间」，字母才能踩在笔触路过它的那一刻
-const EASE_TABLE = Array.from({ length: 97 }, (_, i) => {
-  const t = i / 96
-  const [x1, y1, x2, y2] = WIPE_EASE
-  const bx = 3 * (x2 - x1) - 3 * x1
-  const ax = 1 - 3 * x1 - bx
-  const by = 3 * (y2 - y1) - 3 * y1
-  const ay = 1 - 3 * y1 - by
-  const x = ax * t ** 3 + bx * t ** 2 + 3 * x1 * t
-  const y = ay * t ** 3 + by * t ** 2 + 3 * y1 * t
-  return { x, y }
-})
-
-function timeAt(progress: number) {
-  const p = Math.min(1, Math.max(0, progress))
-  for (let i = 1; i < EASE_TABLE.length; i += 1) {
-    const a = EASE_TABLE[i - 1]
-    const b = EASE_TABLE[i]
-    if (p <= b.y) {
-      const k = b.y === a.y ? 0 : (p - a.y) / (b.y - a.y)
-      return a.x + (b.x - a.x) * k
-    }
-  }
-  return 1
-}
-
-// 每个字母下缘的压深用它自己那一端的颜色，而不是一律压黑，果冻才有颜色
-const SHADE_BLUE = [74, 148, 198]
-const SHADE_PINK = [224, 138, 156]
-
-function shadeAt(t: number) {
-  return SHADE_BLUE.map((b, k) => Math.round(b + (SHADE_PINK[k] - b) * t)).join(', ')
-}
-
-// 每个字母字形自己占多高（em）：高光与沉底要贴着字形铺，不能按行框均分
-const GLYPH_H: Record<string, number> = { L: 0.723, u: 0.532, M: 0.723 }
-
-// 字母被擦过的那一下：从雾里的虚影收成实体（糊 → 清）
-const LETTER_FILTER =
-  'saturate(1.28) drop-shadow(0 2px 0 rgba(6, 20, 46, 0.44)) drop-shadow(0 12px 22px rgba(3, 12, 26, 0.5)) drop-shadow(0 0 22px rgba(150, 214, 255, 0.16))'
-
-const WIPE_POP: Keyframe[] = [
-  {
-    filter: `blur(5px) saturate(1.1) drop-shadow(0 2px 0 rgba(6, 20, 46, 0.3)) drop-shadow(0 10px 20px rgba(3, 12, 26, 0.4)) drop-shadow(0 0 30px rgba(190, 238, 255, 0.5))`,
-    transform: 'scale(1.035, 0.99)',
-    offset: 0,
-  },
-  {
-    filter: `blur(1.2px) saturate(1.24) drop-shadow(0 2px 0 rgba(6, 20, 46, 0.4)) drop-shadow(0 12px 22px rgba(3, 12, 26, 0.46)) drop-shadow(0 0 24px rgba(170, 226, 255, 0.28))`,
-    transform: 'scale(1.01, 0.997)',
-    offset: 0.45,
-  },
-  { filter: LETTER_FILTER, transform: 'scale(1, 1)', offset: 1 },
-]
-
+// 鼠标扫过时，整块字软软弹一下
 const JELLY_TAP: Keyframe[] = [
   { transform: 'translateY(0) scale(1, 1)' },
-  { transform: 'translateY(3px) scale(1.12, 0.86)' },
-  { transform: 'translateY(0) scale(.94, 1.07)' },
-  { transform: 'translateY(0) scale(1.02, .98)' },
+  { transform: 'translateY(4px) scale(1.05, 0.94)' },
+  { transform: 'translateY(0) scale(0.975, 1.025)' },
+  { transform: 'translateY(0) scale(1.01, 0.99)' },
   { transform: 'translateY(0) scale(1, 1)' },
 ]
 
-function JellyWord() {
+function WipeWord() {
   const wrapRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const letters = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-letter'))
-    const hero = wrap.closest('.hp-hero') as HTMLElement | null
-    const heroLeft = hero ? hero.getBoundingClientRect().left : 0
-    const width = (hero ? hero.clientWidth : window.innerWidth) || 1
-
-    // 笔触前沿扫到哪个字母，那个字母就在那一刻从雾里浮出来
-    letters.forEach((el) => {
-      const r = el.getBoundingClientRect()
-      const cx = (r.left - heroLeft) / width
-      const p = Math.min(WIPE_FROM, Math.max(WIPE_TO, positionAt(cx)))
-      const progress = (WIPE_FROM - p) / (WIPE_FROM - WIPE_TO)
-      const at = WIPE_DELAY + WIPE_DURATION * timeAt(progress) * 0.97
-
-      // 透明度单独一条（带 fill），动画结束后仍保留，悬停的 filter 才不被顶掉
-      el.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: 200,
-        delay: at,
-        fill: 'both',
-        easing: 'linear',
-      })
-      el.animate(WIPE_POP, {
-        duration: 470,
-        delay: at,
-        easing: 'cubic-bezier(.2,.7,.3,1)',
-      })
-    })
-
-    // 鼠标扫过某个字母，它就软软地弹一下（擦拭期间不响应）
-    const readyAt = performance.now() + WIPE_DELAY + WIPE_DURATION + 300
-    const onEnter = (el: HTMLElement) => () => {
-      if (performance.now() < readyAt) return
-      el.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
+    // 把整屏那张底图先铺满首屏，再用 background-clip: text 裁进字里。
+    // 所以每个字母里露出来的，就是它本该盖住的那一块，几个字母拼起来是一整张图。
+    const fit = () => {
+      const r = wrap.getBoundingClientRect()
+      if (r.width < 1 || r.height < 1) return
+      // 底图只在这块字里可见，所以尺寸按字宽算：人物正好横跨整块字
+      // 手机上字窄，取景再收紧一点，字母里才看得清人
+      const span = r.width < 420 ? 0.6 : ART_SPAN
+      const artW = r.width / span
+      const artH = artW / ART_RATIO
+      // 让对焦点落在字框中心
+      const left = r.width * 0.5 - artW * ART_FOCUS_X
+      const top = r.height * 0.5 - artH * ART_FOCUS_Y
+      wrap.style.backgroundSize = `${artW.toFixed(1)}px ${artH.toFixed(1)}px`
+      wrap.style.backgroundPosition = `${left.toFixed(1)}px ${top.toFixed(1)}px`
     }
-    const handlers = letters.map((el) => {
-      const fn = onEnter(el)
-      el.addEventListener('pointerenter', fn)
-      return [el, fn] as const
-    })
-    return () => handlers.forEach(([el, fn]) => el.removeEventListener('pointerenter', fn))
+
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(wrap)
+    if (document.fonts) document.fonts.ready.then(fit).catch(() => {})
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // 擦完之前不响应鼠标
+    const readyAt = performance.now() + 1700
+    const onEnter = () => {
+      if (reduce || performance.now() < readyAt) return
+      wrap.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
+    }
+    wrap.addEventListener('pointerenter', onEnter)
+
+    return () => {
+      ro.disconnect()
+      wrap.removeEventListener('pointerenter', onEnter)
+    }
   }, [])
 
-  const n = WORD.length - 1
-
   return (
-    <h1 className="hp-word" ref={wrapRef} aria-label={WORD}>
-      {WORD.split('').map((ch, i) => (
-        <span
-          key={i}
-          className="hp-letter"
-          data-ch={ch}
-          aria-hidden="true"
-          style={
-            {
-              '--bp': `${(i / n) * 100}%`,
-              '--lm-shade': shadeAt(i / n),
-              '--lm-gh': GLYPH_H[ch] ?? 0.72,
-            } as React.CSSProperties
-          }
-        >
-          {ch}
-        </span>
-      ))}
+    <h1 className="hp-word" ref={wrapRef} data-word={WORD} aria-label={WORD}>
+      {WORD}
     </h1>
   )
 }
@@ -340,11 +256,7 @@ export default function HomePage() {
       </header>
 
       <section className="hp-hero">
-        <div className="hp-hero-reveal" aria-hidden="true">
-          <div className="hp-hero-window" />
-        </div>
         <div className="hp-hero-scrim" aria-hidden="true" />
-        <div className="hp-hero-glow" aria-hidden="true" />
         <div className="hp-wrap hp-hero-inner">
           <div className="hp-hero-top">
             <p className="hp-kicker">
@@ -372,7 +284,7 @@ export default function HomePage() {
           </div>
 
           <div className="hp-hero-mid">
-            <JellyWord />
+            <WipeWord />
           </div>
 
           <div className="hp-hero-foot">

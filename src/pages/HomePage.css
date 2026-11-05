@@ -141,7 +141,7 @@
   transform: translateX(3px);
 }
 
-/* ---------- 首屏：水雾玻璃，一笔擦出一条窗 ---------- */
+/* ---------- 首屏：满屏水雾玻璃，一笔把字擦出来 ---------- */
 /* 底子就是那张实拍的冷凝水玻璃，铺满整屏 */
 .hp-hero {
   position: relative;
@@ -160,56 +160,7 @@
   isolation: isolate;
 }
 
-/* 擦开后露出来的画面：整屏铺好这张插画，再用「横带窗口」只留中间擦净的一条；
-   外面再套一层笔触前沿的蒙版，从左往右推过去 —— 就是一次擦拭 */
-.hp-hero-reveal {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  -webkit-mask-image: url('../assets/wipe-edge.webp');
-  mask-image: url('../assets/wipe-edge.webp');
-  -webkit-mask-size: 240% 100%;
-  mask-size: 240% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: 104% 0;
-  mask-position: 104% 0;
-  animation: hp-sweep 1400ms cubic-bezier(0.25, 0.35, 0.35, 1) 260ms both;
-}
-
-.hp-hero-window {
-  position: absolute;
-  top: 47%;
-  left: 50%;
-  width: min(64vw, 920px);
-  height: min(68vh, 610px);
-  transform: translate(-50%, -50%);
-  background: url('../assets/lumu.webp') center 47% / cover no-repeat;
-  /* 压暗层会压到这扇窗，这里补一点亮度与饱和度，擦净的地方才透亮 */
-  filter: saturate(1.05) contrast(1.04) brightness(1.0);
-  /* 窗口内缘压一圈暗，玻璃才有厚度 */
-  box-shadow: inset 0 0 90px rgba(4, 16, 24, 0.26);
-  -webkit-mask-image: url('../assets/wipe-window.webp');
-  mask-image: url('../assets/wipe-window.webp');
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-}
-
-@keyframes hp-sweep {
-  from {
-    -webkit-mask-position: 104% 0;
-    mask-position: 104% 0;
-  }
-  to {
-    -webkit-mask-position: 24% 0;
-    mask-position: 24% 0;
-  }
-}
-
-/* 首尾压暗：给顶部说明、底部简介留出可读底子（中间那条擦净的带子不压） */
+/* 首尾压暗：只压上下两端，给说明和简介留可读底子；中间那条字不压 */
 .hp-hero-scrim {
   position: absolute;
   inset: 0;
@@ -231,7 +182,7 @@
   gap: clamp(20px, 3.2vh, 44px);
 }
 
-/* 字标区：撑满首屏上下两段文字之间的全部空间，字母居中 */
+/* 字标区：撑满上下两段文字之间的全部空间 */
 .hp-hero-mid {
   position: relative;
   display: flex;
@@ -239,121 +190,76 @@
   align-items: center;
   justify-content: center;
   min-height: 0;
-  isolation: isolate;
-}
-
-/* 字母背后压一小块暗影：插画太亮，蓝粉渐变字要压一层才立得住 */
-.hp-hero-glow {
-  position: absolute;
-  inset: 10% 0;
-  z-index: 3;
-  pointer-events: none;
-  background:
-    radial-gradient(34% 40% at 50% 50%, rgba(3, 11, 17, 0.34), rgba(3, 11, 17, 0.14) 62%, rgba(3, 11, 17, 0) 88%);
-}
-
-/* ---------- 首屏字标：LuMu（橹穆蓝粉） ---------- */
-.hp-word {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: baseline;
-  margin: 0;
-  margin-left: -0.02em;
-  font-size: clamp(56px, min(17vw, 25vh), 268px);
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.012em;
-  /* 稍微下沉，别压住人物脸 */
-  transform: translateY(5vh);
-  white-space: nowrap;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.hp-letter {
-  position: relative;
-  display: inline-block;
-  /* 回弹的支点落在基线上，而不是字框中心 */
-  transform-origin: 50% 86%;
-  will-change: transform, filter;
-  /* 擦拭到它之前先藏着；JS 会在笔触路过时把它放出来 */
-  opacity: 0;
-  /* 应援色本身很浅，靠"顶亮—中透—底沉—底边透光"做出胶体厚度；
-     size 用每个字母自己的字形高度（--lm-gh），底边对齐基线 */
-  background-image:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.42) 0%,
-      rgba(255, 255, 255, 0.16) 6%,
-      rgba(255, 255, 255, 0.04) 13%,
-      rgba(255, 255, 255, 0) 19%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(var(--lm-shade), 0) 40%,
-      rgba(var(--lm-shade), 0.26) 64%,
-      rgba(var(--lm-shade), 0.72) 85%,
-      rgba(var(--lm-shade), 0.52) 93%,
-      rgba(var(--lm-shade), 0.26) 97%,
-      rgba(255, 255, 255, 0.26) 100%
-    ),
-    linear-gradient(
-      102deg,
-      #aee4ff 0%,
-      #b2e3ff 38%,
-      #d8ddf8 50%,
-      #ffd6e1 62%,
-      #ffccd5 100%
-    );
-  background-size:
-    100% calc(var(--lm-gh, 0.8) * 1em),
-    100% calc(var(--lm-gh, 0.8) * 1em),
-    400% 100%;
-  background-position:
-    left 0 bottom 0,
-    left 0 bottom 0,
-    var(--bp, 0%) bottom;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: saturate(1.32) drop-shadow(0 3px 0 rgba(6, 20, 46, 0.5))
-    drop-shadow(0 14px 26px rgba(3, 12, 26, 0.56))
-    drop-shadow(0 0 24px rgba(150, 214, 255, 0.18));
+  /* 投影必须挂在外层：和 background-clip:text 同元素会让雾从字缝里透出来 */
+  filter: contrast(1.07) saturate(1.12) drop-shadow(0 0 7px rgba(226, 244, 255, 0.3))
+    drop-shadow(0 18px 40px rgba(3, 12, 26, 0.42))
+    drop-shadow(0 0 30px rgba(158, 214, 255, 0.14));
   transition: filter 0.35s var(--rp-ease);
 }
 
-/* 玻璃壳：一圈极细的高光边，让字像有厚度的胶体而不是平面色块 */
-.hp-letter::after {
-  content: attr(data-ch);
-  position: absolute;
-  inset: 0;
+.hp-hero-mid:hover {
+  filter: contrast(1.07) saturate(1.12) drop-shadow(0 0 10px rgba(226, 244, 255, 0.4))
+    drop-shadow(0 20px 44px rgba(3, 12, 26, 0.46))
+    drop-shadow(0 0 46px rgba(174, 228, 255, 0.34));
+}
+
+/* ---------- 字标：玻璃上被一笔擦出来的字母 ---------- */
+.hp-word {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  margin-left: -0.02em;
+  font-size: clamp(84px, min(34vw, 50vh), 520px);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  /* 字里面透出来的就是底图：整屏那张插画铺好，再用文字裁出来。
+     尺寸与位置由 JS 按首屏实测值写进 style，所以几个字母拼起来是一整张图 */
+  background-color: #a8d5e9;
+  background-image: url('../assets/lumu.webp');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
-  -webkit-text-stroke: 0.9px rgba(255, 255, 255, 0.26);
-  pointer-events: none;
-  mix-blend-mode: screen;
+  /* 玻璃切口一圈极细的高光边 */
+  -webkit-text-stroke: 1.2px rgba(255, 255, 255, 0.42);
+  /* 一笔擦过：蒙版就是那道笔触前沿，从左往右扫过去 */
+  -webkit-mask-image: url('../assets/wipe-edge.webp');
+  mask-image: url('../assets/wipe-edge.webp');
+  /* auto 高度：让笔触边缘保持原本的长宽比，才是一道湿边而不是被压扁的拉丝 */
+  -webkit-mask-size: 280% auto;
+  mask-size: 280% auto;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 108% 0;
+  mask-position: 108% 0;
+  animation: hp-sweep 1250ms cubic-bezier(0.5, 0.06, 0.44, 0.96) 260ms both;
 }
 
-.hp-letter:hover {
-  filter: saturate(1.2) drop-shadow(0 2px 0 rgba(8, 24, 62, 0.6))
-    drop-shadow(0 12px 24px rgba(8, 20, 48, 0.5))
-    drop-shadow(0 0 32px rgba(174, 228, 255, 0.6))
-    drop-shadow(0 0 58px rgba(255, 204, 213, 0.32));
+@keyframes hp-sweep {
+  from {
+    -webkit-mask-position: 108% 0;
+    mask-position: 108% 0;
+  }
+  to {
+    -webkit-mask-position: 18% 0;
+    mask-position: 18% 0;
+  }
 }
 
-/* 系统里关了动效：直接给擦干净的画面 */
+/* 系统里关了动效：不做擦拭，直接给擦干净的字 */
 @media (prefers-reduced-motion: reduce) {
-  /* 不做擦拭，但窗口还是要留着：直接把前沿推到终点 */
-  .hp-hero-reveal {
+  .hp-word {
     animation: none;
-    -webkit-mask-position: 24% 0;
-    mask-position: 24% 0;
-  }
-
-  .hp-letter {
-    opacity: 1;
+    -webkit-mask-position: 18% 0;
+    mask-position: 18% 0;
   }
 }
+
 
 .hp-kicker {
   display: inline-flex;
@@ -1007,14 +913,7 @@
   }
 
   .hp-word {
-    font-size: clamp(46px, 19vw, 112px);
-  }
-
-  /* 竖屏：窗口放宽压扁，插画才不会挤成一条，字也落在窗口里 */
-  .hp-hero-window {
-    top: 46%;
-    width: 88vw;
-    height: 58vh;
+    font-size: clamp(80px, min(66vw, 33vh), 280px);
   }
 
   /* 竖屏比例差别大：往画面中间挪一点，避开底部那块最亮的水光 */
