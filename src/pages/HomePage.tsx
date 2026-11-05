@@ -376,6 +376,16 @@ export default function HomePage() {
       </header>
 
       <section className="hp-hero">
+        {/* 玻璃后面被雾挡住的世界：几团虚化的蓝粉灯光 */}
+        <div className="hp-hero-scene" aria-hidden="true">
+          <span className="hp-lamp hp-lamp--a" />
+          <span className="hp-lamp hp-lamp--b" />
+          <span className="hp-lamp hp-lamp--c" />
+          <span className="hp-lamp hp-lamp--d" />
+          <span className="hp-lamp hp-lamp--e" />
+          <span className="hp-lamp hp-lamp--f" />
+        </div>
+        <div className="hp-hero-bokeh" aria-hidden="true" />
         <div className="hp-hero-glow" aria-hidden="true" />
         <div className="hp-wrap hp-hero-inner">
           <div className="hp-hero-top">
