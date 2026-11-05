@@ -50,9 +50,9 @@ const ART_FOCUS_X = 0.5
 const ART_FOCUS_Y = 0.45
 
 // 笔尖：走多快（字体单位/秒）、两个字母之间停多久、最后把剩下的一点抹匀要多久
-const PEN_SPEED = 620
-const PEN_GAP = 170
-const PEN_SETTLE = 460
+const PEN_SPEED = 720
+const PEN_GAP = 150
+const PEN_SETTLE = 420
 
 // 底图在字体坐标系里的铺法：比字标宽一圈，居中对着两张脸
 const ART_W = LEI_W / ART_SPAN
@@ -61,14 +61,59 @@ const ART_X = LEI_LEFT + LEI_W * 0.5 - ART_W * ART_FOCUS_X
 const ART_Y = LEI_TOP + LEI_H * 0.5 - ART_H * ART_FOCUS_Y
 
 // 玻璃上淌下来的水：粗细、长短、快慢、倾斜都错开，看着才像真的在淌而不是一排冰柱
+// 只留在字标两侧的空白里，不跟笔迹抢戏
 const DRIPS = [
-  { left: '18%', top: '24%', w: 2.0, len: 150, dur: '11s', delay: '1.1s', drift: '16px', travel: '44vh', rot: '-2.5deg' },
-  { left: '31%', top: '36%', w: 2.6, len: 92, dur: '9.6s', delay: '4.6s', drift: '-11px', travel: '36vh', rot: '1.8deg' },
-  { left: '44%', top: '20%', w: 1.5, len: 118, dur: '12.4s', delay: '2.6s', drift: '9px', travel: '50vh', rot: '2.6deg' },
-  { left: '63%', top: '30%', w: 2.2, len: 186, dur: '13s', delay: '6.2s', drift: '-16px', travel: '40vh', rot: '-1.6deg' },
-  { left: '72%', top: '22%', w: 1.6, len: 76, dur: '10.2s', delay: '3.4s', drift: '12px', travel: '46vh', rot: '-3deg' },
-  { left: '85%', top: '34%', w: 2.4, len: 128, dur: '11.6s', delay: '8.1s', drift: '-7px', travel: '38vh', rot: '2deg' },
+  { left: '7%', top: '18%', w: 1.3, len: 138, dur: '15s', delay: '2.4s', drift: '14px', travel: '46vh', rot: '-2.2deg' },
+  { left: '93%', top: '26%', w: 1.5, len: 104, dur: '17s', delay: '6.8s', drift: '-12px', travel: '42vh', rot: '1.8deg' },
+  { left: '86%', top: '12%', w: 1.1, len: 168, dur: '19s', delay: '11.2s', drift: '-6px', travel: '50vh', rot: '-1.4deg' },
 ]
+
+/* ---------- 水从字上淌下来 ---------- */
+// 水是跟着笔走的：笔尖刚擦过哪块墨，那里就攒出一颗水珠顺着玻璃往下淌。
+// 坐标用字体单位（和笔迹同一套），时刻由 plan() 里那一笔的时间轴推出来，
+// 所以“字长出来”和“水流下来”是同一条时间线，不是两段各自播的动画。
+type WordDrip = {
+  /** 属于第几个字母 */
+  letter: number
+  /** 笔尖写到这一位置时（0~1）开始积水 */
+  at: number
+  /** 积完水到真的往下滑，中间停一下（ms） */
+  lag: number
+  /** 起滴点（字体单位） */
+  x: number
+  y: number
+  /** 水痕粗细（em，跟着字标字号缩放） */
+  w: number
+  /** 往下淌多久（s）、横向漂移（px）、水痕的倾角 */
+  dur: number
+  drift: number
+  rot: number
+}
+
+const WORD_DRIPS: WordDrip[] = [
+  // L 的竖笔：笔锋一路往下，水就顺着笔杆往下淌
+  { letter: 0, at: 0.3, lag: 60, x: 152, y: -318, w: 0.00408, dur: 3.6, drift: 8, rot: -1.4 },
+  { letter: 0, at: 0.52, lag: 150, x: 116, y: -186, w: 0.00456, dur: 3.2, drift: -10, rot: 1.6 },
+  { letter: 0, at: 0.7, lag: 90, x: 118, y: -76, w: 0.00360, dur: 2.8, drift: 6, rot: -0.9 },
+  // L 的横笔收尾，水从笔画末端坠下去
+  { letter: 0, at: 0.99, lag: 220, x: 430, y: -88, w: 0.00480, dur: 3.4, drift: 12, rot: 1.2 },
+  // e 的左半个圈
+  { letter: 1, at: 0.6, lag: 80, x: 610, y: -232, w: 0.00408, dur: 3.8, drift: -7, rot: -1.8 },
+  // e 写到圈底，水积在那儿
+  { letter: 1, at: 0.79, lag: 120, x: 664, y: -30, w: 0.00504, dur: 3.1, drift: 9, rot: 1 },
+  // e 的尾巴
+  { letter: 1, at: 0.99, lag: 190, x: 888, y: -112, w: 0.00384, dur: 3.6, drift: 13, rot: 2 },
+  // i 的竖笔
+  { letter: 2, at: 0.74, lag: 70, x: 1168, y: -130, w: 0.00432, dur: 3.3, drift: -8, rot: -1.2 },
+  // i 的点：写完点，水珠从点上顺着玻璃滑下来
+  { letter: 2, at: 0.99, lag: 240, x: 1266, y: -586, w: 0.00360, dur: 4.4, drift: 7, rot: 1.4 },
+]
+
+// 字体单位 -> 字标盒子里的百分比：水滴层和 SVG 用的是同一个 viewBox，换算完就贴着字走
+const dripX = (x: number) => ((x - LEI_LEFT) / LEI_W) * 100
+const dripY = (y: number) => ((y - LEI_TOP) / LEI_H) * 100
+// 字标盒子的高度（em），用来算一颗水珠要淌多远才落到字下面
+const WORD_EM = LEI_H / 1000
 
 // 鼠标扫过时，整块字软软弹一下
 const JELLY_TAP: Keyframe[] = [
@@ -89,6 +134,7 @@ function WipeWord() {
     if (!svg) return
     const masks = Array.from(svg.querySelectorAll<SVGMaskElement>('.hp-mask'))
     const settles = Array.from(svg.querySelectorAll<SVGRectElement>('.hp-settle'))
+    const drips = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-drip--word'))
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     // 字写完之前不响应鼠标
@@ -97,8 +143,12 @@ function WipeWord() {
     // 每个字母按笔顺总长算这一笔写多久：长笔画慢一点，短的点一下子
     const plan = () => {
       let t = 130
+      const starts: number[] = []
+      const spans: number[] = []
       masks.forEach((mask, i) => {
         const dur = Math.max(420, (LEI_LETTERS[i].len / PEN_SPEED) * 1000)
+        starts[i] = t
+        spans[i] = dur
         mask.style.setProperty('--pen-start', `${Math.round(t)}ms`)
         mask.style.setProperty('--pen-dur', `${Math.round(dur)}ms`)
         const settle = settles[i]
@@ -107,6 +157,13 @@ function WipeWord() {
           settle.style.setProperty('--settle-dur', `${PEN_SETTLE}ms`)
         }
         t += dur + PEN_GAP
+      })
+      // 水：笔尖走到那一格才攒水，所以每颗水珠的延迟都挂在自己那一笔上
+      drips.forEach((el, k) => {
+        const d = WORD_DRIPS[k]
+        if (!d) return
+        const at = (starts[d.letter] ?? 0) + d.at * (spans[d.letter] ?? 0) + d.lag
+        el.style.setProperty('--delay', `${Math.round(at)}ms`)
       })
       return t + PEN_SETTLE
     }
@@ -173,16 +230,18 @@ function WipeWord() {
               width={LEI_W + 800}
               height={LEI_H + 800}
             >
-              {/* 笔顺：一串半径跟着笔画走的印章，按 --at 先后落笔 */}
-              {l.dabs.map((d, k) => (
-                <circle
+              {/* 笔顺：把相邻两颗印章连成一条带圆头的笔迹，按 --at 先后落笔 */}
+              {l.segs.map((s, k) => (
+                <line
                   key={k}
-                  className="hp-dab"
-                  cx={d.x}
-                  cy={d.y}
-                  r={d.r}
-                  fill="#fff"
-                  style={{ '--at': d.at } as CSSProperties}
+                  className="hp-seg"
+                  x1={s.x1}
+                  y1={s.y1}
+                  x2={s.x2}
+                  y2={s.y2}
+                  strokeWidth={s.w}
+                  strokeLinecap="round"
+                  style={{ '--at': s.at } as CSSProperties}
                 />
               ))}
               {/* 收笔后把笔锋扫不到的边角轻轻抹匀 */}
@@ -212,6 +271,30 @@ function WipeWord() {
           </text>
         ))}
       </svg>
+      {/* 水层盖在字上面：笔尖刚擦过的地方攒出水珠，顺着玻璃往下淌到字下面 */}
+      <div className="hp-wdrips" aria-hidden="true">
+        {WORD_DRIPS.map((d, i) => {
+          const top = dripY(d.y)
+          const travel = ((100 - top) / 100 + 0.2) * WORD_EM
+          return (
+            <span
+              key={i}
+              className="hp-drip hp-drip--word"
+              style={
+                {
+                  left: `${dripX(d.x)}%`,
+                  top: `${top}%`,
+                  '--w': `${d.w}em`,
+                  '--travel': `${travel.toFixed(3)}em`,
+                  '--dur': `${d.dur}s`,
+                  '--drift': `${d.drift}px`,
+                  '--rot': `${d.rot}deg`,
+                } as CSSProperties
+              }
+            />
+          )
+        })}
+      </div>
     </h1>
   )
 }
@@ -370,7 +453,7 @@ export default function HomePage() {
           {DRIPS.map((d, i) => (
             <span
               key={i}
-              className="hp-drip"
+              className="hp-drip hp-drip--hero"
               style={
                 {
                   left: d.left,

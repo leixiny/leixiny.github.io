@@ -239,32 +239,29 @@
   font-size: 1000px;
 }
 
-/* 笔迹 = 一串沿笔画排好的"印章"：每颗印章的半径就是那一处笔画的半宽，
-   沿笔顺依次落笔，字就是顺着笔画一笔一笔长出来的 */
-.hp-dab {
+/* 笔迹 = 沿笔顺排好的一串带圆头的短线段：线宽就是那一处笔画的宽度，
+   按 --at 依次落笔，字就是顺着笔画一笔一笔长出来的 */
+.hp-seg {
+  stroke: #fff;
+  fill: none;
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: scale(0.4);
 }
 
-.hp-word.is-ready .hp-dab {
-  animation: hp-dab-in 170ms cubic-bezier(0.25, 0.7, 0.35, 1) forwards;
-  /* --at 是这颗印章在整笔里的位置（0~1），乘以这一笔的时长就是它的落笔时刻 */
+.hp-word.is-ready .hp-seg {
+  animation: hp-seg-in 190ms cubic-bezier(0.25, 0.7, 0.35, 1) forwards;
+  /* --at 是这一段在整笔里的位置（0~1），乘以这一笔的时长就是它的落笔时刻 */
   animation-delay: calc(var(--pen-start, 0ms) + var(--at, 0) * var(--pen-dur, 0ms));
 }
 
-@keyframes hp-dab-in {
+@keyframes hp-seg-in {
   0% {
     opacity: 0;
-    transform: scale(0.4);
   }
-  55% {
+  60% {
     opacity: 1;
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -283,7 +280,8 @@
   }
 }
 
-/* ---------- 玻璃上的水：擦过之后顺着玻璃往下淌 ---------- */
+/* ---------- 玻璃上的水 ---------- */
+/* 整屏那层：字以外的空白里也有零星水珠，玻璃才是湿的 */
 .hp-drips {
   position: absolute;
   inset: 0;
@@ -292,78 +290,151 @@
   overflow: hidden;
 }
 
-/* 一道水痕 = 上端化开的细拖尾 + 末端一颗水珠；折射感靠“亮线 + 偏左一条暗边” */
+/* 字标自己那层水：盒子和 SVG 的 viewBox 一样大，坐标换算完就贴着字走 */
+.hp-wdrips {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* 一道水痕 = 上端化开的细拖尾 + 末端一颗水珠 */
 .hp-drip {
   position: absolute;
-  width: calc(var(--w, 2px) * 3);
-  height: var(--len, 120px);
+  width: calc(var(--w, 2px) * 5);
+  margin-left: calc(var(--w, 2px) * -2.5);
+  opacity: 0;
+  will-change: transform, opacity, height;
+}
+
+/* 拖尾：中间实、两侧化开。不铺这层横向遮罩就是一根硬邦邦的白线，像划痕 */
+.hp-drip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   border-radius: 999px;
   background: linear-gradient(
     to bottom,
     rgba(226, 244, 255, 0) 0%,
-    rgba(226, 244, 255, 0.12) 34%,
-    rgba(238, 249, 255, 0.34) 78%,
-    rgba(255, 255, 255, 0.6) 100%
+    rgba(228, 245, 255, 0.3) 24%,
+    rgba(234, 248, 255, 0.44) 56%,
+    rgba(244, 251, 255, 0.66) 85%,
+    rgba(255, 255, 255, 0.86) 100%
   );
-  /* 亮道旁边一条很淡的暗边，才有玻璃折射的立体感，不然像一根塑料条 */
+  /* 亮道旁边一条很淡的暗边，才有玻璃折射的立体感 */
   box-shadow:
-    inset 1px 0 0 rgba(255, 255, 255, 0.5),
-    inset -1px 0 0 rgba(4, 18, 28, 0.35),
-    0 0 10px rgba(206, 234, 252, 0.22);
+    inset 1px 0 0 rgba(255, 255, 255, 0.34),
+    inset -1px 0 0 rgba(4, 18, 28, 0.26),
+    0 0 9px rgba(206, 234, 252, 0.2);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 34%, #000 66%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 34%, #000 66%, transparent 100%);
   filter: blur(0.5px);
-  opacity: 0;
-  transform-origin: 50% 100%;
-  will-change: transform, opacity;
-  animation: hp-drip var(--dur, 9s) cubic-bezier(0.42, 0.02, 0.58, 0.98) var(--delay, 2s) infinite;
 }
 
-/* 水珠本体：小小的珠子，左上一块高光，右下透一点暗，才不像白点 */
+/* 水珠本体：一颗圆滚滚的珠子，左上一块高光、右下一点暗，才不像白点 */
 .hp-drip::after {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: calc(var(--w, 2px) * -1.4);
-  width: calc(var(--w, 2px) * 2.2);
-  height: calc(var(--w, 2px) * 2.7);
-  margin-left: calc(var(--w, 2px) * -1.1);
-  border-radius: 50% 50% 46% 46%;
+  bottom: calc(var(--w, 2px) * -2);
+  width: calc(var(--w, 2px) * 5.6);
+  height: calc(var(--w, 2px) * 6.2);
+  margin-left: calc(var(--w, 2px) * -2.8);
+  border-radius: 50% 50% 48% 48% / 58% 58% 42% 42%;
   background:
-    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 42%),
-    radial-gradient(circle at 62% 72%, rgba(24, 46, 60, 0.32) 0%, rgba(24, 46, 60, 0) 62%),
-    linear-gradient(180deg, rgba(232, 247, 255, 0.72) 0%, rgba(176, 210, 232, 0.5) 100%);
-  box-shadow: 0 1px 3px rgba(2, 12, 20, 0.28);
+    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 1) 0 14%, rgba(255, 255, 255, 0) 48%),
+    radial-gradient(circle at 68% 76%, rgba(6, 24, 36, 0.5) 0 22%, rgba(6, 24, 36, 0) 68%),
+    linear-gradient(180deg, rgba(244, 253, 255, 0.95) 0%, rgba(170, 210, 234, 0.8) 100%);
+  box-shadow:
+    0 1px 4px rgba(2, 12, 20, 0.45),
+    0 0 5px rgba(236, 250, 255, 0.55),
+    0 0 16px rgba(200, 232, 255, 0.34);
+  /* 珠子单独再压一道横向光，边缘才圆得起来 */
+  filter: blur(0.3px);
+}
+
+/* ---------- 背景里那几道：一直慢慢地淌，反复循环 ---------- */
+.hp-drip--hero {
+  height: var(--len, 120px);
+  transform-origin: 50% 100%;
+  animation: hp-drip var(--dur, 9s) cubic-bezier(0.42, 0.02, 0.58, 0.98) var(--delay, 2s) infinite;
 }
 
 @keyframes hp-drip {
   0% {
     opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg)) scaleY(0.45);
+    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
   }
   12% {
-    opacity: 0.92;
-    transform: translate3d(0, calc(var(--travel, 42vh) * 0.08), 0) rotate(var(--rot, 0deg)) scaleY(0.86);
+    opacity: 0.85;
+    transform: translate3d(0, calc(var(--travel, 42vh) * 0.08), 0) rotate(var(--rot, 0deg));
   }
   45% {
-    opacity: 0.8;
-    transform: translate3d(calc(var(--drift, 8px) * 0.35), calc(var(--travel, 42vh) * 0.44), 0) rotate(var(--rot, 0deg)) scaleY(1);
+    opacity: 0.74;
+    transform: translate3d(calc(var(--drift, 8px) * 0.35), calc(var(--travel, 42vh) * 0.44), 0) rotate(var(--rot, 0deg));
   }
   76% {
-    opacity: 0.62;
-    transform: translate3d(calc(var(--drift, 8px) * 0.78), calc(var(--travel, 42vh) * 0.78), 0) rotate(var(--rot, 0deg)) scaleY(1.08);
+    opacity: 0.56;
+    transform: translate3d(calc(var(--drift, 8px) * 0.78), calc(var(--travel, 42vh) * 0.78), 0) rotate(var(--rot, 0deg));
   }
   100% {
     opacity: 0;
-    transform: translate3d(var(--drift, 8px), var(--travel, 42vh), 0) rotate(var(--rot, 0deg)) scaleY(1.16);
+    transform: translate3d(var(--drift, 8px), var(--travel, 42vh), 0) rotate(var(--rot, 0deg));
+  }
+}
+
+/* ---------- 字上的水 ---------- */
+/* 笔尖刚擦过就在那一点攒出一颗水珠，挂不住之后顺着玻璃往下滑。
+   水痕不是“整条平移”，而是从起滴点一点点长高、水珠始终挂在末端 ——
+   这样珠子一直是圆的，拖尾也才是真的从字上拖出来的。 */
+.hp-drip--word {
+  top: 0;
+  height: 0;
+  /* 绝对笔直的水痕一眼假，给一点倾角 */
+  transform: rotate(var(--rot, 0deg));
+  transform-origin: 50% 0;
+}
+
+.hp-word.is-ready .hp-drip--word {
+  animation: hp-drip-flow var(--dur, 3.4s) cubic-bezier(0.42, 0.03, 0.6, 1) var(--delay, 1200ms) 1 forwards;
+}
+
+@keyframes hp-drip-flow {
+  0% {
+    height: 0;
+    opacity: 0;
+  }
+  /* 先在笔画上鼓出一颗珠，往下一沉 */
+  7% {
+    height: calc(var(--travel) * 0.03);
+    opacity: 0.94;
+  }
+  /* 挂不住了，开始滑：起步慢，越走越快 */
+  22% {
+    height: calc(var(--travel) * 0.1);
+    opacity: 0.92;
+  }
+  55% {
+    height: calc(var(--travel) * 0.44);
+    opacity: 0.8;
+  }
+  84% {
+    height: calc(var(--travel) * 0.8);
+    opacity: 0.55;
+  }
+  100% {
+    height: var(--travel);
+    opacity: 0;
   }
 }
 
 /* 系统里关了动效：不做擦拭、不淌水，直接给擦干净的字 */
 @media (prefers-reduced-motion: reduce) {
-  .hp-dab,
-  .hp-word.is-ready .hp-dab {
+  .hp-seg,
+  .hp-word.is-ready .hp-seg {
     animation: none;
     opacity: 1;
-    transform: none;
   }
 
   .hp-settle {
