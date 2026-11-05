@@ -35,16 +35,30 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：一笔把 Lei 擦出来，字里透出来的就是底图 ---------- */
+/* ---------- 首屏字标：玻璃上一笔一笔擦出 Lei，字里透出来的就是底图 ---------- */
 const WORD = 'Lei'
 
-// 底图（插画）的宽高比，用来按首屏尺寸算 cover
+// 底图（插画）的宽高比，用来按字标尺寸算取景
 const ART_RATIO = 1000 / 1213
-// 底图宽度 ≈ 字的宽度：两个人物正好落在三个字母里
+// 底图宽度 ≈ 字标宽度：两个人物正好落在三个字母里
 const ART_SPAN = 0.78
-// 底图落在字里的对焦点（0~1），正对两张脸
+// 底图落在字标里的对焦点（0~1），正对两张脸
 const ART_FOCUS_X = 0.5
 const ART_FOCUS_Y = 0.45
+
+// 擦拭节奏，和 CSS 里的 hp-sweep 对齐
+const SWEEP_STEP = 820 // 写完一个字母隔多久写下一个
+const SWEEP_FIRST = 240 // 第一个字母起手
+
+// 玻璃上淌下来的水：粗细、长短、快慢、倾斜都错开，看着才像真的在淌而不是一排冰柱
+const DRIPS = [
+  { left: '18%', top: '24%', w: 2.0, len: 150, dur: '11s', delay: '1.1s', drift: '16px', travel: '44vh', rot: '-2.5deg' },
+  { left: '31%', top: '36%', w: 2.6, len: 92, dur: '9.6s', delay: '4.6s', drift: '-11px', travel: '36vh', rot: '1.8deg' },
+  { left: '44%', top: '20%', w: 1.5, len: 118, dur: '12.4s', delay: '2.6s', drift: '9px', travel: '50vh', rot: '2.6deg' },
+  { left: '63%', top: '30%', w: 2.2, len: 186, dur: '13s', delay: '6.2s', drift: '-16px', travel: '40vh', rot: '-1.6deg' },
+  { left: '72%', top: '22%', w: 1.6, len: 76, dur: '10.2s', delay: '3.4s', drift: '12px', travel: '46vh', rot: '-3deg' },
+  { left: '85%', top: '34%', w: 2.4, len: 128, dur: '11.6s', delay: '8.1s', drift: '-7px', travel: '38vh', rot: '2deg' },
+]
 
 // 鼠标扫过时，整块字软软弹一下
 const JELLY_TAP: Keyframe[] = [
@@ -61,22 +75,25 @@ function WipeWord() {
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap) return
+    const letters = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-letter'))
 
-    // 把整屏那张底图先铺满首屏，再用 background-clip: text 裁进字里。
-    // 所以每个字母里露出来的，就是它本该盖住的那一块，几个字母拼起来是一整张图。
+    // 把整张底图按“整块字标”的位置铺好，再分别裁进每个字母里：
+    // 每个字母拿到的就是它本该盖住的那一块，几个字母拼起来仍是一整张图。
     const fit = () => {
-      const r = wrap.getBoundingClientRect()
-      if (r.width < 1 || r.height < 1) return
-      // 底图只在这块字里可见，所以尺寸按字宽算：人物正好横跨整块字
+      const wr = wrap.getBoundingClientRect()
+      if (wr.width < 1 || wr.height < 1) return
       // 手机上字窄，取景再收紧一点，字母里才看得清人
-      const span = r.width < 420 ? 0.6 : ART_SPAN
-      const artW = r.width / span
+      const span = wr.width < 420 ? 0.66 : ART_SPAN
+      const artW = wr.width / span
       const artH = artW / ART_RATIO
-      // 让对焦点落在字框中心
-      const left = r.width * 0.5 - artW * ART_FOCUS_X
-      const top = r.height * 0.5 - artH * ART_FOCUS_Y
-      wrap.style.backgroundSize = `${artW.toFixed(1)}px ${artH.toFixed(1)}px`
-      wrap.style.backgroundPosition = `${left.toFixed(1)}px ${top.toFixed(1)}px`
+      const left = wr.width * 0.5 - artW * ART_FOCUS_X
+      const top = wr.height * 0.5 - artH * ART_FOCUS_Y
+      letters.forEach((el) => {
+        const r = el.getBoundingClientRect()
+        const dx = r.left - wr.left
+        el.style.backgroundSize = `${artW.toFixed(1)}px ${artH.toFixed(1)}px`
+        el.style.backgroundPosition = `${(left - dx).toFixed(1)}px ${top.toFixed(1)}px`
+      })
     }
 
     fit()
@@ -85,8 +102,8 @@ function WipeWord() {
     if (document.fonts) document.fonts.ready.then(fit).catch(() => {})
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    // 擦完之前不响应鼠标
-    const readyAt = performance.now() + 3900
+    // 三个字母擦完之前不响应鼠标
+    const readyAt = performance.now() + SWEEP_FIRST + SWEEP_STEP * (WORD.length - 1) + 900 + 300
     const onEnter = () => {
       if (reduce || performance.now() < readyAt) return
       wrap.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
@@ -101,7 +118,16 @@ function WipeWord() {
 
   return (
     <h1 className="hp-word" ref={wrapRef} data-word={WORD} aria-label={WORD}>
-      {WORD}
+        {WORD.split('').map((ch, i) => (
+          <span
+            key={i}
+            className="hp-letter"
+            aria-hidden="true"
+            style={{ '--i': i } as React.CSSProperties}
+          >
+            {ch}
+          </span>
+        ))}
     </h1>
   )
 }
@@ -256,6 +282,27 @@ export default function HomePage() {
       </header>
 
       <section className="hp-hero">
+        <div className="hp-drips" aria-hidden="true">
+          {DRIPS.map((d, i) => (
+            <span
+              key={i}
+              className="hp-drip"
+              style={
+                {
+                  left: d.left,
+                  top: d.top,
+                  '--w': `${d.w}px`,
+                  '--len': `${d.len}px`,
+                  '--dur': d.dur,
+                  '--delay': d.delay,
+                  '--drift': d.drift,
+                  '--travel': d.travel,
+                  '--rot': d.rot,
+                } as React.CSSProperties
+              }
+            />
+          ))}
+        </div>
         <div className="hp-hero-scrim" aria-hidden="true" />
         <div className="hp-wrap hp-hero-inner">
           <div className="hp-hero-top">
