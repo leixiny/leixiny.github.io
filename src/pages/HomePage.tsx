@@ -35,88 +35,48 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
-/* ---------- 首屏字标：leixiny 一个个从屏幕右侧滚进来，撞得前一个抖，自己也在抖 ---------- */
-const WORD = 'leixiny'
-const LETTER_START = 160 // 第一个字母之前留一点空
-const SLAM = 0.16 // 撞上去压进去的深度（em）
-const SHAKE_MS = 400 // 撞完自己颤多久
-const KNOCK = 0.18 // 被撞的字母往左退多深（em）
-const NEXT_AT = 0.45 // 下一个字母在前一个颤到 45% 时就起步，两段时间有重合
-const GAP_MS = 20 // 起步点之后再补的一点呼吸
+/* ---------- 首屏字标：LuMu，被一笔擦出来 ---------- */
+const WORD = 'LuMu'
 
-type SlamSpec = { startEm: number; rollMs: number; shakeMs: number }
+// 与 CSS 里的 hp-sweep / hp-sheen 保持一致
+const WIPE_DELAY = 260
+const WIPE_DURATION = 1400
+const WIPE_EASE = [0.25, 0.35, 0.35, 1] as const
+// 笔触前沿蒙版 240% 宽，边缘在蒙版 60% 处；位移 104% → 24% 扫过整屏
+const MASK_SCALE = 2.4
+const MASK_EDGE = 0.6
+const WIPE_FROM = 1.04
+const WIPE_TO = 0.24
 
-// 一个字母的完整动作：从屏幕右侧滚进来 → 一路摆正 → 撞上去压扁 → 自己颤到停
-function slamFrames({ startEm, rollMs, shakeMs }: SlamSpec): Keyframe[] {
-  const total = rollMs + shakeMs
-  const at = rollMs / total // 撞击点在整体进度上的位置
-  const r = (p: number) => +(at * p).toFixed(4) // 滚动段内部比例 → 整体比例
-  const s = (p: number) => +(at + (1 - at) * p).toFixed(4) // 颤动段内部比例 → 整体比例
-  const pose = (amp: number, sx: number, sy: number) =>
-    `translateX(${amp.toFixed(4)}em) rotate(0deg) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`
-  return [
-    // 滚动段：整块滚过来，竖向几乎不动（贴地滚，不从高处落）
-    {
-      transform: `translate(${startEm.toFixed(3)}em, ${(-startEm * 0.015).toFixed(3)}em) rotate(-128deg) scale(0.9, 0.97)`,
-      opacity: 0,
-      offset: 0,
-      easing: 'cubic-bezier(.42,0,.9,.42)',
-    },
-    {
-      transform: `translate(${(startEm * 0.8).toFixed(3)}em, ${(-startEm * 0.012).toFixed(3)}em) rotate(-104deg) scale(0.9, 0.98)`,
-      opacity: 0.45,
-      offset: r(0.14),
-    },
-    {
-      transform: `translate(${(startEm * 0.45).toFixed(3)}em, ${(-startEm * 0.008).toFixed(3)}em) rotate(-72deg) scale(0.91, 0.99)`,
-      opacity: 0.9,
-      offset: r(0.38),
-    },
-    {
-      transform: `translate(${(startEm * 0.16).toFixed(3)}em, 0em) rotate(-30deg) scale(0.92, 1)`,
-      opacity: 1,
-      offset: r(0.68),
-    },
-    // 撞上去：横向压扁、撞进前一个字母一点点
-    { transform: pose(-SLAM, 0.68, 1.34), opacity: 1, offset: at, easing: 'cubic-bezier(.14,.94,.3,1.1)' },
-    { transform: pose(-SLAM * 0.9, 0.75, 1.27), opacity: 1, offset: s(0.06) },
-    // 撞人的那个自己也来回颤，幅度一路衰减
-    { transform: pose(SLAM * 0.72, 1.24, 0.79), opacity: 1, offset: s(0.18), easing: 'cubic-bezier(.3,.9,.4,1)' },
-    { transform: pose(-SLAM * 0.58, 0.83, 1.16), opacity: 1, offset: s(0.38), easing: 'cubic-bezier(.3,.9,.4,1)' },
-    { transform: pose(SLAM * 0.42, 1.13, 0.89), opacity: 1, offset: s(0.56), easing: 'cubic-bezier(.35,.9,.45,1)' },
-    { transform: pose(-SLAM * 0.26, 0.93, 1.07), opacity: 1, offset: s(0.72) },
-    { transform: pose(SLAM * 0.15, 1.045, 0.965), opacity: 1, offset: s(0.86) },
-    { transform: pose(-SLAM * 0.07, 0.98, 1.02), opacity: 1, offset: s(0.94) },
-    // 末帧必须显式给 opacity，否则会回落到 CSS 里的 0
-    { transform: 'translateX(0) rotate(0deg) scale(1, 1)', opacity: 1, offset: 1 },
-  ]
-}
+// 蒙版位移 → 笔触前沿在屏幕上的横向位置（以屏宽为 1）
+const edgeAt = (position: number) => (1 - MASK_SCALE) * position + MASK_SCALE * MASK_EDGE
+// 反过来：前沿扫到 x 时，蒙版位移走到哪儿了
+const positionAt = (x: number) => (edgeAt(0) - x) / (MASK_SCALE - 1)
 
-// 被撞的那个字母：被顶得往左退一格、压扁，再一路颤着回位（叠在自己的入场动画上）
-function knockFrames(amp: number): Keyframe[] {
-  return [
-    { transform: 'translateX(0) scale(1, 1)', offset: 0 },
-    {
-      transform: `translateX(${-amp}em) scale(${1 + amp * 1.7}, ${1 - amp * 1.05})`,
-      offset: 0.16,
-      easing: 'cubic-bezier(.2,.8,.4,1)',
-    },
-    {
-      transform: `translateX(${amp * 0.58}em) scale(${1 - amp * 0.9}, ${1 + amp * 0.6})`,
-      offset: 0.38,
-      easing: 'cubic-bezier(.3,.9,.4,1)',
-    },
-    {
-      transform: `translateX(${-amp * 0.32}em) scale(${1 + amp * 0.5}, ${1 - amp * 0.34})`,
-      offset: 0.58,
-      easing: 'cubic-bezier(.3,.9,.4,1)',
-    },
-    {
-      transform: `translateX(${amp * 0.16}em) scale(${1 - amp * 0.24}, ${1 + amp * 0.18})`,
-      offset: 0.76,
-    },
-    { transform: 'translateX(0) scale(1, 1)', offset: 1 },
-  ]
+// 缓动曲线采样表：把「进度」反查成「时间」，字母才能踩在笔触路过它的那一刻
+const EASE_TABLE = Array.from({ length: 97 }, (_, i) => {
+  const t = i / 96
+  const [x1, y1, x2, y2] = WIPE_EASE
+  const bx = 3 * (x2 - x1) - 3 * x1
+  const ax = 1 - 3 * x1 - bx
+  const by = 3 * (y2 - y1) - 3 * y1
+  const ay = 1 - 3 * y1 - by
+  const x = ax * t ** 3 + bx * t ** 2 + 3 * x1 * t
+  const y = ay * t ** 3 + by * t ** 2 + 3 * y1 * t
+  return { x, y }
+})
+
+function timeAt(progress: number) {
+  const p = Math.min(1, Math.max(0, progress))
+  for (let i = 1; i < EASE_TABLE.length; i += 1) {
+    const a = EASE_TABLE[i - 1]
+    const b = EASE_TABLE[i]
+    if (p <= b.y) {
+      const k = b.y === a.y ? 0 : (p - a.y) / (b.y - a.y)
+      return a.x + (b.x - a.x) * k
+    }
+  }
+  return 1
 }
 
 // 每个字母下缘的压深用它自己那一端的颜色，而不是一律压黑，果冻才有颜色
@@ -127,11 +87,26 @@ function shadeAt(t: number) {
   return SHADE_BLUE.map((b, k) => Math.round(b + (SHADE_PINK[k] - b) * t)).join(', ')
 }
 
-// 每个字母字形自己占多高（em）：高光与沉底要贴着字形铺，不能按行框均分，
-// 否则光带会落在字形外面的空白里，字就显得平。
-const GLYPH_H: Record<string, number> = { l: 0.813, e: 0.576, i: 0.798, x: 0.547, n: 0.561, y: 0.813 }
-// 字形下缘到行框底部的距离（em），背景要以基线为底边对齐
-const GLYPH_DESC: Record<string, number> = { y: 0.266 }
+// 每个字母字形自己占多高（em）：高光与沉底要贴着字形铺，不能按行框均分
+const GLYPH_H: Record<string, number> = { L: 0.723, u: 0.532, M: 0.723 }
+
+// 字母被擦过的那一下：从雾里的虚影收成实体（糊 → 清）
+const LETTER_FILTER =
+  'saturate(1.28) drop-shadow(0 2px 0 rgba(6, 20, 46, 0.44)) drop-shadow(0 12px 22px rgba(3, 12, 26, 0.5)) drop-shadow(0 0 22px rgba(150, 214, 255, 0.16))'
+
+const WIPE_POP: Keyframe[] = [
+  {
+    filter: `blur(5px) saturate(1.1) drop-shadow(0 2px 0 rgba(6, 20, 46, 0.3)) drop-shadow(0 10px 20px rgba(3, 12, 26, 0.4)) drop-shadow(0 0 30px rgba(190, 238, 255, 0.5))`,
+    transform: 'scale(1.035, 0.99)',
+    offset: 0,
+  },
+  {
+    filter: `blur(1.2px) saturate(1.24) drop-shadow(0 2px 0 rgba(6, 20, 46, 0.4)) drop-shadow(0 12px 22px rgba(3, 12, 26, 0.46)) drop-shadow(0 0 24px rgba(170, 226, 255, 0.28))`,
+    transform: 'scale(1.01, 0.997)',
+    offset: 0.45,
+  },
+  { filter: LETTER_FILTER, transform: 'scale(1, 1)', offset: 1 },
+]
 
 const JELLY_TAP: Keyframe[] = [
   { transform: 'translateY(0) scale(1, 1)' },
@@ -147,51 +122,39 @@ function JellyWord() {
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
     const letters = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-letter'))
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      letters.forEach((el) => { el.style.opacity = '1' })
-      return
-    }
+    const hero = wrap.closest('.hp-hero') as HTMLElement | null
+    const heroLeft = hero ? hero.getBoundingClientRect().left : 0
+    const width = (hero ? hero.clientWidth : window.innerWidth) || 1
 
-    // 滚一个、撞一下、两个一起颤；下个字母不等它颤完就起步，两段时间有重合
-    const fs = parseFloat(getComputedStyle(wrap).fontSize) || 100
-    const vw = window.innerWidth
-    let cursor = LETTER_START
-    let endAt = LETTER_START
-    letters.forEach((el, i) => {
+    // 笔触前沿扫到哪个字母，那个字母就在那一刻从雾里浮出来
+    letters.forEach((el) => {
       const r = el.getBoundingClientRect()
-      // 起手位置：整块停在屏幕右边缘外面（再留 18px 余量）
-      const distPx = vw - r.left + 18
-      const startEm = Math.max(1.4, distPx / fs)
-      // 匀速滚：按像素距离给时长，远了多花点时间，但别慢下来
-      const rollMs = Math.round(Math.min(560, Math.max(300, distPx * 0.42)))
-      const total = rollMs + SHAKE_MS
-      el.animate(slamFrames({ startEm, rollMs, shakeMs: SHAKE_MS }), {
-        duration: total,
-        delay: cursor,
-        easing: 'linear',
-        fill: 'both',
-      })
+      const cx = (r.left - heroLeft) / width
+      const p = Math.min(WIPE_FROM, Math.max(WIPE_TO, positionAt(cx)))
+      const progress = (WIPE_FROM - p) / (WIPE_FROM - WIPE_TO)
+      const at = WIPE_DELAY + WIPE_DURATION * timeAt(progress) * 0.97
 
-      const impact = cursor + rollMs
-      // 被撞的前一个字母：跟着一起抖（叠在它已经落定的状态上）
-      if (i > 0) {
-        letters[i - 1].animate(knockFrames(KNOCK), {
-          duration: Math.round(SHAKE_MS * 0.95),
-          delay: impact,
-          easing: 'linear',
-          composite: 'add',
-        })
-      }
-      // 下一个字母在颤动还没结束时就起步
-      cursor = impact + SHAKE_MS * NEXT_AT + GAP_MS
-      endAt = Math.max(endAt, cursor + total - rollMs * 0.15)
+      // 透明度单独一条（带 fill），动画结束后仍保留，悬停的 filter 才不被顶掉
+      el.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 200,
+        delay: at,
+        fill: 'both',
+        easing: 'linear',
+      })
+      el.animate(WIPE_POP, {
+        duration: 470,
+        delay: at,
+        easing: 'cubic-bezier(.2,.7,.3,1)',
+      })
     })
 
-    // 鼠标扫过某个字母，它就软软地弹一下
-    const started = performance.now()
+    // 鼠标扫过某个字母，它就软软地弹一下（擦拭期间不响应）
+    const readyAt = performance.now() + WIPE_DELAY + WIPE_DURATION + 300
     const onEnter = (el: HTMLElement) => () => {
-      if (performance.now() - started < endAt + 400) return
+      if (performance.now() < readyAt) return
       el.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
     }
     const handlers = letters.map((el) => {
@@ -201,6 +164,8 @@ function JellyWord() {
     })
     return () => handlers.forEach(([el, fn]) => el.removeEventListener('pointerenter', fn))
   }, [])
+
+  const n = WORD.length - 1
 
   return (
     <h1 className="hp-word" ref={wrapRef} aria-label={WORD}>
@@ -212,10 +177,9 @@ function JellyWord() {
           aria-hidden="true"
           style={
             {
-              '--i': i,
-              '--lm-shade': shadeAt(i / (WORD.length - 1)),
-              '--lm-gh': GLYPH_H[ch] ?? 0.8,
-              '--lm-gd': GLYPH_DESC[ch] ?? 0.232,
+              '--bp': `${(i / n) * 100}%`,
+              '--lm-shade': shadeAt(i / n),
+              '--lm-gh': GLYPH_H[ch] ?? 0.72,
             } as React.CSSProperties
           }
         >
@@ -376,6 +340,9 @@ export default function HomePage() {
       </header>
 
       <section className="hp-hero">
+        <div className="hp-hero-reveal" aria-hidden="true">
+          <div className="hp-hero-window" />
+        </div>
         <div className="hp-hero-scrim" aria-hidden="true" />
         <div className="hp-hero-glow" aria-hidden="true" />
         <div className="hp-wrap hp-hero-inner">
