@@ -1,13 +1,23 @@
 /* ==========================================================================
-   作品集 · 首页里的一条长串
-   不再一屏一件地翻，所有作品顺着页面往下排，尺寸由右上角那根滑杆统一调。
-   4 件作品只走 1 / 2 / 4 列，怎么调都不留一个孤零零的尾巴。
+   作品集 · 一个独立的横向板块
+   不翻页、不分格：所有作品排在一条横轨上，拖着走，走多远由内容决定。
+   尺寸由右上角那根滑杆统一调，底下那根细线是这条轨道的进度条。
    ========================================================================== */
 
 .hp-works {
   padding-block: clamp(56px, 7vw, 104px);
+  /* 独立板块：技能条是浅灰、下面是黑块，这里用白底夹在中间，
+     上下各一条细线，一眼能看出是一整块 */
   background: var(--rp-paper);
   border-top: 1px solid var(--rp-line);
+  border-bottom: 1px solid var(--rp-line);
+}
+
+.hpw-lead {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--rp-mute);
 }
 
 .hpw-head {
@@ -91,19 +101,65 @@
 }
 
 /* ---------- 长串 ---------- */
-.hpw-grid {
-  margin-top: clamp(26px, 3.4vw, 48px);
-  display: grid;
-  grid-template-columns: repeat(var(--hpw-cols, 1), minmax(0, 1fr));
+/* ---------- 横轨 ---------- */
+/* 整条轨道铺满视口宽，两端留出跟正文一样的边距；
+   滚动条藏掉，改用底下那根细线，画面里就只剩作品本身 */
+.hpw-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: var(--hpw-gap, 26px);
-  align-items: start;
+  width: 100%;
+  margin-top: clamp(26px, 3.4vw, 48px);
+  padding-inline: clamp(20px, 4.5vw, 72px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  outline: none;
+  will-change: scroll-position;
+  /* 两侧化开：告诉人这条还在往外延伸；走到头就收干净，不切卡片 */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--fade-l, 0px),
+    #000 calc(100% - var(--fade-r, 0px)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--fade-l, 0px),
+    #000 calc(100% - var(--fade-r, 0px)),
+    transparent 100%
+  );
+}
+
+.hpw-track::-webkit-scrollbar {
+  display: none;
+}
+
+.hpw-track.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.hpw-track:focus-visible {
+  outline: 2px solid rgba(10, 10, 11, 0.22);
+  outline-offset: -2px;
 }
 
 .hpw-item {
+  /* 宽度由滑杆给，永远不换行 —— 这就是「不翻页」 */
+  flex: 0 0 var(--hpw-w, 620px);
   display: grid;
+  align-content: start;
   gap: 10px;
-  /* 一张比一张晚一点出来，看着像一串往下淌 */
-  transition-delay: calc(var(--hpw-i, 0) * 70ms);
+  /* 一张比一张晚一点出来，像一件件被摆上去 */
+  transition-delay: calc(var(--hpw-i, 0) * 60ms);
 }
 
 .hpw-shot {
@@ -159,8 +215,9 @@
 }
 
 .hpw-shot:focus-visible {
+  /* 轨道纵向是裁切的，焦点环往里收，不然会被切掉 */
   outline: 2px solid var(--rp-ink);
-  outline-offset: 3px;
+  outline-offset: -3px;
 }
 
 .hpw-meta {
@@ -182,8 +239,11 @@
   flex: 1;
   margin: 0;
   font-size: clamp(16px, 1.4vw, 20px);
+  line-height: 1.25;
   font-weight: 700;
   letter-spacing: -0.01em;
+  /* 标题占两行的高度：一行两行都对齐，摘要才不会一高一低 */
+  min-height: 2.5em;
 }
 
 .hpw-year {
@@ -194,10 +254,83 @@
 
 .hpw-sum {
   margin: 0;
-  max-width: 66ch;
   font-size: 14px;
   line-height: 1.65;
   color: var(--rp-mute);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(2 * 1.65em);
+}
+
+/* ---------- 轨道进度条 ---------- */
+.hpw-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: clamp(20px, 2.2vw, 30px);
+}
+
+.hpw-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--rp-faint);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hpw-hint i {
+  font-style: normal;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.hpw-scrub {
+  position: relative;
+  flex: 1 1 auto;
+  height: 24px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.hpw-scrub::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--rp-line-2);
+}
+
+.hpw-thumb {
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 999px;
+  background: var(--rp-ink);
+  transition: height 0.2s var(--rp-ease);
+}
+
+.hpw-scrub:hover .hpw-thumb {
+  height: 5px;
+  margin-top: -2.5px;
+}
+
+.hpw-total {
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--rp-mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .hpw-skeleton {
@@ -366,6 +499,23 @@
   .hpw-size {
     width: 100%;
     padding-bottom: 0;
+  }
+
+  .hpw-hint {
+    display: none;
+  }
+
+  /* 窄屏一行放一张，标题不再需要预留两行 */
+  .hpw-meta h3 {
+    min-height: 0;
+  }
+
+  .hpw-sum {
+    min-height: 0;
+  }
+
+  .hpw-foot {
+    gap: 12px;
   }
 
   .hpw-range {

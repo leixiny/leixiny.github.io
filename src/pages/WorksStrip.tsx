@@ -12,20 +12,12 @@ interface Project {
 
 const baseUrl = import.meta.env.BASE_URL
 
-// 卡片宽度的两头：最小是一列能并四五张，最大是整幅铺满
+// 卡片宽度的两头：最小一屏能看四五件，最大一件几乎铺满
 const MIN_W = 280
-const MAX_W = 920
+const MAX_W = 900
 const SIZE_KEY = 'hp:works:size'
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
-
-/** 只取能整除作品数的列数：4 件作品就只走 1 / 2 / 4 列，不留一个孤零零的尾巴 */
-function columnsFor(count: number, raw: number) {
-  const fit = Math.max(1, Math.floor(raw))
-  if (count <= 1) return 1
-  const divis = Array.from({ length: count }, (_, i) => i + 1).filter((d) => count % d === 0 && d <= fit)
-  return divis.length ? divis[divis.length - 1] : 1
-}
 
 const yearOf = (ts: string) => (ts || '').slice(0, 4)
 
@@ -36,10 +28,17 @@ export default function WorksStrip() {
     const saved = Number(window.localStorage.getItem(SIZE_KEY))
     return Number.isFinite(saved) && saved >= MIN_W ? clamp(saved, MIN_W, MAX_W) : 620
   })
-  const [cols, setCols] = useState(1)
   const [open, setOpen] = useState<number | null>(null)
 
-  const gridRef = useRef<HTMLDivElement>(null)
+  // 滚动条：pos 是进度，size 是可视比例（拇指长度）
+  const [bar, setBar] = useState({ pos: 0, size: 1 })
+  // 实际落地的卡片宽（小屏会被视口压窄），滑杆旁边显示的是它
+  const [cardW, setCardW] = useState(size)
+  const [edge, setEdge] = useState({ start: true, end: true })
+  const [dragging, setDragging] = useState(false)
+
+  const trackRef = useRef<HTMLDivElement>(null)
+  const scrubRef = useRef<HTMLDivElement>(null)
 
   /* ---------- 数据 ---------- */
   useEffect(() => {
@@ -60,21 +59,53 @@ export default function WorksStrip() {
     }
   }, [])
 
-  /* ---------- 尺寸：一列能排几张，按容器宽度和想要的卡片宽算 ---------- */
-  useEffect(() => {
-    const el = gridRef.current
-    if (!el || state !== 'ready') return
-    const measure = () => {
-      const w = el.clientWidth
-      const gap = w < 640 ? 14 : 26
-      el.style.setProperty('--hpw-gap', `${gap}px`)
-      setCols(columnsFor(projects.length, (w + gap) / (size + gap)))
+  /* ---------- 滚动位置 → 进度条 ---------- */
+  const sync = useCallback(() => {
+    const el = trackRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    if (max <= 4) {
+      setBar({ pos: 0, size: 1 })
+      setEdge({ start: true, end: true })
+      return
     }
+    setBar({
+      pos: el.scrollLeft / max,
+      size: Math.max(0.12, el.clientWidth / el.scrollWidth),
+    })
+    setEdge({ start: el.scrollLeft <= 2, end: el.scrollLeft >= max - 2 })
+  }, [])
+
+  /* ---------- 尺寸：卡片宽 = 滑杆值，但不超过一屏 ---------- */
+  const measure = useCallback(() => {
+    const el = trackRef.current
+    if (!el) return
+    const gut = parseFloat(getComputedStyle(el).paddingLeft) || 0
+    const viewport = Math.max(240, el.clientWidth - gut * 2)
+    const gap = window.innerWidth < 760 ? 14 : 26
+    // 窄屏再收一点，让下一张露出个边 —— 不然满屏一张，看不出还能横向滚
+    const peek = window.innerWidth < 760 ? 46 : 0
+    const w = Math.max(200, Math.min(size, viewport - peek))
+    el.style.setProperty('--hpw-w', `${Math.round(w)}px`)
+    el.style.setProperty('--hpw-gap', `${gap}px`)
+    setCardW(Math.round(w))
+    sync()
+  }, [size, sync])
+
+  useEffect(() => {
+    if (state !== 'ready') return
     measure()
+    const el = trackRef.current
+    if (!el) return
     const ro = new ResizeObserver(measure)
     ro.observe(el)
-    return () => ro.disconnect()
-  }, [size, projects.length, state])
+    // 字体、图片落位后 scrollWidth 会再变一次
+    const t = window.setTimeout(sync, 200)
+    return () => {
+      ro.disconnect()
+      window.clearTimeout(t)
+    }
+  }, [state, measure, sync, projects.length])
 
   useEffect(() => {
     window.localStorage.setItem(SIZE_KEY, String(size))
@@ -102,7 +133,70 @@ export default function WorksStrip() {
     )
     els.forEach((el) => io.observe(el))
     return () => io.disconnect()
-  }, [state, cols])
+  }, [state])
+
+  /* ---------- 按住拖动：像拖一张长图，而不是翻页 ---------- */
+  const drag = useRef({ down: false, x: 0, left: 0, moved: false })
+  const blockClick = useRef(false)
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return
+    const el = trackRef.current
+    if (!el) return
+    drag.current = { down: true, x: e.clientX, left: el.scrollLeft, moved: false }
+    el.setPointerCapture(e.pointerId)
+    // 点在空白处时把焦点收到轨道上，之后就能用左右方向键翻着看
+    if (e.target === e.currentTarget) el.focus({ preventScroll: true })
+  }
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    const el = trackRef.current
+    if (!d.down || !el) return
+    const dx = e.clientX - d.x
+    if (!d.moved && Math.abs(dx) > 4) {
+      d.moved = true
+      setDragging(true)
+    }
+    if (d.moved) el.scrollLeft = d.left - dx
+  }
+
+  const endDrag = () => {
+    const d = drag.current
+    if (!d.down) return
+    d.down = false
+    if (d.moved) {
+      blockClick.current = true
+      window.setTimeout(() => {
+        blockClick.current = false
+      }, 80)
+    }
+    setDragging(false)
+  }
+
+  /* ---------- 底下那根细滚动条：点哪滚哪 ---------- */
+  const scrubDrag = useRef(false)
+
+  const seek = (clientX: number) => {
+    const el = trackRef.current
+    const rail = scrubRef.current
+    if (!el || !rail) return
+    const r = rail.getBoundingClientRect()
+    if (!r.width) return
+    const t = clamp((clientX - r.left) / r.width, 0, 1)
+    el.scrollLeft = t * (el.scrollWidth - el.clientWidth)
+  }
+
+  /* ---------- 键盘：焦点在轨道上时左右方向键滚动 ---------- */
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    if ((e.target as HTMLElement).tagName === 'INPUT') return
+    const el = trackRef.current
+    if (!el) return
+    e.preventDefault()
+    const step = el.clientWidth * 0.7
+    el.scrollTo({ left: el.scrollLeft + (e.key === 'ArrowRight' ? step : -step), behavior: 'smooth' })
+  }
 
   /* ---------- 全屏看清一张：滚轮缩放、放大后拖动 ---------- */
   const imgRef = useRef<HTMLImageElement>(null)
@@ -174,6 +268,8 @@ export default function WorksStrip() {
   }, [open, projects.length, zoomAt])
 
   const active = open == null ? null : projects[open]
+  // 两侧化开的宽度：要盖住「露出半张」的那一段，文字才不会硬生生被切
+  const fade = 56
 
   return (
     <section id="works" className="hp-works" aria-label="作品集">
@@ -182,6 +278,7 @@ export default function WorksStrip() {
           <div>
             <p className="hp-sec-label">01 — 作品</p>
             <h2>做过的事，一件接一件</h2>
+            <p className="hpw-lead">一条横着铺开，不翻页，左右拖动看全部。</p>
           </div>
 
           <div className="hpw-size">
@@ -198,50 +295,122 @@ export default function WorksStrip() {
               value={size}
               onChange={(e) => setSize(Number(e.target.value))}
               aria-label="调整作品尺寸"
-              aria-valuetext={`卡片宽 ${size} 像素，每行 ${cols} 件`}
+              aria-valuetext={`卡片宽 ${size} 像素`}
             />
-            <span className="hpw-size-val">{cols} 列</span>
+            <span className="hpw-size-val">{cardW}px</span>
           </div>
         </div>
-
-        {state === 'loading' && <div className="hpw-skeleton" aria-hidden="true" />}
-        {state === 'error' && <p className="hp-note">作品数据加载失败，刷新试试。</p>}
-
-        <div
-          ref={gridRef}
-          className="hpw-grid"
-          style={{ '--hpw-cols': String(cols), '--hpw-gap': '26px' } as CSSProperties}
-        >
-          {projects.map((p, i) => (
-            <article key={p.id} className="hpw-item" data-reveal style={{ '--hpw-i': i } as CSSProperties}>
-              <button
-                type="button"
-                className="hpw-shot"
-                onClick={() => setOpen(i)}
-                aria-label={`放大查看：${p.title}`}
-              >
-                <img
-                  src={`${baseUrl}${p.cover}`}
-                  alt={p.title}
-                  loading={i < 2 ? 'eager' : 'lazy'}
-                  decoding="async"
-                  draggable={false}
-                />
-                <span className="hpw-shot-cue" aria-hidden="true">
-                  ⤢
-                </span>
-              </button>
-
-              <div className="hpw-meta">
-                <span className="hpw-no">{String(i + 1).padStart(2, '0')}</span>
-                <h3>{p.title}</h3>
-                <span className="hpw-year">{yearOf(p.uploadedAt)}</span>
-              </div>
-              <p className="hpw-sum">{p.summary}</p>
-            </article>
-          ))}
-        </div>
       </div>
+
+      {state === 'loading' && (
+        <div className="hp-wrap">
+          <div className="hpw-skeleton" aria-hidden="true" />
+        </div>
+      )}
+      {state === 'error' && (
+        <div className="hp-wrap">
+          <p className="hp-note">作品数据加载失败，刷新试试。</p>
+        </div>
+      )}
+
+      <div
+        ref={trackRef}
+        className={`hpw-track${dragging ? ' is-dragging' : ''}`}
+        style={
+          {
+            '--fade-l': edge.start ? '0px' : `${fade}px`,
+            '--fade-r': edge.end ? '0px' : `${fade}px`,
+          } as CSSProperties
+        }
+        onScroll={sync}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onKeyDown={onKeyDown}
+        onClickCapture={(e) => {
+          if (!blockClick.current) return
+          e.preventDefault()
+          e.stopPropagation()
+          blockClick.current = false
+        }}
+        tabIndex={0}
+        role="group"
+        aria-label="作品列表，左右方向键滚动"
+      >
+        {projects.map((p, i) => (
+          <article
+            key={p.id}
+            className="hpw-item"
+            data-reveal
+            style={{ '--hpw-i': i } as CSSProperties}
+          >
+            <button
+              type="button"
+              className="hpw-shot"
+              onClick={() => setOpen(i)}
+              aria-label={`放大查看：${p.title}`}
+            >
+              <img
+                src={`${baseUrl}${p.cover}`}
+                alt={p.title}
+                loading={i < 3 ? 'eager' : 'lazy'}
+                decoding="async"
+                draggable={false}
+              />
+              <span className="hpw-shot-cue" aria-hidden="true">
+                ⤢
+              </span>
+            </button>
+
+            <div className="hpw-meta">
+              <span className="hpw-no">{String(i + 1).padStart(2, '0')}</span>
+              <h3>{p.title}</h3>
+              <span className="hpw-year">{yearOf(p.uploadedAt)}</span>
+            </div>
+            <p className="hpw-sum">{p.summary}</p>
+          </article>
+        ))}
+      </div>
+
+      {state === 'ready' && (
+        <div className="hp-wrap">
+          <div className="hpw-foot">
+            <span className="hpw-hint" aria-hidden="true">
+              <i>↔</i> 拖动 / 滑动
+            </span>
+            <div
+              ref={scrubRef}
+              className="hpw-scrub"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                scrubDrag.current = true
+                e.currentTarget.setPointerCapture(e.pointerId)
+                seek(e.clientX)
+              }}
+              onPointerMove={(e) => {
+                if (scrubDrag.current) seek(e.clientX)
+              }}
+              onPointerUp={() => {
+                scrubDrag.current = false
+              }}
+              onPointerCancel={() => {
+                scrubDrag.current = false
+              }}
+              aria-hidden="true"
+            >
+              <span
+                className="hpw-thumb"
+                style={{
+                  left: `${bar.pos * (100 - bar.size * 100)}%`,
+                  width: `${bar.size * 100}%`,
+                }}
+              />
+            </div>
+            <span className="hpw-total">共 {projects.length} 件</span>
+          </div>
+        </div>
+      )}
 
       {active && (
         <div className="hpw-view" role="dialog" aria-modal="true" aria-label={active.title}>
