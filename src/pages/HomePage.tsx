@@ -349,6 +349,7 @@ function WipeWord() {
             >
               {/* 擦拭会把水雾推到一处：先摊成一小片水膜，再靠表面张力收成珠 */}
               <i className="hp-pool" />
+              <i className="hp-bead" />
             </span>
           )
         })}
