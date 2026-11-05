@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
+import WorksStrip from './WorksStrip'
 import './HomePage.css'
 
 interface GuestbookRow {
@@ -370,6 +371,18 @@ export default function HomePage() {
   const [notice, setNotice] = useState('')
   const wetRef = useRef<HTMLDivElement>(null)
 
+  // 老的 /works 链接会跳回 /home?to=works：等作品区块量稳定后滚到那里
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).get('to')) {
+      const hash = window.location.hash.split('?')[1]
+      if (!hash || !new URLSearchParams(hash).get('to')) return
+    }
+    const t = window.setTimeout(() => {
+      document.getElementById('works')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 260)
+    return () => window.clearTimeout(t)
+  }, [])
+
   // 水层是满屏固定的（滚动时也一直淌），出了首屏就淡掉、并停掉动画，别让白底页面上挂着一道水
   useEffect(() => {
     const el = wetRef.current
@@ -569,7 +582,7 @@ export default function HomePage() {
           雷馨怡
         </Link>
         <nav className="hp-nav-links" aria-label="页面导航">
-          <Link to="/works">作品集</Link>
+          <button type="button" onClick={() => scrollToSection('works')}>作品集</button>
           <button type="button" onClick={() => scrollToSection('contact')}>联系</button>
           <button type="button" onClick={() => scrollToSection('talk')}>留言</button>
         </nav>
@@ -618,10 +631,10 @@ export default function HomePage() {
             </p>
 
             <div className="hp-hero-actions">
-              <Link className="hp-btn hp-btn--solid" to="/works">
+              <button type="button" className="hp-btn hp-btn--solid" onClick={() => scrollToSection('works')}>
                 查看作品集
                 <i aria-hidden="true">→</i>
-              </Link>
+              </button>
               <Link className="hp-btn hp-btn--ghost" to="/">
                 进入管理系统
               </Link>
@@ -644,10 +657,12 @@ export default function HomePage() {
         </div>
       </section>
 
+      <WorksStrip />
+
       <section id="contact" className="hp-contact">
         <div className="hp-wrap">
           <div className="hp-sec-head" data-reveal>
-            <p className="hp-sec-label">01 — 联系</p>
+            <p className="hp-sec-label">02 — 联系</p>
             <h2>随时可以找我</h2>
           </div>
 
@@ -674,7 +689,7 @@ export default function HomePage() {
       <section id="talk" className="hp-talk">
         <div className="hp-wrap">
           <div className="hp-sec-head" data-reveal>
-            <p className="hp-sec-label">02 — 留言</p>
+            <p className="hp-sec-label">03 — 留言</p>
             <h2>这一页是活的，说句话吧</h2>
           </div>
 
