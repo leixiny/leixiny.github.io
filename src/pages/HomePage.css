@@ -38,6 +38,104 @@
   padding-inline: clamp(20px, 4.5vw, 72px);
 }
 
+
+/* ---------- 作品集独立页：浅绿水底 + 玻璃板 ---------- */
+.home-page.is-works {
+  /* 底片交给伪元素，本体必须透明，不然会把它盖住 */
+  background: transparent;
+  /* 自己开一层层叠上下文：不然 z-index:-1 的水层会沉到 body 底色下面去 */
+  isolation: isolate;
+}
+
+.home-page.is-works::before {
+  content: '';
+  position: fixed;
+  /* 往外多铺一圈：blur 会啃掉边缘，铺满就看不见接缝 */
+  inset: -3%;
+  z-index: -1;
+  background-color: #dfeee2;
+  background-image: url('../assets/bq-water-green.webp'),
+    url('data:image/webp;base64,UklGRlIAAABXRUJQVlA4IEYAAACwAwCdASoUAA0APu1kq04ppaQiMAgBMB2JYwC7ACFMr+LauaouAAD+6w5OZ/66y8/7WAiRW0eJ+h+LLLvJz3O5gavlQAAA');
+  background-size: cover, cover;
+  background-position: center 18%, center 18%;
+  background-repeat: no-repeat, no-repeat;
+  filter: blur(1.6px) saturate(1.04);
+}
+
+.home-page.is-works::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0) 22%,
+    rgba(255, 255, 255, 0.04) 62%,
+    rgba(255, 255, 255, 0.22) 100%
+  );
+}
+
+.home-page.is-works .hp-nav {
+  background: rgba(255, 255, 255, 0.58);
+  border-bottom-color: rgba(255, 255, 255, 0.6);
+}
+
+/* 当前所在页：不做成可点的样子 */
+.hp-nav-links .hp-nav-current {
+  padding: 9px 15px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rp-ink);
+  cursor: default;
+}
+
+.home-page.is-works .hp-skills-label {
+  /* 灰字压在浅绿水上会糊，往深里挪一档 */
+  color: var(--rp-mute);
+}
+
+.home-page.is-works .hp-skills {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px) saturate(1.04);
+  -webkit-backdrop-filter: blur(10px) saturate(1.04);
+}
+
+/* 作品这块是一张磨砂玻璃板：比上下都白一点，下面托一道影，才像“浮在水上”的一整块 */
+.home-page.is-works .hp-works {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 26px 70px rgba(12, 48, 32, 0.12);
+  backdrop-filter: blur(22px) saturate(1.06);
+  -webkit-backdrop-filter: blur(22px) saturate(1.06);
+}
+
+/* 作品页收尾：一行小字，直接压在水面上 */
+.wp-end {
+  padding-block: 8px clamp(26px, 4vw, 44px);
+}
+
+.wp-end-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 18px;
+  font-size: 12px;
+  color: rgba(18, 52, 38, 0.6);
+}
+
+.wp-end-row a {
+  color: rgba(18, 52, 38, 0.8);
+  transition: color 0.2s var(--rp-ease);
+}
+
+.wp-end-row a:hover {
+  color: #12342a;
+}
+
 .home-page ::selection {
   background: rgba(47, 157, 229, 0.2);
 }

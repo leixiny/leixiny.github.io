@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
-import WorksStrip from './WorksStrip'
 import './HomePage.css'
 
 const baseUrl = import.meta.env.BASE_URL
@@ -15,8 +14,6 @@ interface GuestbookRow {
   message: string
   created_at: string
 }
-
-const skillTags = ['SQL', 'Python / pandas', 'Excel 建模', 'Power BI', 'Tableau', '用户调研', '指标体系', 'Git']
 
 const contacts = [
   { label: 'leixinyi@stu.edu.cn', href: 'mailto:leixinyi@stu.edu.cn' },
@@ -469,12 +466,15 @@ export default function HomePage() {
   const [justLiked, setJustLiked] = useState(false)
   const wetRef = useRef<HTMLDivElement>(null)
 
-  // 老的 /home?to=works 链接：作品集就在本页下方，直接滚过去
+  // 作品页的「留言」带 ?to=contact 过来：落到位后滚到页脚，并把光标放进输入框
   useEffect(() => {
     const q = new URLSearchParams(window.location.hash.split('?')[1] || '')
-    if (q.get('to') === 'works') {
-      window.setTimeout(() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' }), 260)
-    }
+    if (q.get('to') !== 'contact') return
+    const t = window.setTimeout(() => {
+      document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
+    }, 260)
+    return () => window.clearTimeout(t)
   }, [])
 
   // 水层是满屏固定的（滚动时也一直淌），出了首屏就淡掉、并停掉动画，别让白底页面上挂着一道水
@@ -608,11 +608,6 @@ export default function HomePage() {
     window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
   }
 
-  // 导航里的「作品集」：滚到作品板块（连技能条一起，正好卡在导航下面）
-  function goWorks() {
-    document.getElementById('skills')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   const interactDisabled = guestbookState === 'offline' || guestbookState === 'error'
 
   async function handleLike() {
@@ -682,9 +677,7 @@ export default function HomePage() {
           雷馨怡
         </Link>
         <nav className="hp-nav-links" aria-label="页面导航">
-          <button type="button" onClick={goWorks}>
-            作品集
-          </button>
+          <Link to="/works">作品集</Link>
           <button type="button" onClick={goTalk}>
             留言
           </button>
@@ -734,10 +727,10 @@ export default function HomePage() {
             </p>
 
             <div className="hp-hero-actions">
-              <button type="button" className="hp-btn hp-btn--solid" onClick={goWorks}>
+              <Link className="hp-btn hp-btn--solid" to="/works">
                 查看作品集
                 <i aria-hidden="true">→</i>
-              </button>
+              </Link>
               <Link className="hp-btn hp-btn--ghost" to="/">
                 进入管理系统
               </Link>
@@ -748,20 +741,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* 作品集：跟在首屏后面的独立板块 */}
-      <section id="skills" className="hp-skills" aria-label="技能">
-        <div className="hp-wrap hp-skills-row">
-          <span className="hp-skills-label">技能</span>
-          <ul>
-            {skillTags.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <WorksStrip />
 
       {/* 联系与留言收进页脚：小字、浅色，不占版块 */}
       <footer id="contact" className="hp-foot">
@@ -852,9 +831,7 @@ export default function HomePage() {
               <h3>更多</h3>
               <ul>
                 <li>
-                  <button type="button" onClick={goWorks}>
-                    作品集
-                  </button>
+                  <Link to="/works">作品集</Link>
                 </li>
                 <li>
                   <Link to="/">管理系统</Link>
