@@ -377,20 +377,8 @@
   }
 }
 
-/* 收笔后把笔锋扫不到的边角轻轻抹匀，不让字留缺口 */
-.hp-settle {
-  opacity: 0;
-}
-
-.hp-word.is-ready .hp-settle {
-  animation: hp-settle var(--settle-dur, 420ms) ease-out var(--settle-delay, 0ms) forwards;
-}
-
-@keyframes hp-settle {
-  to {
-    opacity: 1;
-  }
-}
+/* 不再有“收笔抹匀”那一层：笔触本身就把字形放全了，
+   写完的字就是字，不需要在最后补一块 */
 
 /* ---------- 玻璃上的水 ---------- */
 /* 常驻水层：满屏固定，滚动到哪儿都在淌，出了首屏由 JS 淡掉 */
@@ -1007,10 +995,6 @@
   .hp-seg,
   .hp-word.is-ready .hp-seg {
     animation: none;
-    opacity: 1;
-  }
-
-  .hp-settle {
     opacity: 1;
   }
 

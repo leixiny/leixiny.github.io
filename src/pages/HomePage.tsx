@@ -41,10 +41,21 @@ const ART_SPAN = 0.78
 const ART_FOCUS_X = 0.5
 const ART_FOCUS_Y = 0.45
 
-// 笔尖：走多快（字体单位/秒）、两个字母之间停多久、最后把剩下的一点抹匀要多久
+// 笔尖：走多快（字体单位/秒）、两个字母之间停多久
 const PEN_SPEED = 1050
 const PEN_GAP = 110
-const PEN_SETTLE = 380
+// 写完到戴上雾光之间留一点空，让最后一笔落稳
+const PEN_HOLD = 160
+
+// e 的笔顺要重排。字形数据是从字体轮廓里取的，它的落笔顺序是
+// 「先在字中间横一道、再绕回去把碗补上」—— 写到一半时那根横杠悬在半空、
+// 碗还空着，看着就是个缺口，只能等最后一笔补。
+// 重排成：从收笔点倒着把碗绕回碗口 → 再从碗口起笔把横往右画，正好接回碗的起点。
+// 这样每一帧的笔迹都是连成一块的，笔到之处就是完整的字，不需要任何补笔
+// （原来最后那块“收笔抹匀”已经去掉了）
+const E_BAR = 0.2363
+const remapAt = (letter: number, at: number) =>
+  letter === 1 && at >= E_BAR ? (1 - at) * (1 - E_BAR) : letter === 1 ? 1 - E_BAR + at : at
 
 // 笔触切多细：步长 = 笔宽的这个比例。原来一段笔迹只有一颗印章（步长≈笔宽的四分之一），
 // 字是一块一块跳着冒出来的；切细之后笔尖每帧只往前走一小步，看着才是“写”出来的
@@ -165,7 +176,7 @@ const WORD_EM = LEI_H / 1000
 // 把每一笔再切成一小步一小步的笔触（步长只有笔宽的十分之一）：
 // 每一小步自己淡入，笔尖就是连续往前推的，不是隔着笔宽盖一颗印章
 type Dab = { x1: number; y1: number; x2: number; y2: number; w: number; at: number }
-const DABS: Dab[][] = LEI_LETTERS.map((l) => {
+const DABS: Dab[][] = LEI_LETTERS.map((l, li) => {
   const out: Dab[] = []
   l.segs.forEach((s, k) => {
     const nextAt = l.segs[k + 1]?.at ?? 1
@@ -182,7 +193,7 @@ const DABS: Dab[][] = LEI_LETTERS.map((l) => {
         y2: s.y1 + (s.y2 - s.y1) * t1,
         // 笔宽跟着这一段插值，粗细变化才连得住
         w: s.w,
-        at: s.at + (nextAt - s.at) * t0,
+        at: remapAt(li, s.at + (nextAt - s.at) * t0),
       })
     }
   })
@@ -246,7 +257,6 @@ function WipeWord() {
     const svg = wrap.querySelector('svg')
     if (!svg) return
     const masks = Array.from(svg.querySelectorAll<SVGMaskElement>('.hp-mask'))
-    const settles = Array.from(svg.querySelectorAll<SVGRectElement>('.hp-settle'))
     const drips = Array.from(wrap.querySelectorAll<HTMLElement>('.hp-drip--word'))
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -269,21 +279,16 @@ function WipeWord() {
         // 前后两小步在时间上搭上一点，边缘才连成一条往前动的线
         const stepMs = dur / Math.max(1, DABS[i].length)
         mask.style.setProperty('--fade', `${Math.round(Math.min(120, Math.max(34, stepMs * 2.4)))}ms`)
-        const settle = settles[i]
-        if (settle) {
-          settle.style.setProperty('--settle-delay', `${Math.round(t + dur - 90)}ms`)
-          settle.style.setProperty('--settle-dur', `${PEN_SETTLE}ms`)
-        }
         t += dur + PEN_GAP
       })
       // 水：笔尖走到那一格才攒水，所以每颗水珠的延迟都挂在自己那一笔上
       drips.forEach((el, k) => {
         const d = WORD_DRIPS[k]
         if (!d) return
-        const at = (starts[d.letter] ?? 0) + d.at * (spans[d.letter] ?? 0) + d.lag
+        const at = (starts[d.letter] ?? 0) + remapAt(d.letter, d.at) * (spans[d.letter] ?? 0) + d.lag
         el.style.setProperty('--delay', `${Math.round(at)}ms`)
       })
-      return t + PEN_SETTLE
+      return t + PEN_HOLD
     }
 
     // 手写体到位才开始“写”：先写默认字体、等字体回来字宽一变会很跳
@@ -421,7 +426,10 @@ function WipeWord() {
               width={LETTER_BOX[i].w}
               height={LETTER_BOX[i].h}
             >
-              {/* 笔顺：一小步一颗笔触，按 --at 先后落笔 */}
+              {/* 笔顺：一小步一颗笔触，按 --at 先后落笔。
+                  笔宽比量到的笔画直径多 8 个字体单位：遮罩只负责“放行”，
+                  放开一点不会让字变粗，只把字形边上的抗锯齿也一起放出来，
+                  写完就是完整的字，不靠后面再补一笔 */}
               {DABS[i].map((s, k) => (
                 <line
                   key={k}
@@ -430,20 +438,11 @@ function WipeWord() {
                   y1={s.y1}
                   x2={s.x2}
                   y2={s.y2}
-                  strokeWidth={s.w}
+                  strokeWidth={s.w + 8}
                   strokeLinecap="round"
                   style={{ '--at': s.at } as CSSProperties}
                 />
               ))}
-              {/* 收笔后把笔锋扫不到的边角轻轻抹匀 */}
-              <rect
-                className="hp-settle"
-                x={LETTER_BOX[i].x}
-                y={LETTER_BOX[i].y}
-                width={LETTER_BOX[i].w}
-                height={LETTER_BOX[i].h}
-                fill="#fff"
-              />
             </mask>
           ))}
         </defs>
