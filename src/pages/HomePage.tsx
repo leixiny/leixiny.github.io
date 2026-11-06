@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
@@ -146,12 +146,32 @@ const JELLY_TAP: Keyframe[] = [
   { transform: 'translateY(0) scale(1, 1)' },
 ]
 
+/* 点击字标：字先抖成水波，再往下沉、化成一条条水淌掉，最后重新写一遍 */
+type MeltDrop = {
+  /** 起滴点（字标盒子内的百分比坐标） */
+  x: number
+  y: number
+  /** 水痕粗细（em，跟着字标字号缩放） */
+  w: number
+  /** 要淌多远（em） */
+  travel: number
+  /** 下滑时长（s）、延迟（ms）、轻微倾角（deg） */
+  dur: number
+  delay: number
+  rot: number
+}
+
 function WipeWord() {
   const wrapRef = useRef<HTMLHeadingElement>(null)
+  // 每点一次换一套 SVG/DOM，手写动画就能从头再来
+  const [run, setRun] = useState(0)
+  const [drops, setDrops] = useState<MeltDrop[]>([])
+  const meltingRef = useRef(false)
 
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap) return
+    wrap.classList.remove('is-ready', 'is-melt')
     const svg = wrap.querySelector('svg')
     if (!svg) return
     const masks = Array.from(svg.querySelectorAll<SVGMaskElement>('.hp-mask'))
@@ -211,26 +231,78 @@ function WipeWord() {
     }
 
     const onEnter = () => {
-      if (reduce || performance.now() < readyAt) return
+      if (reduce || meltingRef.current || performance.now() < readyAt) return
       wrap.animate(JELLY_TAP, { duration: 620, easing: 'cubic-bezier(.3,.9,.4,1)' })
     }
     wrap.addEventListener('pointerenter', onEnter)
 
+    // 点一下字：化水 -> 淌掉 -> 重写
+    let meltTimer = 0
+    const onMelt = () => {
+      if (reduce || meltingRef.current || performance.now() < readyAt) return
+      meltingRef.current = true
+      wrap.classList.add('is-melt')
+
+      // 从笔画上随机抓一些点，让水从字身上冒出来往下淌
+      const list: MeltDrop[] = []
+      LEI_LETTERS.forEach((l) => {
+        const n = 4 + Math.floor(Math.random() * 2)
+        for (let k = 0; k < n; k++) {
+          const s = l.segs[Math.floor(Math.random() * l.segs.length)]
+          const t = Math.random()
+          const top = dripY(s.y1 + (s.y2 - s.y1) * t)
+          list.push({
+            x: dripX(s.x1 + (s.x2 - s.x1) * t),
+            y: top,
+            w: 0.0042 + Math.random() * 0.0038,
+            travel: ((100 - top) / 100 + 0.16) * WORD_EM,
+            dur: 1.0 + Math.random() * 0.7,
+            delay: Math.random() * 420,
+            rot: Math.random() * 4 - 2,
+          })
+        }
+      })
+      setDrops(list)
+
+      meltTimer = window.setTimeout(() => {
+        meltingRef.current = false
+        setDrops([])
+        setRun((r) => r + 1)
+      }, 2250)
+    }
+    wrap.addEventListener('pointerdown', onMelt)
+
     return () => {
       wrap.removeEventListener('pointerenter', onEnter)
+      wrap.removeEventListener('pointerdown', onMelt)
+      if (meltTimer) window.clearTimeout(meltTimer)
     }
-  }, [])
+  }, [run])
 
   return (
     <h1 className="hp-word" ref={wrapRef} aria-label={WORD} role="img">
-      <svg
-        className="hp-word-svg"
-        viewBox={`${LEI_LEFT} ${LEI_TOP} ${LEI_W} ${LEI_H}`}
-        style={{ width: `${LEI_W / 1000}em`, height: `${LEI_H / 1000}em` }}
-        aria-hidden="true"
-      >
-        <defs>
-          <pattern
+      {/* run 变一次就换一套 SVG：笔顺动画和水珠都从头再播 */}
+      <Fragment key={run}>
+        <svg
+          className="hp-word-svg"
+          viewBox={`${LEI_LEFT} ${LEI_TOP} ${LEI_W} ${LEI_H}`}
+          style={{ width: `${LEI_W / 1000}em`, height: `${LEI_H / 1000}em` }}
+          aria-hidden="true"
+        >
+          <defs>
+            {/* 化水用的湍流置换：字边被噪声搅出水波，baseFrequency 自己轻微起伏 */}
+            <filter id="hp-melt-f" x="-15%" y="-15%" width="130%" height="150%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.011 0.045" numOctaves="2" seed="8" result="n">
+                <animate
+                  attributeName="baseFrequency"
+                  values="0.011 0.045;0.017 0.072;0.011 0.045"
+                  dur="1.3s"
+                  repeatCount="indefinite"
+                />
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="30" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <pattern
             id="hp-art"
             patternUnits="userSpaceOnUse"
             x={ART_X}
@@ -292,38 +364,63 @@ function WipeWord() {
             {l.ch}
           </text>
         ))}
-      </svg>
-      {/* 水层盖在字上面：笔尖刚擦过的地方攒出水珠，顺着玻璃往下淌到字下面 */}
-      <div className="hp-wdrips" aria-hidden="true">
-        {WORD_DRIPS.map((d, i) => {
-          const top = dripY(d.y)
-          const travel = ((100 - top) / 100 + 0.2) * WORD_EM
-          return (
-            <span
-              key={i}
-              className="hp-drip hp-drip--word"
-              style={
-                {
-                  left: `${dripX(d.x)}%`,
-                  top: `${top}%`,
-                  '--w': `${d.w}em`,
-                  '--travel': `${travel.toFixed(3)}em`,
-                  '--dur': `${d.dur}s`,
-                  '--drift': `${d.drift}px`,
-                  '--rot': `${d.rot}deg`,
-                  '--pool-from': `${d.from}em`,
-                  '--pw': `${d.pw}em`,
-                  '--p-ang': `${d.pAng}deg`,
-                } as CSSProperties
-              }
-            >
-              {/* 擦拭会把水雾推到一处：先摊成一小片水膜，再靠表面张力收成珠 */}
-              <i className="hp-pool" />
-              <i className="hp-bead" />
-            </span>
-          )
-        })}
-      </div>
+        </svg>
+        {/* 水层盖在字上面：笔尖刚擦过的地方攒出水珠，顺着玻璃往下淌到字下面 */}
+        <div className="hp-wdrips" aria-hidden="true">
+          {WORD_DRIPS.map((d, i) => {
+            const top = dripY(d.y)
+            const travel = ((100 - top) / 100 + 0.2) * WORD_EM
+            return (
+              <span
+                key={i}
+                className="hp-drip hp-drip--word"
+                style={
+                  {
+                    left: `${dripX(d.x)}%`,
+                    top: `${top}%`,
+                    '--w': `${d.w}em`,
+                    '--travel': `${travel.toFixed(3)}em`,
+                    '--dur': `${d.dur}s`,
+                    '--drift': `${d.drift}px`,
+                    '--rot': `${d.rot}deg`,
+                    '--pool-from': `${d.from}em`,
+                    '--pw': `${d.pw}em`,
+                    '--p-ang': `${d.pAng}deg`,
+                  } as CSSProperties
+                }
+              >
+                {/* 擦拭会把水雾推到一处：先摊成一小片水膜，再靠表面张力收成珠 */}
+                <i className="hp-pool" />
+                <i className="hp-bead" />
+              </span>
+            )
+          })}
+        </div>
+        {/* 化水时刻的水：从笔画上冒出来，直接进入下滑 */}
+        {drops.length > 0 && (
+          <div className="hp-wdrips hp-wdrips--melt" aria-hidden="true">
+            {drops.map((d, i) => (
+              <span
+                key={i}
+                className="hp-drip hp-drip--melt"
+                style={
+                  {
+                    left: `${d.x.toFixed(2)}%`,
+                    top: `${d.y.toFixed(2)}%`,
+                    '--w': `${d.w.toFixed(4)}em`,
+                    '--travel': `${d.travel.toFixed(3)}em`,
+                    '--dur': `${d.dur.toFixed(2)}s`,
+                    '--delay': `${Math.round(d.delay)}ms`,
+                    '--rot': `${d.rot.toFixed(1)}deg`,
+                  } as CSSProperties
+                }
+              >
+                <i className="hp-bead" />
+              </span>
+            ))}
+          </div>
+        )}
+      </Fragment>
     </h1>
   )
 }

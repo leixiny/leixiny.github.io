@@ -886,6 +886,81 @@
   }
 }
 
+/* ---------- 点击字标：字化成水流 ---------- */
+/* 字是可以点的：点一下，字先抖成水波，再往下沉、化成一条条水淌掉，然后重新写 */
+.hp-word {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 化水时刻：字形套湍流置换滤镜（边缘被噪声搅出水波），整体下沉、纵向拉长、淡出 */
+.hp-word.is-melt .hp-glyph {
+  transform-box: fill-box;
+  transform-origin: 50% 22%;
+  animation: hp-word-melt 1.9s cubic-bezier(0.55, 0.02, 0.75, 0.4) forwards;
+  filter: url(#hp-melt-f);
+}
+
+/* 三个字母错开一点：水从 L 先化，i 撑到最后 */
+.hp-word.is-melt .hp-glyph:nth-of-type(2) {
+  animation-delay: 90ms;
+}
+
+.hp-word.is-melt .hp-glyph:nth-of-type(3) {
+  animation-delay: 180ms;
+}
+
+@keyframes hp-word-melt {
+  0% {
+    transform: translateY(0) scale(1, 1);
+    opacity: 1;
+  }
+  22% {
+    transform: translateY(1.6%) scale(1.02, 1.04);
+    opacity: 1;
+  }
+  52% {
+    transform: translateY(7%) scale(0.99, 1.12);
+    opacity: 1;
+  }
+  76% {
+    transform: translateY(18%) scale(0.95, 1.2);
+    opacity: 0.72;
+  }
+  100% {
+    transform: translateY(34%) scale(0.9, 1.26);
+    opacity: 0;
+  }
+}
+
+/* 化水时从笔画上冒出来的水：跟写字时的水珠同一套视觉，
+   只是跳过“聚水”那一步，直接进入下滑 */
+.hp-drip--melt {
+  top: 0;
+  height: 0;
+  transform: rotate(var(--rot, 0deg));
+  transform-origin: 50% 0;
+  animation: hp-melt-drip var(--dur, 1.2s) cubic-bezier(0.34, 0.08, 0.6, 1) var(--delay, 0ms) 1 both;
+  will-change: height, opacity;
+}
+
+@keyframes hp-melt-drip {
+  0% {
+    height: calc(var(--travel) * 0.03);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.95;
+  }
+  100% {
+    height: var(--travel);
+    opacity: 0;
+  }
+}
+
 
 .hp-kicker {
   display: inline-flex;
