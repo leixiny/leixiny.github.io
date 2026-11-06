@@ -297,6 +297,20 @@
   transition: filter 0.35s var(--rp-ease);
 }
 
+/* 写字期间先不戴滤镜：字每帧都在变，这层对比度 + 三圈投影就得整块重算一遍，
+   是全流程里最贵的开销。等字写完（is-written）再淡上来 —— 那时内容不再变，滤镜只算一次 */
+.hp-hero-mid:has(.hp-word:not(.is-glow)) {
+  filter: none;
+}
+
+/* 中间这一帧只把“恒等滤镜”换上，下一帧才给真值，过渡才有起点可插值 */
+.hp-hero-mid:has(.hp-word.is-glow:not(.is-written)) {
+  filter: contrast(1) saturate(1) brightness(1)
+    drop-shadow(0 0 0 rgba(3, 12, 26, 0))
+    drop-shadow(0 0 0 rgba(3, 12, 26, 0))
+    drop-shadow(0 0 0 rgba(158, 214, 255, 0));
+}
+
 .hp-hero-mid:hover {
   filter: contrast(1.16) saturate(1.2) brightness(0.94)
     drop-shadow(0 0 10px rgba(226, 244, 255, 0.4))
@@ -346,18 +360,17 @@
   opacity: 0;
 }
 
+/* 每一小步自己淡入（时长由 --fade 给，只有“走两小步”那么长）：
+   太多步叠在一起淡化，边缘会糊成一片；太短又会露出印章的台阶 */
 .hp-word.is-ready .hp-seg {
-  animation: hp-seg-in 190ms cubic-bezier(0.25, 0.7, 0.35, 1) forwards;
-  /* --at 是这一段在整笔里的位置（0~1），乘以这一笔的时长就是它的落笔时刻 */
+  animation: hp-seg-in var(--fade, 70ms) linear forwards;
+  /* --at 是这一笔在整笔里的位置（0~1），乘以这一笔的时长就是它的落笔时刻 */
   animation-delay: calc(var(--pen-start, 0ms) + var(--at, 0) * var(--pen-dur, 0ms));
 }
 
 @keyframes hp-seg-in {
-  0% {
+  from {
     opacity: 0;
-  }
-  60% {
-    opacity: 1;
   }
   to {
     opacity: 1;

@@ -42,9 +42,13 @@ const ART_FOCUS_X = 0.5
 const ART_FOCUS_Y = 0.45
 
 // 笔尖：走多快（字体单位/秒）、两个字母之间停多久、最后把剩下的一点抹匀要多久
-const PEN_SPEED = 720
-const PEN_GAP = 150
-const PEN_SETTLE = 420
+const PEN_SPEED = 1050
+const PEN_GAP = 110
+const PEN_SETTLE = 380
+
+// 笔触切多细：步长 = 笔宽的这个比例。原来一段笔迹只有一颗印章（步长≈笔宽的四分之一），
+// 字是一块一块跳着冒出来的；切细之后笔尖每帧只往前走一小步，看着才是“写”出来的
+const DAB_STEP = 0.1
 
 // 底图在字体坐标系里的铺法：比字标宽一圈，居中对着两张脸
 const ART_W = LEI_W / ART_SPAN
@@ -155,9 +159,54 @@ const WORD_DRIPS: WordDrip[] = [
 
 // 字体单位 -> 字标盒子里的百分比：水滴层和 SVG 用的是同一个 viewBox，换算完就贴着字走
 const dripX = (x: number) => ((x - LEI_LEFT) / LEI_W) * 100
-const dripY = (y: number) => ((y - LEI_TOP) / LEI_H) * 100
-// 字标盒子的高度（em），用来算一颗水珠要淌多远才落到字下面
+const dripY = (y: number) => ((y - LEI_TOP) / LEI_H) * 100// 字标盒子的高度（em），用来算一颗水珠要淌多远才落到字下面
 const WORD_EM = LEI_H / 1000
+
+// 把每一笔再切成一小步一小步的笔触（步长只有笔宽的十分之一）：
+// 每一小步自己淡入，笔尖就是连续往前推的，不是隔着笔宽盖一颗印章
+type Dab = { x1: number; y1: number; x2: number; y2: number; w: number; at: number }
+const DABS: Dab[][] = LEI_LETTERS.map((l) => {
+  const out: Dab[] = []
+  l.segs.forEach((s, k) => {
+    const nextAt = l.segs[k + 1]?.at ?? 1
+    const len = Math.hypot(s.x2 - s.x1, s.y2 - s.y1)
+    const step = Math.max(6, s.w * DAB_STEP)
+    const n = Math.max(1, Math.round(len / step))
+    for (let j = 0; j < n; j++) {
+      const t0 = j / n
+      const t1 = (j + 1) / n
+      out.push({
+        x1: s.x1 + (s.x2 - s.x1) * t0,
+        y1: s.y1 + (s.y2 - s.y1) * t0,
+        x2: s.x1 + (s.x2 - s.x1) * t1,
+        y2: s.y1 + (s.y2 - s.y1) * t1,
+        // 笔宽跟着这一段插值，粗细变化才连得住
+        w: s.w,
+        at: s.at + (nextAt - s.at) * t0,
+      })
+    }
+  })
+  return out
+})
+
+// 每个字母遮罩只围住它自己：以前三块遮罩全都开成整词大小，
+// 字每帧都在变，遮罩就得每帧重栅格三倍大的面积
+const LETTER_BOX = LEI_LETTERS.map((l) => {
+  let x0 = Infinity
+  let y0 = Infinity
+  let x1 = -Infinity
+  let y1 = -Infinity
+  for (const s of l.segs) {
+    const r = s.w / 2 + 12
+    x0 = Math.min(x0, s.x1 - r, s.x2 - r)
+    y0 = Math.min(y0, s.y1 - r, s.y2 - r)
+    x1 = Math.max(x1, s.x1 + r, s.x2 + r)
+    y1 = Math.max(y1, s.y1 + r, s.y2 + r)
+  }
+  // 留一圈余量：笔锋和圆头不吃到遮罩边
+  const pad = 40
+  return { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 }
+})
 
 // 鼠标扫过时，整块字软软弹一下
 const JELLY_TAP: Keyframe[] = [
@@ -193,7 +242,7 @@ function WipeWord() {
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap) return
-    wrap.classList.remove('is-ready', 'is-melt')
+    wrap.classList.remove('is-ready', 'is-melt', 'is-glow', 'is-written')
     const svg = wrap.querySelector('svg')
     if (!svg) return
     const masks = Array.from(svg.querySelectorAll<SVGMaskElement>('.hp-mask'))
@@ -210,11 +259,16 @@ function WipeWord() {
       const starts: number[] = []
       const spans: number[] = []
       masks.forEach((mask, i) => {
-        const dur = Math.max(420, (LEI_LETTERS[i].len / PEN_SPEED) * 1000)
+        const letter = LEI_LETTERS[i]
+        const dur = Math.max(420, (letter.len / PEN_SPEED) * 1000)
         starts[i] = t
         spans[i] = dur
         mask.style.setProperty('--pen-start', `${Math.round(t)}ms`)
         mask.style.setProperty('--pen-dur', `${Math.round(dur)}ms`)
+        // 每一小步走多久由 --at 排出来；淡入时长取“走两小步”的时间，
+        // 前后两小步在时间上搭上一点，边缘才连成一条往前动的线
+        const stepMs = dur / Math.max(1, DABS[i].length)
+        mask.style.setProperty('--fade', `${Math.round(Math.min(120, Math.max(34, stepMs * 2.4)))}ms`)
         const settle = settles[i]
         if (settle) {
           settle.style.setProperty('--settle-delay', `${Math.round(t + dur - 90)}ms`)
@@ -233,11 +287,24 @@ function WipeWord() {
     }
 
     // 手写体到位才开始“写”：先写默认字体、等字体回来字宽一变会很跳
+    let glowTimer = 0
     const start = () => {
       if (wrap.classList.contains('is-ready')) return
       const total = plan()
-      wrap.classList.add('is-ready')
-      readyAt = performance.now() + total + 260
+      // 等两帧再落笔：首屏底图、预热滤镜、字的第一次栅格都在这一两帧里做完，
+      // 让它们跟第一笔错开，起笔才不会先顿一下
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          wrap.classList.add('is-ready')
+          readyAt = performance.now() + total + 260
+          // 雾光等写完再戴：写字这几秒里，外层那三圈 drop-shadow 每帧都要跟着字重算，
+          // 是全流程里最贵的一笔；写完字不再变，滤镜只算一次就能缓存住
+          glowTimer = window.setTimeout(() => {
+            wrap.classList.add('is-glow')
+            requestAnimationFrame(() => wrap.classList.add('is-written'))
+          }, Math.round(total))
+        }),
+      )
     }
     const fonts = document.fonts
     if (fonts) {
@@ -309,6 +376,7 @@ function WipeWord() {
       wrap.removeEventListener('pointerenter', onEnter)
       wrap.removeEventListener('pointerdown', onMelt)
       if (meltTimer) window.clearTimeout(meltTimer)
+      if (glowTimer) window.clearTimeout(glowTimer)
     }
   }, [run])
 
@@ -342,19 +410,19 @@ function WipeWord() {
           {/* 预热：同一个滤镜先在 1px 的小方块上走一遍，点字时才不会临时编译着色器 */}
           <rect className="hp-warm" x={LEI_LEFT} y={LEI_TOP} width={LEI_W} height={LEI_H} filter="url(#hp-melt-f)" opacity={0.004} />
           {LEI_LETTERS.map((l, i) => (
-            /* 遮罩边距只留半条笔宽：以前留 400，离屏面比字大 3 倍，每帧都要白画一遍 */
+            /* 遮罩只围住这个字母自己（外加一圈余量）：面积小了，每帧重栅格才跟得上 */
             <mask
               key={l.ch}
               id={`hp-mask-${i}`}
               className="hp-mask"
               maskUnits="userSpaceOnUse"
-              x={LEI_LEFT - 120}
-              y={LEI_TOP - 120}
-              width={LEI_W + 240}
-              height={LEI_H + 240}
+              x={LETTER_BOX[i].x}
+              y={LETTER_BOX[i].y}
+              width={LETTER_BOX[i].w}
+              height={LETTER_BOX[i].h}
             >
-              {/* 笔顺：把相邻两颗印章连成一条带圆头的笔迹，按 --at 先后落笔 */}
-              {l.segs.map((s, k) => (
+              {/* 笔顺：一小步一颗笔触，按 --at 先后落笔 */}
+              {DABS[i].map((s, k) => (
                 <line
                   key={k}
                   className="hp-seg"
@@ -370,10 +438,10 @@ function WipeWord() {
               {/* 收笔后把笔锋扫不到的边角轻轻抹匀 */}
               <rect
                 className="hp-settle"
-                x={LEI_LEFT - 120}
-                y={LEI_TOP - 120}
-                width={LEI_W + 240}
-                height={LEI_H + 240}
+                x={LETTER_BOX[i].x}
+                y={LETTER_BOX[i].y}
+                width={LETTER_BOX[i].w}
+                height={LETTER_BOX[i].h}
                 fill="#fff"
               />
             </mask>
@@ -629,7 +697,9 @@ export default function HomePage() {
         {WET_STREAMS.map((f, i) => (
           <span
             key={`stream-${i}`}
-            className={`hp-flow${f.w >= 2 ? ' hp-flow--glass' : ''}`}
+            /* 只有最粗的三道做“背景折射”：backdrop-filter 的元素每帧都要重读背后的画面再模糊一遍，
+               十来道一起动，GPU 会被吃光，字就跟着掉帧 */
+            className={`hp-flow${f.w >= 2.6 ? ' hp-flow--glass' : ''}`}
             style={
               {
                 '--x': `${f.x}%`,
