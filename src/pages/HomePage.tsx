@@ -52,15 +52,10 @@ const PEN_HOLD = 160
 // 弧（相邻两笔的外角）会漏在遮罩外，屏幕上就是一个被切掉的口子
 const MASK_PAD = 40
 
-// e 的笔顺要重排。字形数据是从字体轮廓里取的，它的落笔顺序是
-// 「先在字中间横一道、再绕回去把碗补上」—— 写到一半时那根横杠悬在半空、
-// 碗还空着，看着就是个缺口，只能等最后一笔补。
-// 重排成：从收笔点倒着把碗绕回碗口 → 再从碗口起笔把横往右画，正好接回碗的起点。
-// 这样每一帧的笔迹都是连成一块的，笔到之处就是完整的字，不需要任何补笔
-// （原来最后那块“收笔抹匀”已经去掉了）
-const E_BAR = 0.2363
-const remapAt = (letter: number, at: number) =>
-  letter === 1 && at >= E_BAR ? (1 - at) * (1 - E_BAR) : letter === 1 ? 1 - E_BAR + at : at
+// 笔顺直接用字形里量出来的那一套：e 是一笔连写的
+// 「从碗口横着出去 → 绕上去兜过顶部 → 顺着左壁下来 → 沿底部绕到右下收笔」，
+// 这正是手写 e 的顺序，笔尖一路往前走，不回头。缺的那块以前是遮罩没盖住，
+// 靠最后一块“收笔抹匀”补，现在遮罩已经盖满了（见 MASK_PAD），不需要再补笔
 
 // 笔触切多细：步长 = 笔宽的这个比例。原来一段笔迹只有一颗印章（步长≈笔宽的四分之一），
 // 字是一块一块跳着冒出来的；切细之后笔尖每帧只往前走一小步，看着才是“写”出来的
@@ -181,7 +176,7 @@ const WORD_EM = LEI_H / 1000
 // 把每一笔再切成一小步一小步的笔触（步长只有笔宽的十分之一）：
 // 每一小步自己淡入，笔尖就是连续往前推的，不是隔着笔宽盖一颗印章
 type Dab = { x1: number; y1: number; x2: number; y2: number; w: number; at: number }
-const DABS: Dab[][] = LEI_LETTERS.map((l, li) => {
+const DABS: Dab[][] = LEI_LETTERS.map((l) => {
   const out: Dab[] = []
   l.segs.forEach((s, k) => {
     const nextAt = l.segs[k + 1]?.at ?? 1
@@ -198,7 +193,7 @@ const DABS: Dab[][] = LEI_LETTERS.map((l, li) => {
         y2: s.y1 + (s.y2 - s.y1) * t1,
         // 笔宽跟着这一段插值，粗细变化才连得住
         w: s.w,
-        at: remapAt(li, s.at + (nextAt - s.at) * t0),
+        at: s.at + (nextAt - s.at) * t0,
       })
     }
   })
@@ -290,7 +285,7 @@ function WipeWord() {
       drips.forEach((el, k) => {
         const d = WORD_DRIPS[k]
         if (!d) return
-        const at = (starts[d.letter] ?? 0) + remapAt(d.letter, d.at) * (spans[d.letter] ?? 0) + d.lag
+        const at = (starts[d.letter] ?? 0) + d.at * (spans[d.letter] ?? 0) + d.lag
         el.style.setProperty('--delay', `${Math.round(at)}ms`)
       })
       return t + PEN_HOLD
