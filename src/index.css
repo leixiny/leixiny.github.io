@@ -46,13 +46,53 @@ button { cursor: pointer; }
 .btn-danger { color: #b91c1c; background: #fff1f2; border-color: #fecdd3; }
 .btn-primary:disabled, .btn-secondary:disabled, .btn-danger:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  /* 水底交给伪元素：本体透明 + 自开层叠上下文，负层才不会被 body 的不透明底色盖住 */
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
+
+/* 管理系统的水底：固定一层冷蓝水面，上面压一层浅雾，水从卡片缝里透出来 */
+.app-shell::before {
+  content: '';
+  position: fixed;
+  inset: -3%;
+  z-index: -1;
+  background-color: #dce9f2;
+  background-image: url('./assets/bq-water-blue.webp'),
+    url('data:image/webp;base64,UklGRk4AAABXRUJQVlA4IEIAAADQAwCdASoUAA0APu1iqU2ppaOiMAgBMB2JYwC7ABhxXTWNP+DBrgAA/uBsd5nfKWNM0rE3Yd3N3upRuz0rNZuAAAA=');
+  background-size: cover, cover;
+  background-position: center 40%, center 40%;
+  background-repeat: no-repeat, no-repeat;
+  filter: blur(1.6px) saturate(1.05);
+}
+
+.app-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(244, 248, 252, 0.74) 0%,
+    rgba(244, 248, 252, 0.54) 42%,
+    rgba(244, 248, 252, 0.62) 100%
+  );
+}
 .sidebar {
   width: 264px;
   flex: 0 0 264px;
   padding: 24px 18px;
   color: #5f7288;
-  background: linear-gradient(180deg, #edf7ff 0%, #fff0f6 100%);
+  /* 侧栏改成一片磨砂玻璃，让身后的水透出来 */
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(1.12);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.55);
   display: flex;
   flex-direction: column;
   gap: 26px;

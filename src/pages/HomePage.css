@@ -217,20 +217,20 @@
   transform: translateX(3px);
 }
 
-/* ---------- 首屏：一整片水面，一笔把字擦出来 ---------- */
-/* 底子就是那张实拍的水面（涟漪 + 几尾鱼），铺满整屏 */
+/* ---------- 首屏：满屏水雾玻璃，一笔把字擦出来 ---------- */
+/* 底子就是那张实拍的冷凝水玻璃，铺满整屏 */
 .hp-hero {
   position: relative;
   display: flex;
   min-height: calc(100svh - 72px);
   padding-block: clamp(26px, 4.4vh, 58px);
   overflow: hidden;
-  background-color: #1b3b46;
-  /* 第一层是主图，第二层是 20px 的极小占位图：大图下载完之前先铺一层同色调 */
-  background-image: url('../assets/bq-water-blue.webp'),
-    url('data:image/webp;base64,UklGRk4AAABXRUJQVlA4IEIAAADQAwCdASoUAA0APu1iqU2ppaOiMAgBMB2JYwC7ABhxXTWNP+DBrgAA/uBsd5nfKWNM0rE3Yd3N3upRuz0rNZuAAAA=');
+  background-color: #16262f;
+  /* 第一层是主图，第二层是 28px 的极小占位图：大图下载完之前先铺一层同色调 */
+  background-image: url('../assets/fog-glass.webp'),
+    url('data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAQBQCdASocABQAPrVMnEmnJKKhMBgMAOAWiWUArCDugSL0R8RvkeLvyQ0ROcEM+SdIAP5ry4EpPPS57ceue9b1JPlP2UxXiv9clHfaFLGAeLS70m6f8HbHzbgBYRFNjll2J2n2T/IcgXcLzlROda1hJcQInOmndAA=');
   background-size: cover, cover;
-  background-position: center 46%, center 46%;
+  background-position: center 50%, center 50%;
   background-repeat: no-repeat, no-repeat;
   color: #fff;
   isolation: isolate;
@@ -243,10 +243,8 @@
   z-index: 2;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(3, 11, 16, 0.82) 0%, rgba(3, 11, 16, 0.62) 8%, rgba(3, 11, 16, 0.2) 16%, rgba(3, 11, 16, 0.02) 22%, rgba(3, 11, 16, 0) 27%),
-    linear-gradient(0deg, rgba(3, 11, 16, 0.86) 0%, rgba(3, 11, 16, 0.5) 7%, rgba(3, 11, 16, 0.08) 15%, rgba(3, 11, 16, 0) 21%),
-    /* 四周一圈暗角：水面太满，收一下边才把视线压回字上 */
-    radial-gradient(86% 84% at 50% 46%, rgba(3, 12, 18, 0) 54%, rgba(3, 12, 18, 0.22) 100%);
+    linear-gradient(180deg, rgba(3, 11, 16, 0.9) 0%, rgba(3, 11, 16, 0.7) 8%, rgba(3, 11, 16, 0.22) 16%, rgba(3, 11, 16, 0.02) 22%, rgba(3, 11, 16, 0) 27%),
+    linear-gradient(0deg, rgba(3, 11, 16, 0.88) 0%, rgba(3, 11, 16, 0.5) 7%, rgba(3, 11, 16, 0.08) 15%, rgba(3, 11, 16, 0) 21%);
 }
 
 /* 上（说明 + 数据）／中（字标）／下（简介 + 按钮）三段撑满整屏 */
