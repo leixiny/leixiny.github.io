@@ -28,89 +28,14 @@
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* 用 clip 而不是 hidden：hidden 会把整页变成滚动容器，顶部导航的 sticky 就失效了 */
+  overflow-x: clip;
 }
 
 /* 满铺容器：只留左右安全边距，不限制最大宽度 */
 .hp-wrap {
   width: 100%;
   padding-inline: clamp(20px, 4.5vw, 72px);
-}
-
-/* ---------- 每页一片水：首页冷蓝、作品集浅绿、登录深绿 ---------- */
-/* 作品集整页泡在水里：固定一层浅绿水纹，上面压一层白雾，
-   板块本身做成半透的磨砂玻璃，水就从缝里透出来，作品还压得住 */
-.home-page.is-works {
-  /* 底片交给伪元素，本体必须透明，不然会把它盖住 */
-  background: transparent;
-  /* 自己开一层层叠上下文：不然 z-index:-1 的水层会沉到 body 底色下面去（body 是不透明灰） */
-  isolation: isolate;
-}
-
-.home-page.is-works::before {
-  content: '';
-  position: fixed;
-  /* 往外多铺一圈：blur 会啃掉边缘，铺满就看不见接缝 */
-  inset: -3%;
-  z-index: -1;
-  background-color: #dfeee2;
-  background-image: url('../assets/bq-water-green.webp'),
-    url('data:image/webp;base64,UklGRlIAAABXRUJQVlA4IEYAAACwAwCdASoUAA0APu1kq04ppaQiMAgBMB2JYwC7ACFMr+LauaouAAD+6w5OZ/66y8/7WAiRW0eJ+h+LLLvJz3O5gavlQAAA');
-  background-size: cover, cover;
-  background-position: center 18%, center 18%;
-  background-repeat: no-repeat, no-repeat;
-  /* 水纹太密，虚一点，不然跟作品抢注意力 */
-  filter: blur(1.6px) saturate(1.06);
-}
-
-.home-page.is-works::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.16) 0%,
-      rgba(255, 255, 255, 0) 22%,
-      rgba(255, 255, 255, 0.04) 62%,
-      rgba(255, 255, 255, 0.22) 100%
-    ),
-    radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.16), transparent 62%);
-}
-
-.home-page.is-works .hp-nav {
-  background: rgba(255, 255, 255, 0.58);
-  border-bottom-color: rgba(255, 255, 255, 0.6);
-}
-
-.home-page.is-works .hp-skills-label {
-  /* 灰字压在浅绿水上会糊，往深里挪一档 */
-  color: var(--rp-mute);
-}
-
-.home-page.is-works .hp-skills {
-  background: rgba(255, 255, 255, 0.32);
-  border-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px) saturate(1.04);
-  -webkit-backdrop-filter: blur(10px) saturate(1.04);
-}
-
-/* 作品这块是一张磨砂玻璃板：比上下都白一点，下面托一道影，才像“浮在水上”的一整块 */
-.home-page.is-works .hp-works {
-  background: rgba(255, 255, 255, 0.5);
-  border-color: rgba(255, 255, 255, 0.62);
-  box-shadow: 0 26px 70px rgba(12, 48, 32, 0.12);
-  backdrop-filter: blur(22px) saturate(1.06);
-  -webkit-backdrop-filter: blur(22px) saturate(1.06);
-}
-
-.home-page.is-works .hp-foot {
-  background: rgba(255, 255, 255, 0.6);
-  border-top: 1px solid rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px) saturate(1.04);
-  -webkit-backdrop-filter: blur(20px) saturate(1.04);
 }
 
 .home-page ::selection {
@@ -1415,6 +1340,21 @@
   55% { transform: scale(0.92); }
   80% { transform: scale(1.14); }
   100% { transform: scale(1); }
+}
+
+/* 跳到作品板块 / 页脚时，别被顶部那条 sticky 导航盖住（留出导航高度，刚好贴着下沿） */
+.hp-skills,
+.hp-works,
+.hp-foot {
+  scroll-margin-top: 72px;
+}
+
+@media (max-width: 719px) {
+  .hp-skills,
+  .hp-works,
+  .hp-foot {
+    scroll-margin-top: 63px;
+  }
 }
 
 /* ---------- 技能条 ---------- */
