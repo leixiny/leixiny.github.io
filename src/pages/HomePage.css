@@ -136,6 +136,20 @@
   border-bottom: 0;
 }
 
+/* 手机上作品页就是一屏一件：玻璃板不再留上下内边距，
+   轨道吃掉导航以下剩下的全部高度，作品从导航底下一直铺到屏幕底边 */
+@media (max-width: 760px) {
+  .hp-works-page .hp-works {
+    padding-block: 0;
+    justify-content: stretch;
+  }
+
+  .hp-works-page .hp-works > .hpw-track {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
 .home-page ::selection {
   background: rgba(47, 157, 229, 0.2);
 }
