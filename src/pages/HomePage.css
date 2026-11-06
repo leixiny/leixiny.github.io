@@ -112,28 +112,28 @@
   -webkit-backdrop-filter: blur(22px) saturate(1.06);
 }
 
-/* 作品页收尾：一行小字，直接压在水面上 */
-.wp-end {
-  padding-block: 8px clamp(26px, 4vw, 44px);
-}
-
-.wp-end-row {
+/* 作品页整页就一块作品轨：导航之外全部给它，竖直居中 */
+.hp-works-page {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px 18px;
-  font-size: 12px;
-  color: rgba(18, 52, 38, 0.6);
+  flex-direction: column;
+  min-height: 100svh;
 }
 
-.wp-end-row a {
-  color: rgba(18, 52, 38, 0.8);
-  transition: color 0.2s var(--rp-ease);
+.hp-works-page .hp-works-main {
+  flex: 1;
+  display: flex;
 }
 
-.wp-end-row a:hover {
-  color: #12342a;
+.hp-works-page .hp-works {
+  flex: 1;
+  /* 不加 min-width:0 会被内容撑开，横向滚动直接失效 */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* 满屏玻璃板就不要上下那两条线了 */
+  border-top: 0;
+  border-bottom: 0;
 }
 
 .home-page ::selection {

@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom'
 import WorksStrip from './WorksStrip'
 import './HomePage.css'
 
-const skillTags = ['SQL', 'Python / pandas', 'Excel 建模', 'Power BI', 'Tableau', '用户调研', '指标体系', 'Git']
-
 /**
- * 作品集是一块独立版面：浅绿水底 + 一条技能带 + 可以横向拖的作品轨。
- * 联系方式和留言在个人首页下方，这里只留一行收尾。
+ * 作品集：一进来就只有作品 —— 没有标题、没有说明文字。
+ * 浅绿水底上一条横向轨道，可以拖动/滚轮快速滑，双指捏合或 Ctrl+滚轮缩放。
+ * 联系方式和留言在个人首页下方。
  */
 export default function WorksPage() {
   // 滚动进入视口时淡入
@@ -35,7 +34,7 @@ export default function WorksPage() {
   }, [])
 
   return (
-    <div className="home-page is-works">
+    <div className="home-page is-works hp-works-page">
       <header className="hp-nav">
         <Link className="hp-brand" to="/home">
           <span className="hp-brand-dot" />
@@ -53,25 +52,9 @@ export default function WorksPage() {
         </Link>
       </header>
 
-      <section className="hp-skills" aria-label="技能">
-        <div className="hp-wrap hp-skills-row">
-          <span className="hp-skills-label">技能</span>
-          <ul>
-            {skillTags.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <WorksStrip />
-
-      <div className="wp-end">
-        <div className="hp-wrap wp-end-row">
-          <span>© 2026 雷馨怡 · 作品集</span>
-          <Link to="/home">回到首页 ↑</Link>
-        </div>
-      </div>
+      <main className="hp-works-main">
+        <WorksStrip />
+      </main>
     </div>
   )
 }

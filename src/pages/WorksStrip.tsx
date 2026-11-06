@@ -26,6 +26,8 @@ export default function WorksStrip() {
     return Number.isFinite(saved) && saved >= MIN_W ? clamp(saved, MIN_W, MAX_W) : 620
   })
   const [open, setOpen] = useState<number | null>(null)
+  const sizeRef = useRef(size)
+  sizeRef.current = size
 
   // 滚动条：pos 是进度，size 是可视比例（拇指长度）
   const [bar, setBar] = useState({ pos: 0, size: 1 })
@@ -132,12 +134,26 @@ export default function WorksStrip() {
   /* ---------- 按住拖动：像拖一张长图，而不是翻页 ---------- */
   const drag = useRef({ down: false, x: 0, left: 0, moved: false })
   const blockClick = useRef(false)
+  // 松手后的惯性 + 双指捏合的状态
+  const mom = useRef({ raf: 0 })
+  const stopMomentum = () => cancelAnimationFrame(mom.current.raf)
+  const vel = useRef({ t: 0, x: 0, v: 0 })
+  const pts = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef({ d0: 0, s0: 0 })
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    stopMomentum()
+    // 任何指针先记进来：凑够两根就是捏合缩放
+    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pts.current.size === 2) {
+      const [a, b] = [...pts.current.values()]
+      pinch.current = { d0: Math.hypot(a.x - b.x, a.y - b.y), s0: sizeRef.current }
+    }
     if (e.pointerType !== 'mouse' || e.button !== 0) return
     const el = trackRef.current
     if (!el) return
     drag.current = { down: true, x: e.clientX, left: el.scrollLeft, moved: false }
+    vel.current = { t: e.timeStamp, x: e.clientX, v: 0 }
     // 注意：这里不能立刻 setPointerCapture —— 一旦捕获，后续的 click 会被改派到轨道上，
     // 点图片就再也打不开大图了。等真的拖起来（位移超过阈值）再捕获。
     // 点在空白处时把焦点收到轨道上，之后就能用左右方向键翻着看
@@ -145,6 +161,16 @@ export default function WorksStrip() {
   }
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    // 捏合：两指的距离比例直接映射到卡片宽度
+    if (pts.current.has(e.pointerId)) pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pts.current.size >= 2 && pinch.current.d0 > 0) {
+      const [a, b] = [...pts.current.values()]
+      const d = Math.hypot(a.x - b.x, a.y - b.y)
+      if (d > 8) {
+        setSize(clamp(Math.round((pinch.current.s0 * d) / pinch.current.d0 / 10) * 10, MIN_W, MAX_W))
+      }
+      return
+    }
     const d = drag.current
     const el = trackRef.current
     if (!d.down || !el) return
@@ -154,10 +180,19 @@ export default function WorksStrip() {
       setDragging(true)
       el.setPointerCapture(e.pointerId)
     }
-    if (d.moved) el.scrollLeft = d.left - dx
+    if (d.moved) {
+      el.scrollLeft = d.left - dx
+      // 记一笔拖动速度（px/帧，做了点平滑），松手时顺着这股劲继续滑
+      const dt = Math.max(1, e.timeStamp - vel.current.t)
+      vel.current.v = 0.8 * vel.current.v + 0.2 * (((e.clientX - vel.current.x) / dt) * 16.7)
+      vel.current.t = e.timeStamp
+      vel.current.x = e.clientX
+    }
   }
 
   const endDrag = (e?: React.PointerEvent<HTMLDivElement>) => {
+    pts.current.delete(e?.pointerId ?? -1)
+    if (pts.current.size < 2) pinch.current.d0 = 0
     const d = drag.current
     if (!d.down) return
     d.down = false
@@ -166,11 +201,52 @@ export default function WorksStrip() {
       window.setTimeout(() => {
         blockClick.current = false
       }, 80)
+      // 惯性：最后一下的速度乘个衰减，滑到头或速度耗尽就停
+      const el = trackRef.current
+      if (el && Math.abs(vel.current.v) > 1.5) {
+        let v = vel.current.v
+        let last = performance.now()
+        cancelAnimationFrame(mom.current.raf)
+        const step = (now: number) => {
+          const dt = Math.max(1, now - last)
+          last = now
+          el.scrollLeft -= (v * dt) / 16.7
+          v *= Math.pow(0.94, dt / 16.7)
+          const max = el.scrollWidth - el.clientWidth
+          if (Math.abs(v) > 0.4 && el.scrollLeft > 0 && el.scrollLeft < max) {
+            mom.current.raf = requestAnimationFrame(step)
+          }
+        }
+        mom.current.raf = requestAnimationFrame(step)
+      }
     }
     const el = trackRef.current
     if (el && e && el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
     setDragging(false)
   }
+
+  /* ---------- 滚轮：竖滚当横滑用，Ctrl+滚轮直接缩放卡片 ---------- */
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault()
+        setSize((s) => clamp(Math.round((s * (e.deltaY < 0 ? 1.09 : 1 / 1.09)) / 10) * 10, MIN_W, MAX_W))
+        return
+      }
+      // 触控板横扫交给原生；鼠标竖向滚轮转成横向
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return
+      const max = el.scrollWidth - el.clientWidth
+      if (max <= 4) return
+      if (e.deltaY > 0 ? el.scrollLeft >= max - 1 : el.scrollLeft <= 1) return
+      e.preventDefault()
+      stopMomentum()
+      el.scrollLeft += e.deltaY
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
 
   /* ---------- 底下那根细滚动条：点哪滚哪 ---------- */
   const scrubDrag = useRef(false)
