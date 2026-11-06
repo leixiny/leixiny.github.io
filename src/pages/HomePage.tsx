@@ -170,7 +170,8 @@ const WORD_DRIPS: WordDrip[] = [
 
 // 字体单位 -> 字标盒子里的百分比：水滴层和 SVG 用的是同一个 viewBox，换算完就贴着字走
 const dripX = (x: number) => ((x - LEI_LEFT) / LEI_W) * 100
-const dripY = (y: number) => ((y - LEI_TOP) / LEI_H) * 100// 字标盒子的高度（em），用来算一颗水珠要淌多远才落到字下面
+const dripY = (y: number) => ((y - LEI_TOP) / LEI_H) * 100
+// 字标盒子的高度（em），用来算一颗水珠要淌多远才落到字下面
 const WORD_EM = LEI_H / 1000
 
 // 把每一笔再切成一小步一小步的笔触（步长只有笔宽的十分之一）：
