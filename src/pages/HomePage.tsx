@@ -243,32 +243,42 @@ function WipeWord() {
       meltingRef.current = true
       wrap.classList.add('is-melt')
 
-      // 从笔画上随机抓一些点，让水从字身上冒出来往下淌
+      // 化成几股水流（不是一把细水珠）：每个字母轮流挑起流点，
+      // 横向上互相错开，偏向笔画下半段 —— 水是攒到笔画下缘才淌下来的
       const list: MeltDrop[] = []
-      LEI_LETTERS.forEach((l) => {
-        const n = 4 + Math.floor(Math.random() * 2)
-        for (let k = 0; k < n; k++) {
-          const s = l.segs[Math.floor(Math.random() * l.segs.length)]
-          const t = Math.random()
-          const top = dripY(s.y1 + (s.y2 - s.y1) * t)
+      const pickedX: number[] = []
+      for (let s = 0; s < 4; s++) {
+        const l = LEI_LETTERS[s % LEI_LETTERS.length]
+        for (let tries = 0; tries < 12; tries++) {
+          const seg = l.segs[Math.floor(Math.random() * l.segs.length)]
+          // 水是从笔画下缘淌下来的，起流点压在笔画的低处
+          const t = 0.72 + Math.random() * 0.28
+          const x = dripX(seg.x1 + (seg.x2 - seg.x1) * t)
+          // 起流点横向至少错开 10%，太近会糊成一片
+          if (pickedX.some((px) => Math.abs(px - x) < 10)) continue
+          const top = dripY(seg.y1 + (seg.y2 - seg.y1) * t)
+          pickedX.push(x)
           list.push({
-            x: dripX(s.x1 + (s.x2 - s.x1) * t),
+            x,
             y: top,
-            w: 0.0042 + Math.random() * 0.0038,
-            travel: ((100 - top) / 100 + 0.16) * WORD_EM,
-            dur: 1.0 + Math.random() * 0.7,
-            delay: Math.random() * 420,
-            rot: Math.random() * 4 - 2,
+            // 一股水柱约 30px 宽，末端水滴同一尺寸
+            w: 0.0058 + Math.random() * 0.0012,
+            // 一路流到首屏底下再消失，不是在中途化掉
+            travel: ((100 - top) / 100 + 0.3) * WORD_EM * 1.5,
+            dur: 1.6 + Math.random() * 0.6,
+            delay: s * 90 + Math.random() * 120,
+            rot: Math.random() * 3 - 1.5,
           })
+          break
         }
-      })
+      }
       setDrops(list)
 
       meltTimer = window.setTimeout(() => {
         meltingRef.current = false
         setDrops([])
         setRun((r) => r + 1)
-      }, 2250)
+      }, 2850)
     }
     wrap.addEventListener('pointerdown', onMelt)
 
@@ -402,7 +412,7 @@ function WipeWord() {
             {drops.map((d, i) => (
               <span
                 key={i}
-                className="hp-drip hp-drip--melt"
+                className="hp-stream"
                 style={
                   {
                     left: `${d.x.toFixed(2)}%`,
@@ -415,7 +425,10 @@ function WipeWord() {
                   } as CSSProperties
                 }
               >
-                <i className="hp-bead" />
+                {/* 一股水 = 一根有圆柱感的水柱（两边亮、中间透）+ 末端水滴 */}
+                <i className="hp-stream-body" />
+                <i className="hp-stream-shine" />
+                <i className="hp-bead hp-stream-bead" />
               </span>
             ))}
           </div>
@@ -447,7 +460,7 @@ export default function HomePage() {
       raf = 0
       const span = Math.max(1, window.innerHeight)
       const p = Math.min(1, Math.max(0, window.scrollY / (span * 0.85)))
-      el.style.opacity = String(+((1 - p) ** 1.4).toFixed(3))
+      el.style.setProperty('--wet-o', String(+((1 - p) ** 1.4).toFixed(3)))
       el.classList.toggle('is-idle', p > 0.985)
     }
     const onScroll = () => {

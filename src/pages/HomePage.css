@@ -291,6 +291,14 @@
   pointer-events: none;
   overflow: hidden;
   contain: layout style;
+  /* 滚动时 JS 只改这个变量，CSS 里才能再乘上“化水时退后”的系数 */
+  opacity: var(--wet-o, 1);
+  transition: opacity 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* 字化水的时候，满屏常驻的水先退到后面去，不然几股水流混在二十几道水痕里根本看不出来 */
+.home-page:has(.hp-word.is-melt) .hp-wet {
+  opacity: calc(var(--wet-o, 1) * 0.32);
 }
 
 /* 一条水 = 一截固定长度的湿痕 + 挂在末端的水珠，整条从屏幕上方滑到屏幕下方。
@@ -463,6 +471,12 @@
   }
 
   .hp-flow--glass .hp-flow-line {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /* 化水时的股流也一样：手机上四层折射叠在一起会掉帧 */
+  .hp-stream-body {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -933,15 +947,116 @@
   }
 }
 
-/* 化水时从笔画上冒出来的水：跟写字时的水珠同一套视觉，
-   只是跳过“聚水”那一步，直接进入下滑 */
-.hp-drip--melt {
+/* ---------- 化水时的那几股水流 ---------- */
+/* 一股水：一根往下淌的水柱 + 末端一颗水滴。
+   水柱不是刷白的一条，而是「两边亮、中间透」的圆柱 ——
+   中间压暗（水把雾填平了，比周围更透）、两侧留亮边，才有水的体积；
+   再叠一层折射把背后的雾擦清，浅色雾面上也看得见。 */
+.hp-stream {
+  /* --w 是 em 单位（跟着字标字号走），小屏字小，股流就会细得像根线；
+     这里给一个下限，保证大小屏都是“一股”而不是“一根” */
+  --sw: max(calc(var(--w, 2px) * 9), 20px);
+  position: absolute;
   top: 0;
   height: 0;
+  width: var(--sw);
+  margin-left: calc(var(--sw) * -0.5);
   transform: rotate(var(--rot, 0deg));
   transform-origin: 50% 0;
-  animation: hp-melt-drip var(--dur, 1.2s) cubic-bezier(0.34, 0.08, 0.6, 1) var(--delay, 0ms) 1 both;
+  animation: hp-melt-drip var(--dur, 1.6s) cubic-bezier(0.34, 0.08, 0.6, 1) var(--delay, 0ms) 1 both;
   will-change: height, opacity;
+}
+
+/* 单颗水珠那层的拖尾 / 水膜用不上，这里自己画 */
+.hp-stream::before,
+.hp-stream::after {
+  display: none;
+}
+
+.hp-stream-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 42% 42% 46% 46% / 4% 4% 8% 8%;
+  background:
+    /* 横截面：光从左上来 —— 左边一道亮边，右边压暗，中间是透的水，
+       两边一样亮就成了一根玻璃棒 */
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(253, 255, 255, 0.62) 8%,
+      rgba(246, 252, 255, 0.2) 24%,
+      rgba(104, 156, 194, 0.14) 52%,
+      rgba(255, 255, 255, 0.1) 74%,
+      rgba(4, 18, 28, 0.2) 93%,
+      rgba(255, 255, 255, 0) 100%
+    ),
+    /* 纵向：从字上下来时最薄，越往下水越多 */
+    linear-gradient(
+      to bottom,
+      rgba(226, 244, 255, 0) 0%,
+      rgba(236, 250, 255, 0.12) 45%,
+      rgba(248, 254, 255, 0.22) 100%
+    );
+  -webkit-backdrop-filter: blur(2.6px) brightness(1.22) contrast(1.18) saturate(1.08);
+  backdrop-filter: blur(2.6px) brightness(1.22) contrast(1.18) saturate(1.08);
+  filter: blur(0.5px);
+  /* 上端化进笔画里，别留一个圆头的“棒子顶” */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 6%, #000 16%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 6%, #000 16%);
+}
+
+/* 高光：贴着左侧内壁的一条，水柱才有圆的立体感；稍微往下跑，像水在流 */
+.hp-stream-shine {
+  position: absolute;
+  left: 18%;
+  top: 6%;
+  bottom: 10%;
+  width: calc(var(--sw) * 0.11);
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.34) 26%,
+    rgba(255, 255, 255, 0.78) 72%,
+    rgba(255, 255, 255, 0.94) 100%
+  );
+  background-size: 100% 190%;
+  filter: blur(0.6px);
+  animation: hp-shine-run 1.4s linear infinite;
+}
+
+@keyframes hp-shine-run {
+  from {
+    background-position: 0 -60%;
+  }
+  to {
+    background-position: 0 60%;
+  }
+}
+
+/* 末端水滴：跟写字时那颗同一份形状与光学，按股流的粗细放大 */
+.hp-stream .hp-bead {
+  left: 50%;
+  bottom: calc(var(--sw) * -0.34);
+  width: var(--sw);
+  height: calc(var(--sw) * 1.18);
+  margin-left: calc(var(--sw) * -0.5);
+}
+
+/* 里子内缩也要跟着股流走，否则水珠的亮边会糊掉 */
+.hp-stream .hp-bead::before {
+  left: calc(var(--sw) * 0.032);
+  right: calc(var(--sw) * 0.032);
+  top: calc(var(--sw) * 0.036);
+  bottom: calc(var(--sw) * 0.036);
+}
+
+/* 手机上别叠四层折射 */
+@media (max-width: 760px) {
+  .hp-stream-body {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 @keyframes hp-melt-drip {
