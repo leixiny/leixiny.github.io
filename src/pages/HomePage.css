@@ -1202,282 +1202,234 @@
   font-weight: 400;
 }
 
-/* ---------- 区块标题 ---------- */
-.hp-sec-head {
-  display: grid;
-  gap: 12px;
-}
-
-.hp-sec-label {
-  margin: 0;
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--rp-mute);
-  text-transform: uppercase;
-}
-
-.hp-sec-head h2 {
-  margin: 0;
-  font-size: clamp(30px, 4.2vw, 54px);
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-}
-
 .hp-note {
   margin: 18px 0 0;
   font-size: 14px;
   color: var(--rp-mute);
 }
 
-/* ---------- 联系（黑色满铺色块） ---------- */
-.hp-contact {
-  padding-block: clamp(60px, 8vw, 108px);
-  background: var(--rp-ink);
-  color: #fff;
+/* ---------- 页脚：联系 + 留言，小字浅色，不占版块 ---------- */
+.hp-foot {
+  padding-block: clamp(36px, 4.4vw, 62px) 20px;
+  background: var(--rp-soft);
+  font-size: 12.5px;
+  color: var(--rp-mute);
 }
 
-.hp-contact .hp-sec-label {
-  color: rgba(255, 255, 255, 0.42);
-}
-
-.hp-contact .hp-sec-head h2 {
-  color: #fff;
-}
-
-.hp-contact-list {
-  margin-top: clamp(30px, 4vw, 52px);
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-}
-
-.hp-contact-row {
+.hp-foot-grid {
   display: grid;
-  grid-template-columns: clamp(64px, 8vw, 130px) minmax(0, 1fr) auto;
-  gap: clamp(16px, 2.4vw, 40px);
-  align-items: center;
-  padding-block: clamp(18px, 2.2vw, 28px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-  transition: padding-left 0.3s var(--rp-ease);
+  grid-template-columns:
+    minmax(180px, 1.15fr) minmax(150px, 0.85fr)
+    minmax(300px, 1.5fr) minmax(112px, 0.55fr);
+  gap: clamp(24px, 3.6vw, 60px);
+  align-items: start;
 }
 
-.hp-contact-row:not(.is-static):hover {
-  padding-left: 16px;
+.hp-foot-name {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  color: var(--rp-ink);
+  text-decoration: none;
+  transition: opacity 0.2s var(--rp-ease);
 }
 
-.hp-contact-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.42);
+.hp-foot-name:hover {
+  opacity: 0.62;
 }
 
-.hp-contact-value {
-  font-size: clamp(19px, 2.4vw, 32px);
+.hp-foot-brand p {
+  margin: 10px 0 0;
+  max-width: 24em;
+  font-size: 12px;
+  line-height: 1.85;
+  color: var(--rp-faint);
+}
+
+.hp-foot-col h3 {
+  margin: 0 0 12px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: -0.025em;
-  color: #fff;
-  transition: opacity 0.25s var(--rp-ease);
+  letter-spacing: 0.02em;
+  color: var(--rp-ink);
+}
+
+.hp-foot-col ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hp-foot-col a,
+.hp-foot-col span,
+.hp-foot-col button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--rp-mute);
+  text-align: left;
+  text-decoration: none;
+  transition: color 0.2s var(--rp-ease);
   word-break: break-word;
 }
 
-.hp-contact-row:not(.is-static):hover .hp-contact-value {
-  background-image: var(--rp-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.hp-foot-col a:hover,
+.hp-foot-col button:hover {
+  color: var(--rp-ink);
 }
 
-.hp-contact-arrow {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.32);
-  transition: color 0.25s var(--rp-ease), transform 0.25s var(--rp-ease);
+.hp-foot-col button {
+  cursor: pointer;
 }
 
-.hp-contact-row:not(.is-static):hover .hp-contact-arrow {
-  color: #fff;
-  transform: translate(3px, -3px);
-}
-
-/* ---------- 留言 ---------- */
-.hp-talk {
-  padding-block: clamp(60px, 8vw, 108px);
-  background: #fff;
-}
-
-.hp-talk-grid {
-  display: grid;
-  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
-  gap: clamp(32px, 5vw, 80px);
-  margin-top: clamp(28px, 3.4vw, 44px);
-}
-
-.hp-form {
-  display: grid;
-  gap: 18px;
-  align-content: start;
-}
-
-.hp-field {
-  display: grid;
+/* 一行留言：昵称 + 内容 + 箭头，全部收在一颗小胶囊里 */
+.hp-say {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  font-size: 13px;
+  max-width: 400px;
+  height: 34px;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--rp-line-2);
+  border-radius: 999px;
+  background: #fff;
+  transition: border-color 0.2s var(--rp-ease), box-shadow 0.2s var(--rp-ease);
+}
+
+.hp-say:focus-within {
+  border-color: var(--rp-ink);
+  box-shadow: 0 0 0 3px rgba(10, 10, 11, 0.05);
+}
+
+.hp-say input {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--rp-ink);
+  outline: none;
+}
+
+.hp-say input::placeholder {
+  font-weight: 400;
+  color: var(--rp-faint);
+}
+
+.hp-say-name {
+  flex: 0 0 60px;
+  width: 60px;
+  padding-right: 8px !important;
+  border-right: 1px solid var(--rp-line) !important;
+}
+
+.hp-say-text {
+  flex: 1 1 auto;
+}
+
+.hp-say button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--rp-ink);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: opacity 0.2s var(--rp-ease), transform 0.2s var(--rp-ease);
+}
+
+.hp-say button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.hp-say button:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.hp-say-note {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: #be123c;
+}
+
+.hp-say-log {
+  display: grid;
+  gap: 6px;
+  max-width: 430px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hp-say-log li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-mute);
+}
+
+.hp-say-log strong {
+  flex: 0 0 auto;
   font-weight: 650;
   color: var(--rp-ink-2);
 }
 
-.hp-field > span {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+.hp-say-log span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.hp-field em {
-  font-style: normal;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--rp-faint);
-}
-
-.hp-field input,
-.hp-field textarea {
-  width: 100%;
-  border: 1px solid var(--rp-line-2);
-  border-radius: 14px;
-  padding: 14px 16px;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 400;
-  color: var(--rp-ink);
-  background: #fff;
-  outline: none;
-  transition: border-color 0.2s var(--rp-ease), box-shadow 0.2s var(--rp-ease);
-}
-
-.hp-field input::placeholder,
-.hp-field textarea::placeholder {
-  color: var(--rp-faint);
-  font-weight: 400;
-}
-
-.hp-field input:focus,
-.hp-field textarea:focus {
-  border-color: var(--rp-ink);
-  box-shadow: 0 0 0 4px rgba(10, 10, 11, 0.06);
-}
-
-.hp-field textarea {
-  min-height: 118px;
-  line-height: 1.65;
-  resize: vertical;
-}
-
-.hp-field input:disabled,
-.hp-field textarea:disabled {
-  background: var(--rp-soft);
-  cursor: not-allowed;
-}
-
-.hp-form .hp-btn {
-  justify-self: start;
-  margin-top: 2px;
-}
-
-.hp-error {
-  margin: 0;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: #fff1f4;
-  color: #be123c;
-  font-size: 13px;
-}
-
-.hp-messages {
-  display: grid;
-  align-content: start;
-  max-height: 470px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.hp-messages::-webkit-scrollbar {
-  width: 4px;
-}
-
-.hp-messages::-webkit-scrollbar-thumb {
-  background: var(--rp-line-2);
-  border-radius: 3px;
-}
-
-.hp-msg {
-  padding: 18px 0;
-  border-top: 1px solid var(--rp-line);
-}
-
-.hp-msg:first-of-type {
-  border-top: 0;
-  padding-top: 4px;
-}
-
-.hp-msg header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 7px;
-}
-
-.hp-msg strong {
-  font-size: 14px;
-  font-weight: 750;
-  color: var(--rp-ink);
-}
-
-.hp-msg time {
-  font-size: 12px;
+.hp-say-log time {
+  flex: 0 0 auto;
+  font-size: 11px;
   color: var(--rp-faint);
   font-variant-numeric: tabular-nums;
 }
 
-.hp-msg p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--rp-ink-2);
-  word-break: break-word;
+.hp-say-log .is-empty {
+  color: var(--rp-faint);
 }
 
-/* ---------- 页脚 ---------- */
-.hp-footer {
-  padding-block: 24px;
-  background: var(--rp-ink);
-  color: rgba(255, 255, 255, 0.5);
+.hp-say-count {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--rp-faint);
 }
 
-.hp-footer-row {
+.hp-foot-base {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  font-size: 12.5px;
+  gap: 6px 16px;
+  margin-top: clamp(28px, 3.4vw, 50px);
+  padding-top: 16px;
+  border-top: 1px solid var(--rp-line);
+  font-size: 11.5px;
+  color: var(--rp-faint);
 }
 
-.hp-footer-mid {
-  margin-right: auto;
-  color: rgba(255, 255, 255, 0.32);
+.hp-foot-base-end {
+  margin-left: auto;
 }
 
-.hp-footer button {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font: inherit;
-  color: rgba(255, 255, 255, 0.6);
-  transition: color 0.2s var(--rp-ease);
-}
-
-.hp-footer button:hover {
-  color: #fff;
-}
 
 /* ---------- 响应式 ---------- */
 @media (max-width: 900px) {
@@ -1499,13 +1451,36 @@
     font-size: 30px;
   }
 
-  .hp-talk-grid {
-    grid-template-columns: 1fr;
-    gap: 34px;
+  /* 页脚收成两列：品牌独占一行，留言放最后并横跨整行 */
+  .hp-foot-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 26px 28px;
   }
 
-  .hp-messages {
-    max-height: none;
+  .hp-foot-brand {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+
+  .hp-foot-col:nth-child(2) {
+    order: 2;
+  }
+
+  .hp-foot-col:nth-child(4) {
+    order: 3;
+  }
+
+  .hp-foot-say {
+    grid-column: 1 / -1;
+    order: 4;
+  }
+
+  .hp-say {
+    max-width: none;
+  }
+
+  .hp-foot-base-end {
+    margin-left: 0;
   }
 }
 
@@ -1576,26 +1551,30 @@
     font-size: 14px;
   }
 
-  .hp-contact-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px 16px;
+  .hp-foot {
+    padding-block: 30px 18px;
   }
 
-  .hp-contact-label {
-    display: none;
+  .hp-foot-col a,
+  .hp-foot-col span,
+  .hp-foot-col button,
+  .hp-say input {
+    font-size: 12px;
   }
 
-  .hp-contact-value {
-    font-size: 19px;
+  /* 触摸要够大：胶囊抬到 40px，箭头按钮 30px */
+  .hp-say {
+    height: 40px;
   }
 
-  .hp-footer-row {
-    flex-wrap: wrap;
-    gap: 8px 14px;
+  .hp-say button {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
   }
 
-  .hp-footer-mid {
-    display: none;
+  .hp-foot-base {
+    font-size: 11px;
   }
 }
 
