@@ -37,6 +37,82 @@
   padding-inline: clamp(20px, 4.5vw, 72px);
 }
 
+/* ---------- 每页一片水：首页冷蓝、作品集浅绿、登录深绿 ---------- */
+/* 作品集整页泡在水里：固定一层浅绿水纹，上面压一层白雾，
+   板块本身做成半透的磨砂玻璃，水就从缝里透出来，作品还压得住 */
+.home-page.is-works {
+  /* 底片交给伪元素，本体必须透明，不然会把它盖住 */
+  background: transparent;
+  /* 自己开一层层叠上下文：不然 z-index:-1 的水层会沉到 body 底色下面去（body 是不透明灰） */
+  isolation: isolate;
+}
+
+.home-page.is-works::before {
+  content: '';
+  position: fixed;
+  /* 往外多铺一圈：blur 会啃掉边缘，铺满就看不见接缝 */
+  inset: -3%;
+  z-index: -1;
+  background-color: #dfeee2;
+  background-image: url('../assets/bq-water-green.webp'),
+    url('data:image/webp;base64,UklGRlIAAABXRUJQVlA4IEYAAACwAwCdASoUAA0APu1kq04ppaQiMAgBMB2JYwC7ACFMr+LauaouAAD+6w5OZ/66y8/7WAiRW0eJ+h+LLLvJz3O5gavlQAAA');
+  background-size: cover, cover;
+  background-position: center 18%, center 18%;
+  background-repeat: no-repeat, no-repeat;
+  /* 水纹太密，虚一点，不然跟作品抢注意力 */
+  filter: blur(1.6px) saturate(1.06);
+}
+
+.home-page.is-works::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0) 22%,
+      rgba(255, 255, 255, 0.04) 62%,
+      rgba(255, 255, 255, 0.22) 100%
+    ),
+    radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.16), transparent 62%);
+}
+
+.home-page.is-works .hp-nav {
+  background: rgba(255, 255, 255, 0.58);
+  border-bottom-color: rgba(255, 255, 255, 0.6);
+}
+
+.home-page.is-works .hp-skills-label {
+  /* 灰字压在浅绿水上会糊，往深里挪一档 */
+  color: var(--rp-mute);
+}
+
+.home-page.is-works .hp-skills {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px) saturate(1.04);
+  -webkit-backdrop-filter: blur(10px) saturate(1.04);
+}
+
+/* 作品这块是一张磨砂玻璃板：比上下都白一点，下面托一道影，才像“浮在水上”的一整块 */
+.home-page.is-works .hp-works {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 26px 70px rgba(12, 48, 32, 0.12);
+  backdrop-filter: blur(22px) saturate(1.06);
+  -webkit-backdrop-filter: blur(22px) saturate(1.06);
+}
+
+.home-page.is-works .hp-foot {
+  background: rgba(255, 255, 255, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(1.04);
+  -webkit-backdrop-filter: blur(20px) saturate(1.04);
+}
+
 .home-page ::selection {
   background: rgba(47, 157, 229, 0.2);
 }
@@ -141,20 +217,20 @@
   transform: translateX(3px);
 }
 
-/* ---------- 首屏：满屏水雾玻璃，一笔把字擦出来 ---------- */
-/* 底子就是那张实拍的冷凝水玻璃，铺满整屏 */
+/* ---------- 首屏：一整片水面，一笔把字擦出来 ---------- */
+/* 底子就是那张实拍的水面（涟漪 + 几尾鱼），铺满整屏 */
 .hp-hero {
   position: relative;
   display: flex;
   min-height: calc(100svh - 72px);
   padding-block: clamp(26px, 4.4vh, 58px);
   overflow: hidden;
-  background-color: #16262f;
-  /* 第一层是主图，第二层是 28px 的极小占位图：大图下载完之前先铺一层同色调 */
-  background-image: url('../assets/fog-glass.webp'),
-    url('data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAAAQBQCdASocABQAPrVMnEmnJKKhMBgMAOAWiWUArCDugSL0R8RvkeLvyQ0ROcEM+SdIAP5ry4EpPPS57ceue9b1JPlP2UxXiv9clHfaFLGAeLS70m6f8HbHzbgBYRFNjll2J2n2T/IcgXcLzlROda1hJcQInOmndAA=');
+  background-color: #1b3b46;
+  /* 第一层是主图，第二层是 20px 的极小占位图：大图下载完之前先铺一层同色调 */
+  background-image: url('../assets/bq-water-blue.webp'),
+    url('data:image/webp;base64,UklGRk4AAABXRUJQVlA4IEIAAADQAwCdASoUAA0APu1iqU2ppaOiMAgBMB2JYwC7ABhxXTWNP+DBrgAA/uBsd5nfKWNM0rE3Yd3N3upRuz0rNZuAAAA=');
   background-size: cover, cover;
-  background-position: center 50%, center 50%;
+  background-position: center 46%, center 46%;
   background-repeat: no-repeat, no-repeat;
   color: #fff;
   isolation: isolate;
@@ -167,8 +243,10 @@
   z-index: 2;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(3, 11, 16, 0.9) 0%, rgba(3, 11, 16, 0.7) 8%, rgba(3, 11, 16, 0.22) 16%, rgba(3, 11, 16, 0.02) 22%, rgba(3, 11, 16, 0) 27%),
-    linear-gradient(0deg, rgba(3, 11, 16, 0.88) 0%, rgba(3, 11, 16, 0.5) 7%, rgba(3, 11, 16, 0.08) 15%, rgba(3, 11, 16, 0) 21%);
+    linear-gradient(180deg, rgba(3, 11, 16, 0.82) 0%, rgba(3, 11, 16, 0.62) 8%, rgba(3, 11, 16, 0.2) 16%, rgba(3, 11, 16, 0.02) 22%, rgba(3, 11, 16, 0) 27%),
+    linear-gradient(0deg, rgba(3, 11, 16, 0.86) 0%, rgba(3, 11, 16, 0.5) 7%, rgba(3, 11, 16, 0.08) 15%, rgba(3, 11, 16, 0) 21%),
+    /* 四周一圈暗角：水面太满，收一下边才把视线压回字上 */
+    radial-gradient(86% 84% at 50% 46%, rgba(3, 12, 18, 0) 54%, rgba(3, 12, 18, 0.22) 100%);
 }
 
 /* 上（说明 + 数据）／中（字标）／下（简介 + 按钮）三段撑满整屏 */

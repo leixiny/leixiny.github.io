@@ -138,7 +138,7 @@ export default function WorksPage() {
   const interactDisabled = guestbookState === 'offline' || guestbookState === 'error'
 
   return (
-    <div className="home-page">
+    <div className="home-page is-works">
       <header className="hp-nav">
         <Link className="hp-brand" to="/home">
           <span className="hp-brand-dot" />
