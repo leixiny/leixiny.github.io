@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
+import WorksPage from './pages/WorksPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DashboardPage from './pages/DashboardPage'
 import CustomersPage from './pages/CustomersPage'
@@ -58,8 +59,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/home" element={<HomePage />} />
-      {/* 作品集不再是单独一页：老链接直接送回首页那条长串 */}
-      <Route path="/works" element={<Navigate to="/home?to=works" replace />} />
+      {/* 作品集是独立的一页 */}
+      <Route path="/works" element={<WorksPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route
         path="/onboarding"
