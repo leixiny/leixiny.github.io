@@ -400,6 +400,13 @@
   opacity: calc(var(--wet-o, 1) * 0.32);
 }
 
+/* 化水这两秒把水层冻住：它本来就要退到 0.32，停一下看不出来，
+   但能省掉二十几条水痕每一帧的合成，把算力全留给字和股流 */
+.home-page:has(.hp-word.is-melt) .hp-wet,
+.home-page:has(.hp-word.is-melt) .hp-wet * {
+  animation-play-state: paused;
+}
+
 /* 一条水 = 一截固定长度的湿痕 + 挂在末端的水珠，整条从屏幕上方滑到屏幕下方。
    长度有限才不像贯穿全屏的雨丝；起止都在屏幕外，循环重启时不会跳。 */
 .hp-flow {
@@ -1006,20 +1013,26 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 化水时刻：字形套湍流置换滤镜（边缘被噪声搅出水波），整体下沉、纵向拉长、淡出 */
+/* 化水时刻：两层干活 —— 里层字只负责“被水波搅开”（滤镜是静态的，只栅格化一次），
+   外层 <g> 只动 transform / opacity，整段能直接交给合成线程。
+   以前滤镜和位移挤在同一个元素上，等于每帧重建一次噪声再置换，必掉帧。 */
 .hp-word.is-melt .hp-glyph {
-  transform-box: fill-box;
-  transform-origin: 50% 22%;
-  animation: hp-word-melt 1.9s cubic-bezier(0.55, 0.02, 0.75, 0.4) forwards;
   filter: url(#hp-melt-f);
 }
 
+.hp-word.is-melt .hp-glyph-move {
+  transform-box: fill-box;
+  transform-origin: 50% 22%;
+  animation: hp-word-melt 1.9s cubic-bezier(0.55, 0.02, 0.75, 0.4) forwards;
+  will-change: transform, opacity;
+}
+
 /* 三个字母错开一点：水从 L 先化，i 撑到最后 */
-.hp-word.is-melt .hp-glyph:nth-of-type(2) {
+.hp-word.is-melt .hp-glyph-move:nth-of-type(2) {
   animation-delay: 90ms;
 }
 
-.hp-word.is-melt .hp-glyph:nth-of-type(3) {
+.hp-word.is-melt .hp-glyph-move:nth-of-type(3) {
   animation-delay: 180ms;
 }
 
@@ -1057,13 +1070,15 @@
   --sw: max(calc(var(--w, 2px) * 9), 20px);
   position: absolute;
   top: 0;
-  height: 0;
+  /* 高度先按“流到底”定死，生长交给子层的 scaleY：
+     以前动的是 height，每帧都要重排、重画渐变、重新取景做折射 */
+  height: var(--travel, 400px);
   width: var(--sw);
   margin-left: calc(var(--sw) * -0.5);
   transform: rotate(var(--rot, 0deg));
   transform-origin: 50% 0;
-  animation: hp-melt-drip var(--dur, 1.6s) cubic-bezier(0.34, 0.08, 0.6, 1) var(--delay, 0ms) 1 both;
-  will-change: height, opacity;
+  animation: hp-melt-fade var(--dur, 1.6s) cubic-bezier(0.34, 0.08, 0.6, 1) var(--delay, 0ms) 1 both;
+  pointer-events: none;
 }
 
 /* 单颗水珠那层的拖尾 / 水膜用不上，这里自己画 */
@@ -1098,7 +1113,9 @@
     );
   -webkit-backdrop-filter: blur(2.6px) brightness(1.22) contrast(1.18) saturate(1.08);
   backdrop-filter: blur(2.6px) brightness(1.22) contrast(1.18) saturate(1.08);
-  filter: blur(0.5px);
+  transform-origin: 50% 0;
+  animation: hp-melt-grow var(--dur, 1.6s) cubic-bezier(0.34, 0.08, 0.6, 1) var(--delay, 0ms) 1 both;
+  will-change: transform;
   /* 上端化进笔画里，别留一个圆头的“棒子顶” */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 6%, #000 16%);
   mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 6%, #000 16%);
@@ -1122,24 +1139,38 @@
   background-size: 100% 190%;
   filter: blur(0.6px);
   animation: hp-shine-run 1.4s linear infinite;
+  will-change: transform;
 }
 
+/* 用位移而不是 background-position：不用每帧重绘那条渐变 */
 @keyframes hp-shine-run {
   from {
-    background-position: 0 -60%;
+    transform: translateY(-18%);
   }
   to {
-    background-position: 0 60%;
+    transform: translateY(18%);
   }
 }
 
-/* 末端水滴：跟写字时那颗同一份形状与光学，按股流的粗细放大 */
+/* 末端水滴：跟写字时那颗同一份形状与光学，按股流的粗细放大。
+   它挂在整条水柱的末端，所以自己补一段同样的位移，才不会一开始就贴在最底下 */
 .hp-stream .hp-bead {
   left: 50%;
   bottom: calc(var(--sw) * -0.34);
   width: var(--sw);
   height: calc(var(--sw) * 1.18);
   margin-left: calc(var(--sw) * -0.5);
+  animation: hp-melt-bead var(--dur, 1.6s) cubic-bezier(0.34, 0.08, 0.6, 1) var(--delay, 0ms) 1 both;
+  will-change: transform;
+}
+
+@keyframes hp-melt-bead {
+  from {
+    transform: translateY(calc(var(--travel, 400px) * -0.97));
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 /* 里子内缩也要跟着股流走，否则水珠的亮边会糊掉 */
@@ -1158,9 +1189,8 @@
   }
 }
 
-@keyframes hp-melt-drip {
+@keyframes hp-melt-fade {
   0% {
-    height: calc(var(--travel) * 0.03);
     opacity: 0;
   }
   10% {
@@ -1170,8 +1200,16 @@
     opacity: 0.95;
   }
   100% {
-    height: var(--travel);
     opacity: 0;
+  }
+}
+
+@keyframes hp-melt-grow {
+  from {
+    transform: scaleY(0.03);
+  }
+  to {
+    transform: scaleY(1);
   }
 }
 

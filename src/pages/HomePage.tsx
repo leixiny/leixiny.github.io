@@ -294,7 +294,8 @@ function WipeWord() {
           break
         }
       }
-      setDrops(list)
+      // 股流晚 220ms 才挂上去：字的滤镜要先栅格化一次，两件贵事挤在同一帧就会先顿一下
+      window.setTimeout(() => setDrops(list), 220)
 
       meltTimer = window.setTimeout(() => {
         meltingRef.current = false
@@ -324,15 +325,8 @@ function WipeWord() {
           <defs>
             {/* 化水用的湍流置换：字边被噪声搅出水波，baseFrequency 自己轻微起伏 */}
             <filter id="hp-melt-f" x="-15%" y="-15%" width="130%" height="150%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.011 0.045" numOctaves="2" seed="8" result="n">
-                <animate
-                  attributeName="baseFrequency"
-                  values="0.011 0.045;0.017 0.072;0.011 0.045"
-                  dur="1.3s"
-                  repeatCount="indefinite"
-                />
-              </feTurbulence>
-              <feDisplacementMap in="SourceGraphic" in2="n" scale="30" xChannelSelector="R" yChannelSelector="G" />
+              <feTurbulence type="fractalNoise" baseFrequency="0.02 0.07" numOctaves="1" seed="8" result="n" />
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G" />
             </filter>
             <pattern
             id="hp-art"
@@ -345,16 +339,19 @@ function WipeWord() {
             {/* pattern 的内容坐标是相对 tile 的，所以图片从 0 0 铺满整块 tile */}
             <image href={lumuUrl} x={0} y={0} width={ART_W} height={ART_H} preserveAspectRatio="none" />
           </pattern>
+          {/* 预热：同一个滤镜先在 1px 的小方块上走一遍，点字时才不会临时编译着色器 */}
+          <rect className="hp-warm" x={LEI_LEFT} y={LEI_TOP} width={LEI_W} height={LEI_H} filter="url(#hp-melt-f)" opacity={0.004} />
           {LEI_LETTERS.map((l, i) => (
+            /* 遮罩边距只留半条笔宽：以前留 400，离屏面比字大 3 倍，每帧都要白画一遍 */
             <mask
               key={l.ch}
               id={`hp-mask-${i}`}
               className="hp-mask"
               maskUnits="userSpaceOnUse"
-              x={LEI_LEFT - 400}
-              y={LEI_TOP - 400}
-              width={LEI_W + 800}
-              height={LEI_H + 800}
+              x={LEI_LEFT - 120}
+              y={LEI_TOP - 120}
+              width={LEI_W + 240}
+              height={LEI_H + 240}
             >
               {/* 笔顺：把相邻两颗印章连成一条带圆头的笔迹，按 --at 先后落笔 */}
               {l.segs.map((s, k) => (
@@ -373,28 +370,29 @@ function WipeWord() {
               {/* 收笔后把笔锋扫不到的边角轻轻抹匀 */}
               <rect
                 className="hp-settle"
-                x={LEI_LEFT - 400}
-                y={LEI_TOP - 400}
-                width={LEI_W + 800}
-                height={LEI_H + 800}
+                x={LEI_LEFT - 120}
+                y={LEI_TOP - 120}
+                width={LEI_W + 240}
+                height={LEI_H + 240}
                 fill="#fff"
               />
             </mask>
           ))}
         </defs>
         {LEI_LETTERS.map((l, i) => (
-          <text
-            key={l.ch}
-            x={l.x}
-            y={0}
-            mask={`url(#hp-mask-${i})`}
-            fill="url(#hp-art)"
-            stroke="rgba(255,255,255,0.42)"
-            strokeWidth={2}
-            className="hp-glyph"
-          >
-            {l.ch}
-          </text>
+          <g key={l.ch} className="hp-glyph-move">
+            <text
+              x={l.x}
+              y={0}
+              mask={`url(#hp-mask-${i})`}
+              fill="url(#hp-art)"
+              stroke="rgba(255,255,255,0.42)"
+              strokeWidth={2}
+              className="hp-glyph"
+            >
+              {l.ch}
+            </text>
+          </g>
         ))}
         </svg>
         {/* 水层盖在字上面：笔尖刚擦过的地方攒出水珠，顺着玻璃往下淌到字下面 */}
@@ -448,8 +446,9 @@ function WipeWord() {
                 }
               >
                 {/* 一股水 = 一根有圆柱感的水柱（两边亮、中间透）+ 末端水滴 */}
-                <i className="hp-stream-body" />
-                <i className="hp-stream-shine" />
+                <i className="hp-stream-body">
+                  <i className="hp-stream-shine" />
+                </i>
                 <i className="hp-bead hp-stream-bead" />
               </span>
             ))}
