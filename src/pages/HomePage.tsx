@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
+import WaterRipple from '../components/WaterRipple'
 
 const baseUrl = import.meta.env.BASE_URL
 
@@ -922,6 +923,8 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      <WaterRipple />
     </div>
   )
 }
