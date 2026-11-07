@@ -17,12 +17,9 @@ interface GuestbookRow {
   created_at: string
 }
 
-const contacts = [
+// 页脚只留一个邮箱：别的都收起来，不留痕
+const contacts: { label: string; href?: string; download?: boolean }[] = [
   { label: '3121410697@qq.com', href: 'mailto:3121410697@qq.com' },
-  { label: '电话：15605562093', href: 'tel:15605562093' },
-  { label: 'github.com/leixiny', href: 'https://github.com/leixiny' },
-  { label: '微信：leixinyi' },
-  { label: '简历 PDF ↓', href: `${baseUrl}resume.pdf`, download: true },
 ]
 
 function formatDate(ts: string) {
