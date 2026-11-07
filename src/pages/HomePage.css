@@ -51,15 +51,15 @@
   content: '';
   position: fixed;
   /* 往外多铺一圈：blur 会啃掉边缘，铺满就看不见接缝 */
-  inset: -3%;
+  inset: -6%;
   z-index: -1;
   background-color: #dfeee2;
-  background-image: url('../assets/bq-water-green.webp'),
-    url('data:image/webp;base64,UklGRlIAAABXRUJQVlA4IEYAAACwAwCdASoUAA0APu1kq04ppaQiMAgBMB2JYwC7ACFMr+LauaouAAD+6w5OZ/66y8/7WAiRW0eJ+h+LLLvJz3O5gavlQAAA');
-  background-size: cover, cover;
-  background-position: center 18%, center 18%;
-  background-repeat: no-repeat, no-repeat;
-  filter: blur(1.6px) saturate(1.04);
+  background-image: url('../assets/works-water.webp');
+  background-size: cover;
+  background-position: center 42%;
+  background-repeat: no-repeat;
+  /* 水面照片本身细节很多，虚一档让作品浮起来；别虚过头，涟漪和花还要看得出来 */
+  filter: blur(7px) saturate(1.06) brightness(1.01);
 }
 
 .home-page.is-works::after {
@@ -70,10 +70,10 @@
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.16) 0%,
-    rgba(255, 255, 255, 0) 22%,
-    rgba(255, 255, 255, 0.04) 62%,
-    rgba(255, 255, 255, 0.22) 100%
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(255, 255, 255, 0) 70%,
+    rgba(255, 255, 255, 0.1) 100%
   );
 }
 
