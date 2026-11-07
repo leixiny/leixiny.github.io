@@ -358,28 +358,47 @@
   font-size: 1000px;
 }
 
-/* 笔迹 = 沿笔顺排好的一串带圆头的短线段：线宽就是那一处笔画的宽度，
-   按 --at 依次落笔，字就是顺着笔画一笔一笔长出来的 */
-.hp-seg {
+/* 笔迹 = 一条带圆头的折线，用 dash 从尾巴往回收：
+   笔尖永远是一个干净的圆弧，一截收完下一截从同一个点接着起，整笔不会断。
+   以前这里是几百颗各自淡入的印章，笔尖是一颗整宽的圆盘，接缝处还会缺口，
+   写到一半看过去像笔画一块块跳出来、顺序也乱 */
+.hp-ink {
   stroke: #fff;
   fill: none;
-  opacity: 0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* 起手整条藏起来：dash 长度 = 路径长度，偏移也等于路径长度 */
+  stroke-dasharray: var(--len, 10000);
+  stroke-dashoffset: var(--len, 10000);
 }
 
-/* 每一小步自己淡入（时长由 --fade 给，只有“走两小步”那么长）：
-   太多步叠在一起淡化，边缘会糊成一片；太短又会露出印章的台阶 */
-.hp-word.is-ready .hp-seg {
-  animation: hp-seg-in var(--fade, 70ms) linear forwards;
-  /* --at 是这一笔在整笔里的位置（0~1），乘以这一笔的时长就是它的落笔时刻 */
-  animation-delay: calc(var(--pen-start, 0ms) + var(--at, 0) * var(--pen-dur, 0ms));
+/* --delay 是笔尖走到这一截的时刻，--dur 是走完这一截的时间（都由 plan() 算） */
+.hp-word.is-ready .hp-ink {
+  animation: hp-ink-draw var(--dur, 300ms) linear var(--delay, 0ms) forwards;
 }
 
-@keyframes hp-seg-in {
-  from {
-    opacity: 0;
-  }
+@keyframes hp-ink-draw {
   to {
-    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 点：从圆心长出来（笔尖按下去就是一下）。
+   transform-box: fill-box 让圆按自己的中心缩放，不跟 viewBox 走 */
+.hp-dot {
+  fill: #fff;
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.hp-word.is-ready .hp-dot {
+  animation: hp-dot-in var(--dur, 90ms) cubic-bezier(0.25, 0.9, 0.3, 1) var(--delay, 0ms) forwards;
+}
+
+@keyframes hp-dot-in {
+  to {
+    transform: scale(1);
   }
 }
 
@@ -998,10 +1017,16 @@
 
 /* 系统里关了动效：不做擦拭、不淌水，直接给擦干净的字 */
 @media (prefers-reduced-motion: reduce) {
-  .hp-seg,
-  .hp-word.is-ready .hp-seg {
+  .hp-ink,
+  .hp-word.is-ready .hp-ink {
     animation: none;
-    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+
+  .hp-dot,
+  .hp-word.is-ready .hp-dot {
+    animation: none;
+    transform: scale(1);
   }
 
   .hp-drip {

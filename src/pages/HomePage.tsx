@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
+import type { LeiSeg } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
 import WaterRipple from '../components/WaterRipple'
@@ -57,10 +58,6 @@ const MASK_PAD = 40
 // 「从碗口横着出去 → 绕上去兜过顶部 → 顺着左壁下来 → 沿底部绕到右下收笔」，
 // 这正是手写 e 的顺序，笔尖一路往前走，不回头。缺的那块以前是遮罩没盖住，
 // 靠最后一块“收笔抹匀”补，现在遮罩已经盖满了（见 MASK_PAD），不需要再补笔
-
-// 笔触切多细：步长 = 笔宽的这个比例。原来一段笔迹只有一颗印章（步长≈笔宽的四分之一），
-// 字是一块一块跳着冒出来的；切细之后笔尖每帧只往前走一小步，看着才是“写”出来的
-const DAB_STEP = 0.1
 
 // 底图在字体坐标系里的铺法：比字标宽一圈，居中对着两张脸
 const ART_W = LEI_W / ART_SPAN
@@ -175,29 +172,153 @@ const dripY = (y: number) => ((y - LEI_TOP) / LEI_H) * 100
 // 字标盒子的高度（em），用来算一颗水珠要淌多远才落到字下面
 const WORD_EM = LEI_H / 1000
 
-// 把每一笔再切成一小步一小步的笔触（步长只有笔宽的十分之一）：
-// 每一小步自己淡入，笔尖就是连续往前推的，不是隔着笔宽盖一颗印章
-type Dab = { x1: number; y1: number; x2: number; y2: number; w: number; at: number }
-const DABS: Dab[][] = LEI_LETTERS.map((l) => {
-  const out: Dab[] = []
-  l.segs.forEach((s, k) => {
-    const nextAt = l.segs[k + 1]?.at ?? 1
-    const len = Math.hypot(s.x2 - s.x1, s.y2 - s.y1)
-    const step = Math.max(6, s.w * DAB_STEP)
-    const n = Math.max(1, Math.round(len / step))
-    for (let j = 0; j < n; j++) {
-      const t0 = j / n
-      const t1 = (j + 1) / n
+// 笔迹 = 一段段带圆头的折线，用 stroke-dashoffset 从尾往头收。
+// 以前是几百颗印章各自淡入：印章是整段宽的圆盘，笔尖就成了一个鼓包，
+// 相邻两颗没接上还会缺口，看过去像笔画一块块跳出来 —— 字母写到一半最明显。
+// 现在整条路径一次性收进来，笔尖是一个干净的圆弧在往前走。
+type InkPiece = {
+  /** 折线路径（点用 dot 画，没有路径） */
+  d: string
+  /** 遮罩线宽（比这一截的笔迹再宽一圈） */
+  w: number
+  /** 路径长度，dash 用 */
+  len: number
+  /** 在这一笔里的起止位置（0~1），真正的时间由 plan() 换算 */
+  t0: number
+  t1: number
+  /** 一个点：圆心，画成一个从小长大的圆（笔点下去就是这么一下） */
+  dot?: { cx: number; cy: number }
+}
+
+// 相邻两颗笔触的中心距超过中位数的这么多倍 = 提笔换笔
+const PEN_LIFT = 2.4
+// 一段“假笔迹”：长度是中位数的这么多倍、速度又是中位速度的这么多倍 ——
+// 这就是提笔时从上一笔收笔点直接连到下一笔起笔点的那根长线（i 的点最典型：
+// 一根 594 单位的长带从竖笔底端直插到点上）。它只是数据上的连线，不是笔画，
+// 整段丢掉，改成“提笔 -> 下一笔另起”
+const LIFT_LEN = 2.2
+const LIFT_SPEED = 4
+// 一截折线最多串多少颗笔触：串多了，这一截里笔宽变化太大，遮罩会鼓出字外
+const PIECE_SEGS = 4
+// 提笔的空档占这一笔多长
+const LIFT_GAP = 0.05
+// 短过这个长度的一笔（一个点）按“点一下”算时间，不按弧长
+const DOT_ARC = 240
+
+const INK: InkPiece[][] = LEI_LETTERS.map((l) => {
+  const segs = l.segs
+  const segLen = segs.map((s) => Math.hypot(s.x2 - s.x1, s.y2 - s.y1))
+  const sorted = [...segLen].sort((a, b) => a - b)
+  const med = sorted[Math.floor(sorted.length / 2)] || 1
+
+  // 每一段在数据里走多快（长度 / 时间占比）：正常笔迹都差不多，提笔的连线会快出几倍
+  const spans = segs.map((s, i) => Math.max(1e-4, (segs[i + 1]?.at ?? 1) - s.at))
+  const speeds = segLen.map((len, i) => len / spans[i])
+  const medSpeed = [...speeds].sort((a, b) => a - b)[Math.floor(speeds.length / 2)] || 1
+  const lift = segs.map(
+    (_, i) => segLen[i] > med * LIFT_LEN && speeds[i] > medSpeed * LIFT_SPEED,
+  )
+
+  // 1) 断开成 run：丢掉提笔长线，跳过真空白
+  const runs: number[][] = []
+  let cur: number[] = []
+  for (let i = 0; i < segs.length; i++) {
+    if (lift[i]) {
+      if (cur.length) runs.push(cur)
+      cur = []
+      continue
+    }
+    if (cur.length) {
+      const prev = segs[cur[cur.length - 1]]
+      const gap = Math.hypot(segs[i].x1 - prev.x2, segs[i].y1 - prev.y2)
+      if (gap > Math.max(med * PEN_LIFT, 60)) {
+        runs.push(cur)
+        cur = []
+      }
+    }
+    cur.push(i)
+  }
+  if (cur.length) runs.push(cur)
+
+  // 2) 笔速：直的地方略快，拐弯处略慢（真人写字就是这样 —— 长竖、长横一气呵成，
+  //    转角会顿一下）。差得太狠会让一个角占掉整笔的一半时间，所以只给到 1.7 倍
+  const dirOf = (s: LeiSeg) => {
+    const len = Math.hypot(s.x2 - s.x1, s.y2 - s.y1) || 1
+    return [(s.x2 - s.x1) / len, (s.y2 - s.y1) / len]
+  }
+  // 1 = 直，0 = 直角，-1 = 折返
+  const straight = (a: LeiSeg, b: LeiSeg) => {
+    const [ax, ay] = dirOf(a)
+    const [bx, by] = dirOf(b)
+    return Math.max(0, (ax * bx + ay * by + 1) / 2)
+  }
+  const speedOf = (i: number, run: number[], k: number) => {
+    const s = segs[i]
+    const prev = k > 0 ? segs[run[k - 1]] : null
+    const next = k < run.length - 1 ? segs[run[k + 1]] : null
+    const st = Math.min(prev ? straight(prev, s) : 1, next ? straight(s, next) : 1)
+    return 1 + 0.7 * st
+  }
+
+  const weightOf = (run: number[]) => {
+    let w = 0
+    run.forEach((i, k) => {
+      w += segLen[i] / speedOf(i, run, k)
+    })
+    // 一个点：按“点一下”给个下限，不然零点几毫秒就蹦出来了
+    const arc = run.reduce((s, i) => s + segLen[i], 0)
+    return arc < DOT_ARC ? Math.max(w, 90 / 2.2) : w
+  }
+  const weights = runs.map(weightOf)
+  const wSum = weights.reduce((a, b) => a + b, 0) || 1
+  const gapT = runs.length > 1 ? LIFT_GAP : 0
+  const usable = 1 - gapT * (runs.length - 1)
+
+  const n1 = (v: number) => Math.round(v * 10) / 10
+  const out: InkPiece[] = []
+  let tRun = 0
+  runs.forEach((run, ri) => {
+    const span = (usable * weights[ri]) / wSum
+    const runW = weights[ri] || 1
+    const arc = run.reduce((s, i) => s + segLen[i], 0)
+    if (arc < DOT_ARC && run.length <= 2) {
+      // 点：一句话就写完，别用折线慢慢收，直接一颗圆按下去
+      const seg = segs[run[0]]
       out.push({
-        x1: s.x1 + (s.x2 - s.x1) * t0,
-        y1: s.y1 + (s.y2 - s.y1) * t0,
-        x2: s.x1 + (s.x2 - s.x1) * t1,
-        y2: s.y1 + (s.y2 - s.y1) * t1,
-        // 笔宽跟着这一段插值，粗细变化才连得住
-        w: s.w,
-        at: s.at + (nextAt - s.at) * t0,
+        d: '',
+        w: Math.max(...run.map((i) => segs[i].w)) + MASK_PAD,
+        len: 0,
+        t0: tRun,
+        t1: tRun + span,
+        dot: { cx: n1(seg.x1), cy: n1(seg.y1) },
+      })
+      tRun += span + gapT
+      return
+    }
+    let accW = 0
+    for (let s = 0; s < run.length; s += PIECE_SEGS) {
+      const part = run.slice(s, s + PIECE_SEGS)
+      let d = `M${n1(segs[part[0]].x1)} ${n1(segs[part[0]].y1)}`
+      let w = 0
+      let len = 0
+      let wgt = 0
+      part.forEach((i, k) => {
+        d += `L${n1(segs[i].x2)} ${n1(segs[i].y2)}`
+        w = Math.max(w, segs[i].w)
+        len += segLen[i]
+        wgt += segLen[i] / speedOf(i, run, s + k)
+      })
+      accW += wgt
+      out.push({
+        d,
+        w: w + MASK_PAD,
+        // 路径两端是圆头，dash 只按中心线算，多给一点保证收满
+        len: Math.round(len) + 2,
+        t0: tRun + ((accW - wgt) / runW) * span,
+        t1: tRun + (accW / runW) * span,
       })
     }
+    tRun += span + gapT
   })
   return out
 })
@@ -275,12 +396,16 @@ function WipeWord() {
         const dur = Math.max(420, (letter.len / PEN_SPEED) * 1000)
         starts[i] = t
         spans[i] = dur
-        mask.style.setProperty('--pen-start', `${Math.round(t)}ms`)
-        mask.style.setProperty('--pen-dur', `${Math.round(dur)}ms`)
-        // 每一小步走多久由 --at 排出来；淡入时长取“走两小步”的时间，
-        // 前后两小步在时间上搭上一点，边缘才连成一条往前动的线
-        const stepMs = dur / Math.max(1, DABS[i].length)
-        mask.style.setProperty('--fade', `${Math.round(Math.min(120, Math.max(34, stepMs * 2.4)))}ms`)
+        // 每一截自己收进来：delay 是笔尖走到这一截起点的时刻，dur 是走完这一截的时间。
+        // 前收后起在同一个点上交接，整笔就是一条不停的线
+        const pieces = INK[i]
+        const inks = mask.querySelectorAll<SVGElement>('.hp-ink, .hp-dot')
+        inks.forEach((el, k) => {
+          const p = pieces[k]
+          if (!p) return
+          el.style.setProperty('--delay', `${Math.round(t + p.t0 * dur)}ms`)
+          el.style.setProperty('--dur', `${Math.max(18, Math.round((p.t1 - p.t0) * dur))}ms`)
+        })
         t += dur + PEN_GAP
       })
       // 水：笔尖走到那一格才攒水，所以每颗水珠的延迟都挂在自己那一笔上
@@ -428,24 +553,30 @@ function WipeWord() {
               width={LETTER_BOX[i].w}
               height={LETTER_BOX[i].h}
             >
-              {/* 笔顺：一小步一颗笔触，按 --at 先后落笔。
-                  笔宽比量到的笔画直径多 PAD 个字体单位：遮罩只负责“放行”，
+              {/* 笔顺：一截折线用 dash 收进来，按 --delay 先后落笔。
+                  线宽比量到的笔画直径多 PAD 个字体单位：遮罩只负责“放行”，
                   放开不会让字变粗（外面还有字形裁剪），只是把笔画外凸的弧
                   和相邻两笔的外角一起盖住 —— 只多 8 时 e 最左侧鼓出来的那块
                   会露在遮罩外，看起来像被谁切了个口子 */}
-              {DABS[i].map((s, k) => (
-                <line
-                  key={k}
-                  className="hp-seg"
-                  x1={s.x1}
-                  y1={s.y1}
-                  x2={s.x2}
-                  y2={s.y2}
-                  strokeWidth={s.w + MASK_PAD}
-                  strokeLinecap="round"
-                  style={{ '--at': s.at } as CSSProperties}
-                />
-              ))}
+              {INK[i].map((p, k) =>
+                p.dot ? (
+                  <circle
+                    key={k}
+                    className="hp-dot"
+                    cx={p.dot.cx}
+                    cy={p.dot.cy}
+                    r={p.w / 2}
+                  />
+                ) : (
+                  <path
+                    key={k}
+                    className="hp-ink"
+                    d={p.d}
+                    strokeWidth={p.w}
+                    style={{ '--len': p.len } as CSSProperties}
+                  />
+                ),
+              )}
             </mask>
           ))}
         </defs>
