@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vante — Craft in Motion</title>
-<meta name="description" content="A studio portfolio where a ribbon of live video work sweeps through space, then lands in a grid.">
+<title>作品集 · 雷馨怡</title>
+<meta name="description" content="雷馨怡的作品：客户任务管理系统、个人网站、区域消费差异数据看板、用户调研。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
@@ -37,7 +37,7 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 .acts a:hover{background:var(--ink);color:var(--bg)}
 .acts a i{width:6px;height:6px;border-radius:50%;background:currentColor}
 .acts a b{display:block;width:13px;height:7px;border-top:1px solid currentColor;border-bottom:1px solid currentColor}
-#hint{position:absolute;left:50%;top:33px;transform:translateX(-50%);font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:var(--ink);padding-bottom:6px;border-bottom:1px solid var(--line)}
+#hint{position:absolute;left:50%;top:33px;transform:translateX(-50%);font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:var(--ink);padding-bottom:6px;border-bottom:1px solid var(--line);text-decoration:none}
 .bot{position:absolute;left:32px;right:32px;bottom:26px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;font-size:12.5px;line-height:1.35;pointer-events:none}
 .bot p{color:var(--ink);max-width:21em}
 .bot .mid{font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em}
@@ -48,7 +48,7 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 #name{position:absolute;left:0;top:0;padding:6px 11px;background:var(--ink);color:var(--bg);border-radius:99px;font-size:11.5px;font-weight:600;letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .16s;white-space:nowrap}
 @media (max-width:760px){
   .top{left:18px;right:18px;top:18px}.bot{left:18px;right:18px;bottom:18px;grid-template-columns:1fr auto}.bot .mid{display:none}
-  #hint,#pager{display:none}.bot p{max-width:17em;font-size:11px}
+  #hint,#pager,#cap{display:none}.bot p{max-width:17em;font-size:11px}
 }
 </style>
 <script type="importmap">
@@ -63,25 +63,25 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 
 <div id="track">
   <main class="stage" id="stage">
-    <h1 aria-label="Craft in motion">
-      <div class="hl" id="l1" aria-hidden="true"><span>CRAFT IN</span></div>
-      <div class="hl" id="l2" aria-hidden="true"><span>MOTION</span></div>
+    <h1 aria-label="让数据说话，让作品落地">
+      <div class="hl" id="l1" aria-hidden="true"><span>让数据说话</span></div>
+      <div class="hl" id="l2" aria-hidden="true"><span>让作品落地</span></div>
     </h1>
-    <div id="cap">Exploring ideas through daily design practice.</div>
+    <div id="cap">四个作品，四种把想法做成东西的方式。</div>
     <div id="glow"></div>
     <div id="cross"><i>+</i></div>
     <div id="rule"></div>
     <canvas id="gl"></canvas>
-    <div id="hint">START A PROJECT &nbsp;→</div>
+    <a id="hint" href="mailto:3121410697@qq.com">一起做点东西 &nbsp;→</a>
     <header class="top">
-      <div class="logo"><svg viewBox="0 0 22 18"><path d="M11 0l11 18h-6.200L11 9.600 6.200 18H0z"/></svg>VANTE</div>
+      <div class="logo"><svg viewBox="0 0 22 18"><path d="M11 0l11 18h-6.200L11 9.600 6.200 18H0z"/></svg>雷馨怡</div>
       <div id="pager"><span>←</span><span>→</span></div>
-      <nav class="acts"><a href="#"><i></i>LET'S TALK</a><a href="#">MENU<b></b></a></nav>
+      <nav class="acts"><a href="mailto:3121410697@qq.com"><i></i>聊一聊</a><a href="index.html">回首页<b></b></a></nav>
     </header>
     <footer class="bot">
-      <p>Concepts, explorations and interface experiments shared openly as part of our creative process.</p>
-      <div class="mid">VISUALS<s>/</s>FILM<s>/</s>MUSIC<s>/</s>EXPERIMENTS</div>
-      <div class="r">VIEW SHOWREEL</div>
+      <p>客户系统、数据看板、用户调研、网站 —— 都从真实问题做到能用。</p>
+      <div class="mid">产品<s>/</s>数据<s>/</s>调研<s>/</s>网站</div>
+      <div class="r">继续往下</div>
     </footer>
     <div id="name"></div>
   </main>
@@ -90,16 +90,12 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 <script type="module">
 import * as THREE from 'three';
 
-const R2 = 'https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/';
-const WORK = [
-  ['Roadster 3D', 'designs/roadster-3d-car-landing.mp4'],
-  ['Living Portrait', 'aaaf/living-portrait-hero.mp4'],
-  ['Particle Self', 'aaaf/oraciteslArea.mp4'],
-  ['Robot Jellyfish', 'aaaf/medusa-jellyfish-hero.mp4'],
-  ['Ink Reveal', 'designs/ink-reveal-hover.mp4'],
-  ['Space Voyage', 'designs/space-voyage-video.mp4'],
-  ['Helion Dispatch', 'designs/helion-dispatch-landing.mp4'],
-  ['Honey Bee', 'designs/honey-bee-melli-landing.mp4'],
+/* 四件作品的封面，和作品档案用的是同一套图 */
+const WORKS = [
+  ['客户任务管理系统', 'covers/crm-cut.webp'],
+  ['把简历做成网站', 'covers/website-cut.webp'],
+  ['区域消费差异看板', 'covers/dashboard-cut.webp'],
+  ['问卷 → 优先级', 'covers/survey-cut.webp'],
 ];
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -141,8 +137,9 @@ const at = (s, op, ot) => {
 
 /* ---------- cards ---------- */
 const CARD_W = 2.1, CARD_H = 1.32, GAP = .03, STEP = CARD_W + GAP, NX = 28, NY = 3;
+const CARD_AR = CARD_W / CARD_H;
 const vs = `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
-const fs = `uniform sampler2D map;uniform vec2 cover;uniform float aspect,ready,radius;varying vec2 vUv;
+const fs = `uniform sampler2D map;uniform vec2 cover;uniform float aspect,ready,radius,fade;varying vec2 vUv;
 void main(){
   vec2 q=(abs(vUv-.5)-.5)*vec2(aspect,1.)+radius;
   float d=length(max(q,0.))+min(max(q.x,q.y),0.)-radius;
@@ -151,43 +148,50 @@ void main(){
   vec2 uv=vUv;if(!gl_FrontFacing)uv.x=1.-uv.x;
   vec3 c=mix(vec3(.075),texture2D(map,(uv-.5)*cover+.5).rgb,ready);
   float edge=smoothstep(-.012-px,-.012,d);
-  gl_FragColor=vec4(mix(c,vec3(1.),edge*.1),a);
+  gl_FragColor=vec4(mix(c,vec3(1.),edge*.1),a*fade);
 }`;
-const cards = WORK.map(([title, src], i) => {
-  const v = document.createElement('video');
-  Object.assign(v, {crossOrigin:'anonymous', muted:true, loop:true, playsInline:true, preload:'auto', src:R2 + src});
-  v.setAttribute('playsinline', '');
-  const tex = new THREE.VideoTexture(v);
-  tex.colorSpace = THREE.NoColorSpace; tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = false;
-  const geo = new THREE.PlaneGeometry(1, 1, NX, NY);
+const loader = new THREE.TextureLoader();
+// 四件作品在轨道上跑两遍：缎带够长，绕出去的时候也不会只剩孤零零一张
+const REEL = [...WORKS, ...WORKS];
+const cards = REEL.map(([title, src], i) => {
   const mat = new THREE.ShaderMaterial({vertexShader:vs, fragmentShader:fs, transparent:true, side:THREE.DoubleSide,
-    uniforms:{map:{value:tex}, cover:{value:new THREE.Vector2(1, 1)}, aspect:{value:CARD_W / CARD_H}, ready:{value:0}, radius:{value:.018}}});
-  const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; scene.add(mesh);
-  const c = {i, title, v, tex, geo, mat, mesh, rect:null};
-  v.addEventListener('loadeddata', () => {
-    const va = v.videoWidth / v.videoHeight, ca = CARD_W / CARD_H;
+    uniforms:{map:{value:null}, cover:{value:new THREE.Vector2(1, 1)}, aspect:{value:CARD_AR}, ready:{value:0}, radius:{value:.018}, fade:{value:1}}});
+  // 静态贴图：图片比卡片「宽」就按宽裁、比卡片「高」就按高裁，永远铺满不拉伸
+  const tex = loader.load(src, () => {
+    const va = tex.image.width / tex.image.height, ca = CARD_AR;
     mat.uniforms.cover.value.set(va > ca ? ca / va : 1, va > ca ? 1 : va / ca);
     mat.uniforms.ready.value = 1;
   });
-  return c;
+  tex.colorSpace = THREE.NoColorSpace; tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = false;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  mat.uniforms.map.value = tex;
+  const geo = new THREE.PlaneGeometry(1, 1, NX, NY);
+  const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; scene.add(mesh);
+  return {i, title, tex, geo, mat, mesh, rect:null};
 });
 
 /* ---------- layout ---------- */
 const GZ = 8;
-let W = 1, H = 1, asp = 1, cols = 3, rows = 2, tanH = .3153;
+let W = 1, H = 1, asp = 1, cols = 2, rows = 2, tanH = .3153;
 function resize() {
   W = innerWidth; H = innerHeight; asp = W / H;
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(W, H, false);
   camera.aspect = asp; camera.fov = asp < 16 / 9 ? Math.atan(.561 / asp) * 360 / Math.PI : FOV; camera.updateProjectionMatrix();
   tanH = Math.tan(camera.fov * Math.PI / 360);
-  cols = asp < .9 ? 2 : 3; rows = asp < .9 ? 3 : 2;
+  // 四件作品：横屏 2×2，竖屏 1×4
+  cols = asp < .9 ? 1 : 2; rows = asp < .9 ? 4 : 2;
   }
 addEventListener('resize', resize); resize(); buildPath();
 function grid(i) {
-  const vh = 2 * GZ * tanH, vw = vh * asp, gw = vw * (cols === 3 ? .74 : .88), gap = gw * .017;
-  const cw = (gw - gap * (cols - 1)) / cols, ch = cw / (CARD_W / CARD_H), gh = ch * rows + gap * 1.6 * (rows - 1);
+  const vh = 2 * GZ * tanH, vw = vh * asp;
+  const gw = vw * (asp < .9 ? .92 : .74), gap = gw * .017;
+  // 宽和高两边都试一次，取小的那个：短而宽的窗口也不会把网格顶出画面
+  const fitW = (gw - gap * (cols - 1)) / cols;
+  const fitH = ((vh * .8 - gap * 1.6 * (rows - 1)) / rows) * CARD_AR;
+  const cw = Math.min(fitW, fitH), ch = cw / CARD_AR;
+  const tw = cw * cols + gap * (cols - 1), th = ch * rows + gap * 1.6 * (rows - 1);
   const c = i % cols, r = Math.floor(i / cols);
-  return {x:-gw / 2 + cw / 2 + c * (cw + gap), y:gh / 2 - ch / 2 - r * (ch + gap * 1.6), w:cw, h:ch, vw, vh, c, r};
+  return {x:-tw / 2 + cw / 2 + c * (cw + gap), y:th / 2 - ch / 2 - r * (ch + gap * 1.6), w:cw, h:ch, vw, vh, c, r};
 }
 
 /* ---------- scroll ---------- */
@@ -222,33 +226,42 @@ function poseGrid(c, q) {
   c.rect = g;
 }
 
-const RIB_A = .14, RIB_B = .63;
-function setVideos(fn) { cards.forEach(c => fn(c)); }
+const RIB_A = .09, RIB_B = .72;
+// 缎带开头就有一张卡压在轨道起点上，进场那几帧不会空着
+const START = 12, TOTAL = PATH_L + cards.length * STEP;
+const headAt = pr => START + ease(pr) * (TOTAL - START);
+// smoothstep 的逆：卡片该在哪一刻离开轨道，得反推出对应的 p
+const invEase = y => { let lo = 0, hi = 1; for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (ease(m) < y) lo = m; else hi = m; } return (lo + hi) / 2; };
+const prAt = s => invEase(clamp((s - START) / (TOTAL - START)));
 function render() {
   const pp = p;
   // headline runs right across the page in opposite directions
   const rise = 1 - out(span(pp, 0, .12));
-  const run = mix(-50, 76, span(pp, 0, .58));
+  const run = mix(-50, 84, span(pp, 0, .58));
   $('l1').style.transform = `translate3d(${run}vw,${rise * 34}vh,0)`;
   $('l2').style.transform = `translate3d(${-run}vw,${rise * 34}vh,0)`;
   const capA = 1 - span(pp, .52, .57);
   $('cap').style.opacity = capA; $('cap').style.transform = `translate(-50%,calc(-50% + ${rise * 34}vh))`;
   const intro = 1 - span(pp, 0, .05);
   for (const id of ['hint', 'pager', 'cross', 'glow']) $(id).style.opacity = intro;
-  // the pill only tracks the cursor, so it would linger when you scroll back up without moving
-  if (pp < .86) $('name').style.opacity = 0;
+  // 药丸只在指针移动时更新，滚回顶上会留在画面里
+  if (pp < .75) $('name').style.opacity = 0;
   $('rule').style.transform = `scaleX(${ease(span(pp, .72, .86))})`;
   $('rule').style.top = '50%';
   // ribbon, then the grid
-  const pr = span(pp, RIB_A, RIB_B), head = mix(0, PATH_L + cards.length * STEP, pr);
+  // 轨道长度固定，缎带只沿它滑：两头慢、中间快，近景那两段不慌不忙，远景一笔带过
+  const pr = span(pp, RIB_A, RIB_B), head = headAt(pr);
   for (const c of cards) {
     const s = head - c.i * STEP, end = PATH_L - CARD_W;
     if (s < end) {
-      c.mesh.visible = s > CARD_W; c.rect = null;
+      // 后半段那几张是复用的封面，走到轨道尽头前先化掉
+      const fade = c.i < WORKS.length ? 1 : clamp((end - s) / 9);
+      c.mat.uniforms.fade.value = fade;
+      c.mesh.visible = s > CARD_W && fade > .004; c.rect = null;
       if (c.mesh.visible) poseRibbon(c, head);
     } else if (c.i < cols * rows) {
       // each card flies to its slot the moment it leaves the rail
-      const st = mix(RIB_A, RIB_B, (end + c.i * STEP) / (PATH_L + cards.length * STEP)), q = out(span(pp, st, st + .13));
+      const st = mix(RIB_A, RIB_B, prAt(end + c.i * STEP)), q = out(span(pp, st, st + .13));
       c.mesh.visible = q > .001;
       if (c.mesh.visible) poseGrid(c, q);
     } else { c.mesh.visible = false; c.rect = null; }
@@ -260,7 +273,7 @@ function render() {
 const nameEl = $('name');
 $('stage').addEventListener('pointermove', e => {
   let hit = null;
-  if (p > .86) {
+  if (p > .75) {
     const nx = (e.clientX / W - .5), ny = (.5 - e.clientY / H);
     for (const c of cards) { const g = c.rect; if (!g) continue; const x = nx * g.vw, y = ny * g.vh; if (Math.abs(x - g.x) < g.w / 2 && Math.abs(y - g.y) < g.h / 2) hit = c; }
   }
@@ -273,23 +286,19 @@ function loop() {
   if (!frozen) {
     p += (target - p) * .09;
     if (Math.abs(target - p) < .00005) p = target;
-    for (const c of cards) {
-      if (c.mesh.visible && c.v.paused) c.v.play().catch(() => {});
-      else if (!c.mesh.visible && !c.v.paused) c.v.pause();
-    }
     render();
   }
   requestAnimationFrame(loop);
 }
 loop();
 
-/* ---------- back ---------- */
-// 这一页是独立文档，站内没有导航：左边那个 pager 箭头当作「回上一页」
-const back = document.querySelectorAll('#pager span')[0];
-if (back) {
-  back.style.cursor = 'pointer';
-  back.addEventListener('click', () => history.back());
-}
+/* ---------- pager ---------- */
+// 右边那个箭头直接送到网格，左边回到第一帧
+const pagerSr = document.querySelectorAll('#pager span');
+const endY = () => $('track').offsetHeight - innerHeight;
+pagerSr.forEach(s => { s.style.cursor = 'pointer'; s.style.pointerEvents = 'auto'; });
+if (pagerSr[0]) pagerSr[0].addEventListener('click', () => scrollTo({top: 0, behavior: 'smooth'}));
+if (pagerSr[1]) pagerSr[1].addEventListener('click', () => scrollTo({top: endY(), behavior: 'smooth'}));
 </script>
 </body>
 </html>
