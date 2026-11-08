@@ -1,4 +1,4 @@
-import{n as e,r as t,t as n}from"./index-DfObz4i4.js";var r=t(e(),1),i=`
+import{n as e,r as t,t as n}from"./index-Y-3SIgGK.js";var r=t(e(),1),i=`
 attribute vec2 aPos;
 varying vec2 vUv;
 void main() {
