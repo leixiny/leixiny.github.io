@@ -887,7 +887,7 @@ export default function HomePage() {
           雷馨怡
         </Link>
         <nav className="hp-nav-links" aria-label="页面导航">
-          <Link to="/works">作品集</Link>
+          <a href="showcase.html">作品集</a>
           <button type="button" onClick={goGrowth}>
             成长
           </button>
@@ -940,10 +940,10 @@ export default function HomePage() {
             </p>
 
             <div className="hp-hero-actions">
-              <Link className="hp-btn hp-btn--solid" to="/works">
+              <a className="hp-btn hp-btn--solid" href="showcase.html">
                 查看作品集
                 <i aria-hidden="true">→</i>
-              </Link>
+              </a>
               <Link className="hp-btn hp-btn--ghost" to="/app">
                 进入管理系统
               </Link>
@@ -1043,7 +1043,7 @@ export default function HomePage() {
               <h3>更多</h3>
               <ul>
                 <li>
-                  <Link to="/works">作品集</Link>
+                  <a href="showcase.html">作品集</a>
                 </li>
                 <li>
                   <button type="button" onClick={goGrowth}>个人成长</button>
