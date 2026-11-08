@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { onIntroDone } from '../lib/intro'
+import { prefetchAdmin } from '../lib/prefetch'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
 import GrowthSection from './GrowthSection'
 import type { LeiSeg } from './leiStrokes'
@@ -683,6 +684,13 @@ export default function HomePage() {
     return () => window.clearTimeout(t)
   }, [])
 
+  /* 进后台的包先在空闲时下好：真点「进入管理系统」时是同步打开的，
+     不用再等那几份分块。放到 3 秒后，不跟首屏的字体和底图抢带宽 */
+  useEffect(() => {
+    const timer = window.setTimeout(prefetchAdmin, 3000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
   // 水层是满屏固定的（滚动时也一直淌），出了首屏就淡掉、并停掉动画，别让白底页面上挂着一道水
   useEffect(() => {
     const el = wetRef.current
@@ -897,7 +905,7 @@ export default function HomePage() {
             留言
           </button>
         </nav>
-        <Link className="hp-nav-enter" to="/app">
+        <Link className="hp-nav-enter" to="/app" onPointerEnter={prefetchAdmin} onFocus={prefetchAdmin}>
           进入管理系统
           <i aria-hidden="true">→</i>
         </Link>

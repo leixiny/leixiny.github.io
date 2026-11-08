@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -6,6 +6,7 @@ import type { Customer, Profile, Task, TaskPriority, TaskStatus, TaskWithRelatio
 import { taskPriorityLabels, taskStatusLabels } from '../types'
 import { Badge, Button, Card, EmptyState, Field, Input, PageHeader, Select } from '../components/ui'
 import { formatDate } from '../lib/format'
+import { debounce, peek, put } from '../lib/cache'
 
 interface TaskFormValues {
   title: string
@@ -25,17 +26,23 @@ const emptyForm: TaskFormValues = {
 
 export default function TasksPage() {
   const { profile } = useAuth()
-  const [tasks, setTasks] = useState<TaskWithRelations[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [profiles, setProfiles] = useState<Profile[]>([])
+  // 先铺上次的看板，切回来立刻是满的
+  const [tasks, setTasks] = useState<TaskWithRelations[]>(() => peek<TaskWithRelations[]>('tasks|all') ?? [])
+  const [customers, setCustomers] = useState<Customer[]>(() => peek<Customer[]>('task-customers') ?? [])
+  const [profiles, setProfiles] = useState<Profile[]>(() => peek<Profile[]>('task-profiles') ?? [])
   const [assigneeFilter, setAssigneeFilter] = useState<'all' | 'mine'>('all')
   const [form, setForm] = useState<TaskFormValues>(emptyForm)
   const [error, setError] = useState('')
 
+  /* 当前筛选放进 ref：加载函数不再随输入变化重建，实时订阅也就不用跟着重连 */
+  const filters = useRef({ mine: false, profileId: '' })
+  filters.current = { mine: assigneeFilter === 'mine', profileId: profile?.id ?? '' }
+
   const load = useCallback(async () => {
+    const { mine, profileId } = filters.current
     let taskQuery = supabase.from('tasks').select('*').order('created_at', { ascending: false })
-    if (assigneeFilter === 'mine') {
-      taskQuery = taskQuery.eq('assignee_id', profile?.id ?? '')
+    if (mine) {
+      taskQuery = taskQuery.eq('assignee_id', profileId || '')
     }
 
     const [tasksResult, customersResult, profilesResult] = await Promise.all([
@@ -52,26 +59,38 @@ export default function TasksPage() {
     const customerMap = new Map((customersResult.data ?? []).map((customer) => [customer.id, customer]))
     const profileMap = new Map((profilesResult.data ?? []).map((member) => [member.id, member]))
 
-    setTasks((tasksResult.data ?? []).map((task) => ({
+    const board = (tasksResult.data ?? []).map((task) => ({
       ...task,
       customers: task.customer_id ? customerMap.get(task.customer_id) ?? null : null,
       assignee: task.assignee_id ? profileMap.get(task.assignee_id) ?? null : null,
-    })))
+    }))
+    setTasks(board)
+    put(mine ? 'tasks|mine' : 'tasks|all', board)
     setCustomers((customersResult.data ?? []) as Customer[])
     setProfiles((profilesResult.data ?? []) as Profile[])
-  }, [assigneeFilter, profile?.id])
+    put('task-customers', customersResult.data ?? [])
+    put('task-profiles', profilesResult.data ?? [])
+  }, [])
+
+  /* 订阅只建一次；实时事件攒 300ms 刷一次，拖拽状态或批量改的时候不会连刷十遍 */
+  const reload = useMemo(() => debounce(() => void load(), 300), [load])
 
   useEffect(() => {
-    load()
     const channel = supabase
       .channel('tasks-board-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => reload())
       .subscribe()
 
     return () => {
+      reload.cancel()
       supabase.removeChannel(channel)
     }
-  }, [load])
+  }, [reload])
+
+  // 换「全部 / 分配给我」时重新取一次
+  useEffect(() => {
+    void load()
+  }, [assigneeFilter, load])
 
   const columns = useMemo(() => {
     return (Object.keys(taskStatusLabels) as TaskStatus[]).map((status) => ({

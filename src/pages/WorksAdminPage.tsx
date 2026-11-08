@@ -9,6 +9,7 @@ import {
   type Work,
   type WorkDraft,
 } from '../lib/works'
+import { peek, put } from '../lib/cache'
 import { Badge, Button, Card, EmptyState, Field, Input, Modal, PageHeader, Textarea } from '../components/ui'
 // 建表脚本直接打进包里：还没执行迁移时，页面上就能复制去 Supabase 跑
 import setupSql from '../../supabase/migrations/0003_works.sql?raw'
@@ -29,17 +30,19 @@ const emptyDraft = (sort: number): WorkDraft => ({
 })
 
 export default function WorksAdminPage() {
-  const [works, setWorks] = useState<Work[]>([])
-  const [loading, setLoading] = useState(true)
+  // 切走再切回来时先用上次的列表，别又白一次
+  const [works, setWorks] = useState<Work[]>(() => peek<Work[]>('works') ?? [])
+  const [loading, setLoading] = useState(() => !peek('works'))
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [draft, setDraft] = useState<WorkDraft>(emptyDraft(0))
   const [saving, setSaving] = useState(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true)
     const { works: list, error: loadError } = await listAllWorks()
     setWorks(list)
+    put('works', list)
     setError(loadError ?? '')
     setLoading(false)
   }, [])
@@ -73,20 +76,20 @@ export default function WorksAdminPage() {
     }
     setError('')
     setModalOpen(false)
-    await load()
+    await load(true)
   }
 
   async function handleDelete(work: Work) {
     if (!window.confirm(`删除「${work.title}」？作品集会立刻少一件，删掉就找不回来了。`)) return
     const { error: deleteError } = await deleteWork(work.id)
     if (deleteError) setError(deleteError)
-    else await load()
+    else await load(true)
   }
 
   async function handleMove(work: Work, dir: -1 | 1) {
     const { error: moveError } = await moveWork(works, work.id, dir)
     if (moveError) setError(moveError)
-    else await load()
+    else await load(true)
   }
 
   const dbReady = !error
@@ -111,7 +114,7 @@ export default function WorksAdminPage() {
       {!dbReady ? <SetupCard message={error} onDone={load} /> : null}
 
       <Card>
-        {loading ? (
+        {loading && works.length === 0 ? (
           <EmptyState title="正在读取作品…" />
         ) : works.length === 0 ? (
           <EmptyState

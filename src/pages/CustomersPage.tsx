@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -7,14 +7,18 @@ import { customerStatusLabels } from '../types'
 import { Badge, Button, Card, EmptyState, Field, Input, Modal, PageHeader, Select } from '../components/ui'
 import CustomerForm from '../components/CustomerForm'
 import { formatCurrency, formatDate } from '../lib/format'
+import { debounce, peek, put } from '../lib/cache'
+
+const cacheKey = (status: 'all' | CustomerStatus, keyword: string) => `customers|${status}|${keyword}`
 
 export default function CustomersPage() {
   const { profile, role } = useAuth()
-  const [customers, setCustomers] = useState<CustomerSummary[]>([])
-  const [profiles, setProfiles] = useState<Profile[]>([])
+  /* 先铺上次的结果：从这页切走再切回来，不该再白一下 */
+  const [customers, setCustomers] = useState<CustomerSummary[]>(() => peek<CustomerSummary[]>(cacheKey('all', '')) ?? [])
+  const [profiles, setProfiles] = useState<Profile[]>(() => peek<Profile[]>('profiles') ?? [])
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<'all' | CustomerStatus>('all')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !peek(cacheKey('all', '')))
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<CustomerSummary | null>(null)
@@ -22,20 +26,28 @@ export default function CustomersPage() {
 
   const canManage = role === 'owner' || role === 'admin'
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  /* 请求用的是「当下的筛选」，而不是「创建这个函数时的筛选」——
+     这样订阅和加载函数都不用跟着输入框重来一遍 */
+  const filters = useRef<{ search: string; status: 'all' | CustomerStatus }>({ search: '', status: 'all' })
+  filters.current = { search, status }
+
+  const load = useCallback(async (quiet = false) => {
+    const { search: raw, status: nextStatus } = filters.current
+    const keyword = raw.trim()
+    if (!quiet) setLoading(true)
+
     let query = supabase
       .from('v_customer_summary')
       .select('*')
       .order('updated_at', { ascending: false })
 
-    if (status !== 'all') {
-      query = query.eq('status', status)
+    if (nextStatus !== 'all') {
+      query = query.eq('status', nextStatus)
     }
 
-    const keyword = search.trim().replace(/[,()\\]/g, ' ')
-    if (keyword) {
-      const pattern = `%${keyword}%`
+    const safe = keyword.replace(/[,()\\]/g, ' ')
+    if (safe) {
+      const pattern = `%${safe}%`
       query = query.or(`company_name.ilike.${pattern},industry.ilike.${pattern},notes.ilike.${pattern}`)
     }
 
@@ -49,21 +61,35 @@ export default function CustomersPage() {
     } else {
       setError('')
       setCustomers(customerData ?? [])
+      put(cacheKey(nextStatus, keyword), customerData ?? [])
     }
-    setProfiles(profileData ?? [])
+    if (profileData) {
+      setProfiles(profileData)
+      put('profiles', profileData)
+    }
     setLoading(false)
-  }, [search, status])
+  }, [])
+
+  /* 实时事件一次改动往往连着来两三条，攒 300ms 刷一次；
+     订阅本身只建一次 —— 早先它挂在 load 上，改一个筛选条件就断线重连一遍 */
+  const reload = useMemo(() => debounce(() => void load(true), 300), [load])
 
   useEffect(() => {
-    load()
     const channel = supabase
       .channel('customers-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => reload())
       .subscribe()
     return () => {
+      reload.cancel()
       supabase.removeChannel(channel)
     }
-  }, [load])
+  }, [reload])
+
+  // 敲字时等手停下来再查；换阶段立刻查
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), search.trim() ? 240 : 0)
+    return () => window.clearTimeout(timer)
+  }, [search, status, load])
 
   const initialCustomer = useMemo(() => editing as Customer | null, [editing])
 
@@ -106,7 +132,7 @@ export default function CustomersPage() {
 
     setModalOpen(false)
     setEditing(null)
-    await load()
+    await load(true)
   }
 
   async function handleDelete(customer: CustomerSummary) {
@@ -115,7 +141,7 @@ export default function CustomersPage() {
 
     const { error: deleteError } = await supabase.from('customers').delete().eq('id', customer.id)
     if (deleteError) setError(deleteError.message)
-    else await load()
+    else await load(true)
   }
 
   return (
@@ -143,7 +169,7 @@ export default function CustomersPage() {
       {error ? <Card className="error-card">{error}</Card> : null}
 
       <Card>
-        {loading ? (
+        {loading && customers.length === 0 ? (
           <EmptyState title="正在加载项目..." />
         ) : customers.length === 0 ? (
           <EmptyState

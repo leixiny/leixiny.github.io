@@ -79,13 +79,16 @@ void main() {
   vec2 f1 = vec2(t * 0.019, t * 0.010);
   vec2 f2 = vec2(-t * 0.012, t * 0.016);
 
-  /* 折射用的法线：中频噪声的有限差分 */
+  /* 折射用的法线：中频噪声的有限差分。
+     用「中心点 + 两个前向点」而不是四邻域 —— field() 里是 8 次噪声，
+     少一次就少四分之一，而坡度方向几乎看不出区别 */
   vec2 bp = p * 4.2 + f2 + 3.7;
   const float e = 0.02;
+  float f0 = field(bp);
   vec2 g = vec2(
-    field(bp + vec2(e, 0.0)) - field(bp - vec2(e, 0.0)),
-    field(bp + vec2(0.0, e)) - field(bp - vec2(0.0, e))
-  ) / (2.0 * e);
+    field(bp + vec2(e, 0.0)) - f0,
+    field(bp + vec2(0.0, e)) - f0
+  ) / (2.0 * e);   // 前向差分的量级是中心差分的一半，除 2e 才和原来一样陡
 
   /* 波纹：四次落点，各自一圈同心波往外跑 */
   float rh = 0.0;
@@ -307,6 +310,7 @@ export function createWater(canvas: HTMLCanvasElement, textureUrl: string): Wate
   let elapsed = 0
   let raf = 0
   let last = 0
+  let lastDraw = 0
   let drawn = 0
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -334,16 +338,22 @@ export function createWater(canvas: HTMLCanvasElement, textureUrl: string): Wate
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   }
 
+  /* 30 帧上限：这点漂移和涟漪在 30/60 之间看不出区别，GPU 与电量却差一倍。
+     时间照样按真实间隔累加，水的速度不受帧率影响 */
+  const MIN_STEP = 1000 / 30
+
   const loop = (now: number) => {
     if (dead) return
     raf = requestAnimationFrame(loop)
-    const dt = last ? Math.min((now - last) / 1000, 0.05) : 0.016
+    const dt = last ? Math.min((now - last) / 1000, 0.1) : 0.016
     last = now
     if (reduced) {
       if (drawn > 0) return
     } else {
       elapsed += dt
+      if (now - lastDraw < MIN_STEP - 1) return
     }
+    lastDraw = now
     draw()
     drawn++
   }
@@ -359,6 +369,7 @@ export function createWater(canvas: HTMLCanvasElement, textureUrl: string): Wate
       raf = 0
     } else if (!reduced && !dead && !raf) {
       last = 0
+      lastDraw = 0
       raf = requestAnimationFrame(loop)
     }
   }

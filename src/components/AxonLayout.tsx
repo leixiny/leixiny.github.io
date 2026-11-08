@@ -1,7 +1,8 @@
-import { Suspense, lazy } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useRef } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { prefetch, prefetchAdmin } from '../lib/prefetch'
 import './axon.css'
 
 const AxonField = lazy(() => import('../axon/AxonField'))
@@ -31,6 +32,18 @@ const STAR =
 export default function AxonLayout() {
   const { profile, organization } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const consoleRef = useRef<HTMLElement>(null)
+
+  // 换分区回到顶部：表格滚到一半点「任务」，不该从半截开始看
+  useEffect(() => {
+    consoleRef.current?.scrollTo({ top: 0 })
+  }, [pathname])
+
+  // 空闲时先把后台几页的代码捂热，第一次点不会卡在下载上
+  useEffect(() => {
+    prefetchAdmin()
+  }, [])
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -69,6 +82,9 @@ export default function AxonLayout() {
               to={chip.to}
               end={chip.end}
               className={({ isActive }) => `axon-chip ${isActive ? 'is-on' : ''}`}
+              onPointerEnter={() => prefetch(chip.to)}
+              onFocus={() => prefetch(chip.to)}
+              onTouchStart={() => prefetch(chip.to)}
             >
               {chip.label}
             </NavLink>
@@ -80,10 +96,23 @@ export default function AxonLayout() {
 
         <aside className="axon-list" aria-label="作品索引">
           <div className="axon-list-head">索引 <s>/</s> index</div>
-          {cards.map((card) => (
-            <NavLink key={card.title} to="/app/works" className="axon-card">
+          {cards.map((card, i) => (
+            <NavLink
+              key={card.title}
+              to="/app/works"
+              className="axon-card"
+              onPointerEnter={() => prefetch('/app/works')}
+            >
               <div className="axon-thumb">
-                <img src={card.cover} alt="" loading="lazy" />
+                <img
+                  src={card.cover}
+                  alt=""
+                  width={220}
+                  height={160}
+                  decoding="async"
+                  loading={i < 2 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? 'high' : 'auto'}
+                />
               </div>
               <div className="axon-meta">
                 <span className="axon-card-title">
@@ -96,8 +125,11 @@ export default function AxonLayout() {
           ))}
         </aside>
 
-        <section className="axon-console">
-          <Outlet />
+        <section className="axon-console" ref={consoleRef}>
+          {/* key 一换就重挂一次，进场那一下才有动画可放 */}
+          <div className="axon-page" key={pathname}>
+            <Outlet />
+          </div>
         </section>
 
         <div className="axon-scrim" aria-hidden="true" />

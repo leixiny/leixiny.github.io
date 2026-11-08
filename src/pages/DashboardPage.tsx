@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { ActivityLog, CustomerSummary, DashboardStats, Task } from '../types'
 import { customerStatusLabels, taskPriorityLabels } from '../types'
 import { Badge, Card, EmptyState, PageHeader } from '../components/ui'
 import { formatCurrency, formatDateTime, formatDate } from '../lib/format'
+import { debounce, peek, put } from '../lib/cache'
 
 const emptyStats: DashboardStats = {
   customers_total: 0,
@@ -16,11 +17,22 @@ const emptyStats: DashboardStats = {
   team_members_total: 0,
 }
 
+type DashboardCache = {
+  stats: DashboardStats
+  customers: CustomerSummary[]
+  tasks: Task[]
+  activities: ActivityLog[]
+}
+
+const CACHE_KEY = 'dashboard'
+
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>(emptyStats)
-  const [customers, setCustomers] = useState<CustomerSummary[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [activities, setActivities] = useState<ActivityLog[]>([])
+  /* 先铺上次的看板：从「项目」点回「全部」时不该看到一屏 0 */
+  const cached = useRef(peek<DashboardCache>(CACHE_KEY)).current
+  const [stats, setStats] = useState<DashboardStats>(cached?.stats ?? emptyStats)
+  const [customers, setCustomers] = useState<CustomerSummary[]>(cached?.customers ?? [])
+  const [tasks, setTasks] = useState<Task[]>(cached?.tasks ?? [])
+  const [activities, setActivities] = useState<ActivityLog[]>(cached?.activities ?? [])
 
   const load = useCallback(async () => {
     const [statsResult, customersResult, tasksResult, activitiesResult] = await Promise.all([
@@ -46,25 +58,37 @@ export default function DashboardPage() {
         .returns<ActivityLog[]>(),
     ])
 
-    if (Array.isArray(statsResult.data)) setStats((statsResult.data[0] as DashboardStats) ?? emptyStats)
-    if (customersResult.data) setCustomers(customersResult.data)
-    if (tasksResult.data) setTasks(tasksResult.data)
-    if (activitiesResult.data) setActivities(activitiesResult.data)
+    const next = {
+      stats: (Array.isArray(statsResult.data) ? (statsResult.data[0] as DashboardStats) : null) ?? emptyStats,
+      customers: customersResult.data ?? [],
+      tasks: tasksResult.data ?? [],
+      activities: activitiesResult.data ?? [],
+    }
+    setStats(next.stats)
+    setCustomers(next.customers)
+    setTasks(next.tasks)
+    setActivities(next.activities)
+    put(CACHE_KEY, next)
   }, [])
 
+  /* 一次改动会同时打到 customers / tasks / activity_logs 三张表，
+     三条事件三条请求；攒起来只走一次 */
+  const reload = useMemo(() => debounce(() => void load(), 320), [load])
+
   useEffect(() => {
-    load()
+    void load()
     const channel = supabase
       .channel('dashboard-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_logs' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => reload())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => reload())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_logs' }, () => reload())
       .subscribe()
 
     return () => {
+      reload.cancel()
       supabase.removeChannel(channel)
     }
-  }, [load])
+  }, [load, reload])
 
   const statCards = [
     { label: '项目总数', value: stats.customers_total, tone: 'blue' as const },
@@ -130,7 +154,7 @@ export default function DashboardPage() {
           ) : (
             <div className="list-stack">
               {tasks.map((task) => (
-                <Link key={task.id} to={task.customer_id ? `/customers/${task.customer_id}` : '/tasks'} className="list-row compact">
+                <Link key={task.id} to={task.customer_id ? `/app/customers/${task.customer_id}` : '/app/tasks'} className="list-row compact">
                   <div>
                     <strong>{task.title}</strong>
                     <span>{taskPriorityLabels[task.priority]}优先级</span>
