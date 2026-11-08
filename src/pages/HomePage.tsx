@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { onIntroDone } from '../lib/intro'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
 import type { LeiSeg } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
@@ -437,16 +438,21 @@ function WipeWord() {
       )
     }
     const fonts = document.fonts
+    // 首屏加载页还没散场就先别落笔：否则前一两笔全被幕布吃掉
+    let unwait = () => {}
+    const startAfterIntro = () => {
+      unwait = onIntroDone(start)
+    }
     if (fonts) {
       fonts
         .load(`400 120px 'HP Hand'`)
         .then(() => fonts.ready)
-        .then(start)
-        .catch(start)
+        .then(startAfterIntro)
+        .catch(startAfterIntro)
       // 兜底：字体迟迟不来也别一直空着
-      setTimeout(start, 2200)
+      setTimeout(startAfterIntro, 2200)
     } else {
-      start()
+      startAfterIntro()
     }
 
     const onEnter = () => {
@@ -503,6 +509,7 @@ function WipeWord() {
     wrap.addEventListener('pointerdown', onMelt)
 
     return () => {
+      unwait()
       wrap.removeEventListener('pointerenter', onEnter)
       wrap.removeEventListener('pointerdown', onMelt)
       if (meltTimer) window.clearTimeout(meltTimer)
