@@ -8,19 +8,21 @@
   /* 水是青绿，强调色就不能再用原来那支紫 —— 紫压在青上会发脏。
      改成一对：粉只给小标签（补色，在青上最跳），交互态用浅水色。 */
   --accent: #ffb3c6;
-  --aqua: #a9ecdd;
-  --text: #dcebe7;
-  --muted: #82a09c;
-  --chip: rgba(3, 26, 28, 0.42);
-  --line: rgba(176, 236, 224, 0.16);
-  --line-soft: rgba(176, 236, 224, 0.08);
-  --glass: rgba(3, 20, 22, 0.66);
+  --aqua: #b6f2e4;
+  --text: #eaf8f5;
+  /* 正文次要色：上一版 #82a09c 压在亮起来的水上会发灰（对比只剩 2:1），
+     提亮到浅水色，一眼扫过去是「清楚」，不是「脏」 */
+  --muted: #c2dcd8;
+  --line: rgba(198, 248, 240, 0.26);
+  --line-soft: rgba(198, 248, 240, 0.10);
+  /* 玻璃的底色：0.66 → 0.34。压得越重越不透明，也就越不像玻璃 */
+  --glass: rgba(10, 54, 60, 0.18);
 
   position: fixed;
   inset: 0;
   overflow: hidden;
   /* 兜底色：WebGL 没起来时是一块深青，不是黑 */
-  background: #04181b;
+  background: #062a2e;
   color: var(--text);
   font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
   font-size: 13px;
@@ -45,17 +47,19 @@
 }
 
 /* 水面之上、UI 之下的一层暗部：顶栏和左右两栏要压得住白字，中间留给水。
-   全部用透明渐变，不加色块 —— 一加就看出是「一层膜」 */
+   全部用透明渐变，不加色块 —— 一加就看出是「一层膜」。
+   「清透」的关键就在这几个数：上一版最重的地方压到 0.86，水全被盖住了，
+   整页只剩一层深绿；现在统一收到 0.6 上下，靠字自己的投影顶住对比 */
 .axon-shade {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(2, 15, 17, 0.82) 0%, rgba(2, 15, 17, 0) 22%),
-    linear-gradient(90deg, rgba(2, 15, 17, 0.86) 0%, rgba(2, 15, 17, 0.62) 17%, rgba(2, 15, 17, 0) 31%),
-    radial-gradient(64% 76% at 84% 50%, rgba(2, 15, 17, 0.78) 0%, rgba(2, 15, 17, 0) 74%),
-    radial-gradient(80% 60% at 50% 108%, rgba(2, 15, 17, 0.55) 0%, rgba(2, 15, 17, 0) 62%);
+    linear-gradient(180deg, rgba(3, 24, 28, 0.62) 0%, rgba(3, 24, 28, 0) 21%),
+    linear-gradient(90deg, rgba(3, 24, 28, 0.70) 0%, rgba(3, 24, 28, 0.40) 16%, rgba(3, 24, 28, 0) 30%),
+    radial-gradient(64% 76% at 84% 50%, rgba(3, 22, 26, 0.56) 0%, rgba(3, 22, 26, 0) 74%),
+    radial-gradient(80% 60% at 50% 108%, rgba(3, 22, 26, 0.40) 0%, rgba(3, 22, 26, 0) 62%);
 }
 
 /* 点击涟漪：压在 UI 之上但不吃事件，一圈细环扩出去就没了 */
@@ -171,12 +175,16 @@
   height: 44px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line);
+  /* 原来是纯黑底 + plus-lighter：水一亮，它就成了一个发光黑洞。
+     换成同一套玻璃语言 —— 一圈清透的小透镜 */
+  border: 1px solid rgba(220, 255, 250, 0.32);
   border-radius: 50%;
-  background: #0a0a0a;
+  background: rgba(8, 46, 50, 0.26);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.06);
+  backdrop-filter: blur(18px) saturate(1.5) brightness(1.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
   color: #fff;
   font-size: 14px;
-  mix-blend-mode: plus-lighter;
 }
 
 .axon-user {
@@ -188,7 +196,7 @@
   gap: 10px;
   font-size: 11px;
   color: var(--muted);
-  mix-blend-mode: plus-lighter;
+  text-shadow: 0 1px 10px rgba(0, 20, 22, 0.8);
 }
 
 .axon-user span {
@@ -232,26 +240,27 @@
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgba(190, 240, 230, 0.18);
+  border: 1px solid rgba(212, 255, 248, 0.30);
   border-radius: 999px;
   padding: 5px 11px;
-  background: var(--chip);
-  color: #d3e8e3;
+  background: rgba(10, 52, 58, 0.34);
+  color: #e8f7f4;
   font-family: inherit;
   font-size: 11px;
   line-height: 1.35;
   letter-spacing: 0.02em;
   cursor: pointer;
   white-space: nowrap;
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  backdrop-filter: blur(14px) saturate(1.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px -12px rgba(0, 14, 16, 0.9);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4) brightness(1.08);
+  backdrop-filter: blur(10px) saturate(1.4) brightness(1.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 8px 18px -14px rgba(0, 16, 18, 0.7);
   transition: background 0.25s, color 0.25s, border-color 0.25s;
 }
 
 .axon-chip:hover {
-  background: rgba(10, 52, 54, 0.62);
-  border-color: rgba(200, 248, 238, 0.34);
+  background: rgba(16, 74, 78, 0.46);
+  border-color: rgba(214, 255, 248, 0.44);
   color: #fff;
 }
 
@@ -288,9 +297,9 @@
   padding: 0 0 10px;
   /* 滚动时卡片会从标题底下过，这里得挡住 —— 用一条会糊水的玻璃带，
      而不是原来那条纯黑渐变（黑在青水上会切出一道硬边） */
-  background: linear-gradient(rgba(3, 24, 26, 0.92) 58%, rgba(3, 24, 26, 0));
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(rgba(4, 30, 34, 0.72) 58%, rgba(4, 30, 34, 0));
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   font-size: 10px;
   letter-spacing: 0.14em;
   color: var(--muted);
@@ -298,7 +307,7 @@
 
 .axon-list-head s {
   text-decoration: none;
-  color: rgba(176, 236, 224, 0.38);
+  color: rgba(198, 248, 240, 0.52);
   margin: 0 0.35em;
 }
 
@@ -317,12 +326,13 @@
 .axon-thumb {
   height: 160px;
   border-radius: 10px;
-  background: rgba(3, 26, 28, 0.6);
+  background: rgba(6, 44, 48, 0.36);
   overflow: hidden;
   position: relative;
   box-shadow:
-    inset 0 0 0 1px rgba(190, 240, 230, 0.14),
-    0 18px 34px -22px rgba(0, 12, 14, 0.95);
+    inset 0 0 0 1px rgba(204, 252, 244, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 18px 34px -24px rgba(0, 16, 18, 0.9);
 }
 
 .axon-thumb img {
@@ -330,22 +340,24 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: saturate(0.72) contrast(1.02) brightness(0.8);
+  /* 上一版 saturate(.72) + brightness(.8) 是为了把浅色封面按进暗水，
+     代价是封面全糊成灰的 —— 清透感一半死在这一句上 */
+  filter: saturate(0.96) contrast(1.02) brightness(0.98);
   transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s;
 }
 
-/* 浅色封面压在水上太跳，盖一层青调暗角把它收进去 */
+/* 封面压在水上太跳，盖一层极淡的青调把它收进去 —— 只要一点点 */
 .axon-thumb::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 24, 26, 0.16), rgba(0, 20, 22, 0.5));
+  background: linear-gradient(180deg, rgba(0, 28, 30, 0.02), rgba(0, 22, 24, 0.24));
   pointer-events: none;
 }
 
 .axon-card:hover .axon-thumb img {
   transform: scale(1.04);
-  filter: saturate(0.82) contrast(1.03) brightness(0.9);
+  filter: saturate(1.04) contrast(1.02) brightness(1.06);
 }
 
 /* 两列：左标题吃掉余量，右注记按内容宽度靠右；grid 不会像 flex+gap 那样溢出被裁 */
@@ -369,7 +381,7 @@
 .axon-card-title em {
   display: block;
   font-style: normal;
-  color: #9d9d9d;
+  color: #a9c8c4;
   margin-top: 3px;
 }
 
@@ -377,7 +389,7 @@
 .axon-card-note {
   display: block;
   justify-self: end;
-  color: #c4c4c4;
+  color: #d4ebe7;
   text-shadow: 0 1px 3px rgba(0, 16, 18, 0.95), 0 0 18px rgba(0, 16, 18, 0.9);
   text-align: right;
   white-space: pre;
@@ -399,23 +411,45 @@
   overscroll-behavior: contain;
   padding: 22px 26px 32px;
   /* 一块压在水上的玻璃：先糊再压暗，正文才在波光上读得住；
-     左上角那道斜的薄白是反光，没有它就只是一层半透明的塑料 */
-  border: 1px solid rgba(205, 250, 240, 0.26);
+     左上角那道斜的薄白是反光，没有它就只是一层半透明的塑料。
+     清透感靠四个数：更薄的底色（0.24）、更高的饱和（1.5）、
+     更轻的压暗（0.44 → 0.9）、更浅的模糊（64 → 24）。
+     模糊一过 30px，水在玻璃后面就成了一块平色，看着像刷了青漆的板；
+     24px 刚好：波纹的走向还在，字的后面又不至于跳 */
+  border: 1px solid rgba(224, 255, 252, 0.30);
   border-radius: 20px;
   background:
+    /* 两道斜的薄反光：一道在左上扫过，一道靠右下拖尾。
+       玻璃之所以像玻璃，靠的就是这种「不规则的亮带」，
+       只给一层均匀半透，永远像塑料 */
     linear-gradient(
-      154deg,
-      rgba(228, 255, 250, 0.075) 0%,
-      rgba(228, 255, 250, 0.022) 34%,
-      rgba(228, 255, 250, 0) 52%
+      118deg,
+      rgba(238, 255, 253, 0) 34%,
+      rgba(238, 255, 253, 0.075) 41%,
+      rgba(238, 255, 253, 0) 44%,
+      rgba(238, 255, 253, 0) 60%,
+      rgba(238, 255, 253, 0.03) 65%,
+      rgba(238, 255, 253, 0) 69%
+    ),
+    linear-gradient(
+      152deg,
+      rgba(238, 255, 253, 0.16) 0%,
+      rgba(238, 255, 253, 0.05) 30%,
+      rgba(238, 255, 253, 0) 52%
     ),
     var(--glass);
-  -webkit-backdrop-filter: blur(64px) saturate(1.18) brightness(0.44);
-  backdrop-filter: blur(64px) saturate(1.18) brightness(0.44);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35) brightness(1.26);
+  backdrop-filter: blur(22px) saturate(1.35) brightness(1.26);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-    0 44px 110px -54px rgba(0, 10, 12, 0.95);
+    /* 内壁：顶边一道实白 + 三面极细的环光，四周才立得住 */
+    inset 1px 1px 0 rgba(255, 255, 255, 0.46),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 0 60px rgba(198, 248, 240, 0.09),
+    inset 0 -40px 60px -40px rgba(0, 24, 28, 0.6),
+    /* 外沿：一圈冷光把面板从水上托起来 */
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 46px -14px rgba(150, 232, 222, 0.16),
+    0 44px 110px -54px rgba(0, 20, 24, 0.9);
   scrollbar-width: thin;
   scrollbar-color: rgba(176, 236, 224, 0.32) transparent;
 }
@@ -435,7 +469,8 @@
 
 /* ── 右侧文本栏 ─────────────────────────────────────────── */
 
-/* 右栏背后再压一层青调暗角：水面偶尔从这儿亮起来，正文要一直读得清 */
+/* 右栏背后再压一层青调暗角：水面偶尔从这儿亮起来，正文要一直读得清。
+   但别压成一块灰板 —— 0.86 的圆心太死了，收到 0.6，边缘直接放空 */
 .axon-scrim {
   position: absolute;
   top: 0;
@@ -445,9 +480,9 @@
   pointer-events: none;
   background: radial-gradient(
     90% 62% at 74% 50%,
-    rgba(2, 18, 20, 0.86) 0%,
-    rgba(2, 18, 20, 0.5) 50%,
-    rgba(2, 18, 20, 0) 100%
+    rgba(3, 22, 26, 0.62) 0%,
+    rgba(3, 22, 26, 0.30) 50%,
+    rgba(3, 22, 26, 0) 100%
   );
 }
 
@@ -458,8 +493,8 @@
   transform: translateY(-50%);
   width: 380px;
   font-size: 12.5px;
-  color: #cfe2dd;
-  text-shadow: 0 1px 12px rgba(0, 12, 14, 0.7);
+  color: #dcf2ee;
+  text-shadow: 0 1px 14px rgba(0, 14, 16, 0.9), 0 0 3px rgba(0, 18, 20, 0.6);
 }
 
 .axon-about > div + div {
@@ -493,7 +528,7 @@
 
 .axon-about li::before {
   content: '·';
-  color: rgba(176, 236, 224, 0.4);
+  color: rgba(198, 248, 240, 0.6);
   margin-right: .6em;
 }
 
@@ -585,7 +620,7 @@
 }
 
 .axon-console .section-title a {
-  color: #cfcfcf;
+  color: #d7ece8;
   font-size: 11px;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -828,7 +863,7 @@
 .axon-console .data-table td {
   padding: 12px 10px;
   border-bottom: 1px solid var(--line-soft);
-  color: #ddd;
+  color: #e2f2ee;
   vertical-align: middle;
 }
 
@@ -837,7 +872,7 @@
 }
 
 .axon-console .data-table tr:hover td {
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(206, 255, 248, 0.05);
 }
 
 .axon-console .table-primary {
@@ -859,7 +894,7 @@
 .axon-console .row-actions button {
   border: 0;
   background: transparent;
-  color: #cfcfcf;
+  color: #d7ece8;
   font-family: inherit;
   font-size: 11px;
   padding: 0;
@@ -894,12 +929,13 @@
 .axon-console .input {
   width: 100%;
   padding: 8px 11px;
-  border: 1px solid rgba(190, 240, 230, 0.2);
+  border: 1px solid rgba(204, 252, 244, 0.26);
   border-radius: 8px;
-  background: rgba(2, 24, 26, 0.4);
-  color: #eaf5f2;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  /* 输入框也浮在玻璃上：底色比面板再淡一点，边框比面板再亮一点 */
+  background: rgba(8, 46, 50, 0.3);
+  color: #f0fbf8;
+  -webkit-backdrop-filter: blur(8px) saturate(1.3);
+  backdrop-filter: blur(8px) saturate(1.3);
   font-family: inherit;
   font-size: 12px;
   outline: none;
@@ -907,13 +943,13 @@
 }
 
 .axon-console .input::placeholder {
-  color: rgba(190, 226, 220, 0.36);
+  color: rgba(200, 238, 232, 0.42);
 }
 
 .axon-console .input:focus {
-  border-color: rgba(169, 236, 221, 0.7);
-  background: rgba(6, 40, 42, 0.55);
-  box-shadow: 0 0 0 3px rgba(169, 236, 221, 0.12);
+  border-color: rgba(196, 250, 240, 0.78);
+  background: rgba(14, 60, 64, 0.42);
+  box-shadow: 0 0 0 3px rgba(182, 242, 228, 0.14);
 }
 
 .axon-console textarea.input {
@@ -1006,12 +1042,12 @@
   min-height: 120px;
   padding: 18px;
   gap: 8px;
-  border: 1px dashed #262626;
+  border: 1px dashed rgba(198, 248, 240, 0.24);
   color: var(--muted);
 }
 
 .axon-console .empty-state h3 {
-  color: #ddd;
+  color: #e4f4f0;
   font-size: 12.5px;
 }
 
@@ -1040,7 +1076,7 @@
   left: 5px;
   top: 14px;
   width: 1px;
-  background: #202020;
+  background: var(--line-soft);
 }
 
 .axon-console .timeline-dot {
@@ -1048,7 +1084,7 @@
   height: 10px;
   margin-top: 3px;
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(170, 136, 255, 0.14);
+  box-shadow: 0 0 0 3px rgba(255, 179, 198, 0.16);
 }
 
 .axon-console .timeline-item strong {
@@ -1092,14 +1128,14 @@
 .axon-console .task-card {
   padding: 12px;
   margin-bottom: 8px;
-  border: 1px solid #202020;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(204, 252, 244, 0.14);
+  border-radius: 10px;
+  background: rgba(206, 255, 248, 0.04);
   gap: 8px;
 }
 
 .axon-console .task-card-heading button {
-  color: #6a6a6a;
+  color: rgba(198, 248, 240, 0.44);
   font-size: 16px;
 }
 
@@ -1151,9 +1187,9 @@
 
 /* 弹窗 */
 .axon .modal-backdrop {
-  background: rgba(0, 0, 0, 0.72);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: rgba(2, 18, 21, 0.62);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
   z-index: 60;
 }
 
@@ -1161,11 +1197,16 @@
   width: min(720px, 100%);
   max-height: 88vh;
   padding: 22px;
-  border: 1px solid #333;
-  border-radius: 2px;
-  background: rgba(10, 10, 12, 0.94);
-  color: #ddd;
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(214, 255, 248, 0.26);
+  border-radius: 16px;
+  /* 弹窗跟面板同一套玻璃，只是压得稍厚一点（底下是模糊过的页，不需要那么透） */
+  background:
+    linear-gradient(154deg, rgba(236, 255, 252, 0.09), rgba(236, 255, 252, 0) 46%),
+    rgba(7, 38, 42, 0.86);
+  -webkit-backdrop-filter: blur(26px) saturate(1.4);
+  backdrop-filter: blur(26px) saturate(1.4);
+  color: #e4f4f0;
+  box-shadow: 0 40px 120px rgba(0, 16, 18, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.24);
   font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
   font-size: 12px;
 }
@@ -1197,16 +1238,17 @@
 .axon .modal-actions {
   position: sticky;
   bottom: -22px;
-  background: #0a0a0c;
+  background: rgba(7, 38, 42, 0.92);
   border-top: 1px solid var(--line);
 }
 
 /* 作品表格里的缩略图 */
 .axon-console .work-thumb,
 .axon-console .cover-preview {
-  border-radius: 2px;
-  background: #101010;
-  color: #6a6a6a;
+  border-radius: 6px;
+  background: rgba(8, 46, 50, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(204, 252, 244, 0.2);
+  color: var(--muted);
 }
 
 .axon-console .work-sort button {
@@ -1225,9 +1267,9 @@
 .axon-console .cover-upload,
 .axon-console .upload-button {
   border: 1px solid var(--line);
-  border-radius: 2px;
+  border-radius: 8px;
   background: transparent;
-  color: #ddd;
+  color: #e4f4f0;
   font-family: inherit;
   font-size: 11px;
 }
@@ -1249,9 +1291,9 @@
 }
 
 .axon-console .tag-pill.selected {
-  border-color: var(--accent);
-  background: rgba(170, 136, 255, 0.14);
-  color: #dcd0ff;
+  border-color: rgba(182, 242, 228, 0.7);
+  background: rgba(182, 242, 228, 0.14);
+  color: #dcfbf3;
 }
 
 /* 提示条 */
@@ -1323,10 +1365,10 @@
 }
 
 .axon-console .setup-sql pre {
-  border-radius: 2px;
-  background: #08080a;
+  border-radius: 8px;
+  background: rgba(2, 22, 25, 0.6);
   border: 1px solid var(--line);
-  color: #b9c7d6;
+  color: #c6dcd8;
   font-size: 10.5px;
 }
 
@@ -1366,7 +1408,7 @@
 }
 
 .axon-console .detail-notes {
-  color: #c4c4c4;
+  color: #d3ebe6;
   font-size: 11.5px;
   line-height: 1.8;
 }
@@ -1394,7 +1436,7 @@
   height: 30px;
   background: transparent;
   border: 1px solid var(--line);
-  color: #ddd;
+  color: #e4f4f0;
   font-size: 11px;
   font-weight: 400;
 }
@@ -1552,17 +1594,18 @@
 }
 
 /* 小屏：控制台就是整屏，玻璃再透正文就全压在水纹上。
-   这条必须放在文件末尾 —— 早先那条被前面的 .axon-console 覆盖掉了 */
+   这条必须放在文件末尾 —— 早先那条被前面的 .axon-console 覆盖掉了。
+   但别一路压到 0.86：手机上更该看见水，0.72 就够字立住 */
 @media (max-width: 760px) {
   .axon-console {
     background:
       linear-gradient(
         168deg,
-        rgba(228, 255, 250, 0.055) 0%,
-        rgba(228, 255, 250, 0) 40%
+        rgba(236, 255, 252, 0.10) 0%,
+        rgba(236, 255, 252, 0) 40%
       ),
-      rgba(3, 19, 21, 0.86);
-    -webkit-backdrop-filter: blur(30px) saturate(1.12) brightness(0.36);
-    backdrop-filter: blur(30px) saturate(1.12) brightness(0.36);
+      rgba(9, 48, 54, 0.52);
+    -webkit-backdrop-filter: blur(20px) saturate(1.35) brightness(1.08);
+    backdrop-filter: blur(20px) saturate(1.35) brightness(1.08);
   }
 }
