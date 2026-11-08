@@ -45,6 +45,8 @@ export default function WorksPage() {
           <span className="hp-nav-current" aria-current="page">
             作品集
           </span>
+          {/* 3D 放映页是独立的静态页（public/showcase.html），不在这个 Router 里 */}
+          <a href="showcase.html">放映模式</a>
           <Link to="/home?to=contact">留言</Link>
         </nav>
         <Link className="hp-nav-enter" to="/app">

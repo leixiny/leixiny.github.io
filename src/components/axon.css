@@ -1,0 +1,1500 @@
+/* ─────────────────────────────────────────────────────────────
+   AXON —— 管理台外壳
+   黑底 + 粒子云 + 等宽字细线 UI。所有既有后台组件在这里被重新上色。
+   ───────────────────────────────────────────────────────────── */
+
+.axon {
+  --accent: #aa88ff;
+  --text: #dddddd;
+  --muted: #8a8a8a;
+  --chip: #1c1c1c;
+  --line: #2a2a2a;
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  color: var(--text);
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  font-size: 13px;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  z-index: 0;
+}
+
+.axon *,
+.axon *::before,
+.axon *::after {
+  box-sizing: border-box;
+}
+
+.axon-bg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* 点击涟漪：压在 UI 之上但不吃事件，一圈细环扩出去就没了 */
+.axon-ripples {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.axon-ripples i {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  border: 1.2px solid rgba(180, 150, 255, 0.84);
+  box-shadow: 0 0 20px rgba(170, 136, 255, 0.55), inset 0 0 14px rgba(170, 136, 255, 0.35);
+  opacity: 0;
+  animation: axon-ripple 1.1s cubic-bezier(0.12, 0.62, 0.26, 1) forwards;
+}
+
+/* 第二道波：小一圈、淡一半，晚 120ms 才出来 */
+.axon-ripples i:nth-child(even) {
+  --r-scale: 5.4;
+  border-color: rgba(176, 144, 255, 0.6);
+  box-shadow: 0 0 12px rgba(170, 136, 255, 0.32);
+}
+
+@keyframes axon-ripple {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(var(--r-scale, 7.5));
+    opacity: 0;
+  }
+}
+
+/* 小屏上同样的 7.5 倍会占掉四分之一屏，收一点 */
+@media (max-width: 760px) {
+  .axon-ripples i {
+    width: 11px;
+    height: 11px;
+    margin: -5.5px 0 0 -5.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axon-ripples {
+    display: none;
+  }
+}
+
+.axon-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── 品牌 ───────────────────────────────────────────────── */
+
+.axon-brand {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  mix-blend-mode: plus-lighter;
+}
+
+.axon-brand svg {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+
+.axon-brand b {
+  display: block;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.axon-brand span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 右上计数 ───────────────────────────────────────────── */
+
+.axon-counter {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #0a0a0a;
+  color: #fff;
+  font-size: 14px;
+  mix-blend-mode: plus-lighter;
+}
+
+.axon-user {
+  position: absolute;
+  top: 80px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  mix-blend-mode: plus-lighter;
+}
+
+.axon-user span {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.axon-user button {
+  pointer-events: auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.axon-user button:hover {
+  color: #fff;
+}
+
+/* ── 胶囊导航 ───────────────────────────────────────────── */
+
+.axon-tags {
+  position: absolute;
+  top: 120px;
+  left: 24px;
+  width: 320px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  mix-blend-mode: plus-lighter;
+}
+
+.axon-chip {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  padding: 5px 9px;
+  background: var(--chip);
+  color: #cfcfcf;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.25s, color 0.25s;
+}
+
+.axon-chip:hover {
+  background: #2c2c2c;
+  color: #fff;
+}
+
+.axon-chip.is-on {
+  background: #e6e6e6;
+  color: #000;
+}
+
+/* ── 左栏作品卡 ─────────────────────────────────────────── */
+
+.axon-list {
+  position: absolute;
+  top: 250px;
+  left: 24px;
+  bottom: 0;
+  width: 320px;
+  pointer-events: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 28px;
+  scrollbar-width: none;
+}
+
+.axon-list::-webkit-scrollbar {
+  display: none;
+}
+
+.axon-list-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0 0 10px;
+  background: linear-gradient(#000 62%, rgba(0, 0, 0, 0));
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.axon-list-head s {
+  text-decoration: none;
+  color: #4a4a4a;
+  margin: 0 0.35em;
+}
+
+.axon-card {
+  pointer-events: auto;
+  display: block;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  transition: opacity 0.3s;
+}
+
+.axon-card:hover {
+  opacity: 0.78;
+}
+
+.axon-thumb {
+  height: 160px;
+  border-radius: 2px;
+  background: #0a0a0a;
+  overflow: hidden;
+  position: relative;
+}
+
+.axon-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.72) contrast(1.02) brightness(0.86);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s;
+}
+
+/* 浅色封面压在黑底上太跳，盖一层极淡的暗角把它收进去 */
+.axon-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.38));
+  pointer-events: none;
+}
+
+.axon-card:hover .axon-thumb img {
+  transform: scale(1.04);
+  filter: saturate(0.88) contrast(1.03) brightness(0.96);
+}
+
+/* 两列：左标题吃掉余量，右注记按内容宽度靠右；grid 不会像 flex+gap 那样溢出被裁 */
+.axon-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.axon-card-title {
+  display: block;
+  min-width: 0;
+  color: #fff;
+  line-height: 1.3;
+  text-shadow: 0 0 12px #000, 0 0 4px #000;
+}
+
+.axon-card-title em {
+  display: block;
+  font-style: normal;
+  color: #9d9d9d;
+  margin-top: 3px;
+}
+
+/* pre 而不是 pre-line：两行是设计好的折行，不能再按字符断 */
+.axon-card-note {
+  display: block;
+  justify-self: end;
+  color: #c4c4c4;
+  text-shadow: 0 0 12px #000, 0 0 4px #000;
+  text-align: right;
+  white-space: pre;
+  line-height: 1.45;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+/* ── 中间控制台 ─────────────────────────────────────────── */
+
+.axon-console {
+  position: absolute;
+  top: 96px;
+  left: 372px;
+  right: 500px;
+  bottom: 24px;
+  pointer-events: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 26px 32px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(5, 5, 8, 0.87);
+  backdrop-filter: blur(30px) saturate(1.12);
+  -webkit-backdrop-filter: blur(30px) saturate(1.12);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.axon-console::-webkit-scrollbar {
+  width: 8px;
+}
+
+.axon-console::-webkit-scrollbar-thumb {
+  background: #303030;
+}
+
+.axon-console::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── 右侧文本栏 ─────────────────────────────────────────── */
+
+/* 右栏背后压一层很淡的暗角：粒子亮弧偶尔扫过这里，正文要一直读得清 */
+.axon-scrim {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 620px;
+  pointer-events: none;
+  background: radial-gradient(
+    90% 62% at 74% 50%,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.58) 48%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.axon-about {
+  position: absolute;
+  right: 90px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 380px;
+  mix-blend-mode: plus-lighter;
+  font-size: 12.5px;
+  color: #c9c9c9;
+}
+
+.axon-about > div + div {
+  margin-top: 2.2em;
+}
+
+.axon-about h2 {
+  margin: 0 0 1em;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.axon-about p {
+  margin: 0 0 1em;
+  text-align: justify;
+  line-height: 1.5;
+}
+
+.axon-about p:last-child {
+  margin-bottom: 0;
+}
+
+.axon-about ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 1.7;
+}
+
+.axon-about li::before {
+  content: '·';
+  color: #6a6a6a;
+  margin-right: .6em;
+}
+
+.axon-about a {
+  display: block;
+  margin: 4px 0;
+  color: #d7caff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  pointer-events: auto;
+  transition: opacity 0.3s;
+}
+
+.axon-about a:hover {
+  opacity: 0.7;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   既有后台组件：在控制台里重新上色
+   ───────────────────────────────────────────────────────────── */
+
+.axon-console h1,
+.axon-console h2,
+.axon-console h3,
+.axon-console strong {
+  font-weight: 400;
+}
+
+.axon-console .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.axon-console .page-header h1 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  color: #fff;
+}
+
+.axon-console .page-header p {
+  margin: 0;
+  max-width: 34em;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.axon-console .page-action {
+  flex: none;
+}
+
+/* 卡片 = 一条细线分段，不再是白卡 */
+.axon-console .card {
+  padding: 18px 0;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.axon-console .card:first-of-type {
+  border-top: 0;
+}
+
+.axon-console .card h2 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.axon-console .section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.axon-console .section-title a {
+  color: #cfcfcf;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.3s;
+}
+
+.axon-console .section-title a:hover {
+  color: #fff;
+}
+
+.axon-console .section-title span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.axon-console .live-pill {
+  color: #9ef0c0 !important;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.axon-console .live-pill i {
+  width: 5px;
+  height: 5px;
+  background: #9ef0c0;
+  box-shadow: 0 0 0 3px rgba(158, 240, 192, 0.16);
+}
+
+/* 指标 */
+.axon-console .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 18px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.axon-console .stat-card {
+  padding: 14px 14px 16px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.axon-console .stat-card span {
+  color: var(--muted);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+
+.axon-console .stat-number {
+  margin-top: 10px;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.axon-console .stat-blue,
+.axon-console .stat-green,
+.axon-console .stat-purple,
+.axon-console .stat-amber,
+.axon-console .stat-red {
+  color: #fff;
+}
+
+.axon-console .dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+}
+
+.axon-console .dashboard-grid > .card + .card {
+  border-top: 1px solid var(--line);
+}
+
+/* 列表行 */
+.axon-console .list-stack {
+  display: grid;
+  gap: 0;
+}
+
+.axon-console .list-row,
+.axon-console .entity-row {
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid #1e1e1e;
+  border-radius: 0;
+  background: transparent;
+  gap: 14px;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.axon-console .list-row:last-child,
+.axon-console .entity-row:last-child {
+  border-bottom: 0;
+}
+
+.axon-console .list-row:hover,
+.axon-console .entity-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.axon-console .list-row strong {
+  margin-bottom: 4px;
+  color: #fff;
+  font-size: 12.5px;
+}
+
+.axon-console .list-row > div span,
+.axon-console .entity-row span,
+.axon-console .entity-row p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.axon-console .list-row-meta em {
+  color: #e6e6e6;
+  font-size: 11.5px;
+}
+
+/* 标签 */
+.axon-console .badge {
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  background: transparent;
+}
+
+.axon-console .badge-neutral { color: #a8a8a8; }
+.axon-console .badge-green { color: #9ef0c0; }
+.axon-console .badge-blue { color: #9dc4ff; }
+.axon-console .badge-amber { color: #ffd28a; }
+.axon-console .badge-red { color: #ff9db1; }
+.axon-console .badge-purple { color: #cbb4ff; }
+
+/* 按钮 */
+.axon-console .btn-primary,
+.axon-console .btn-secondary,
+.axon-console .btn-ghost,
+.axon-console .btn-danger,
+.axon-console button.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  box-shadow: none;
+  transform: none;
+}
+
+.axon-console .btn-primary,
+.axon-console button.btn-primary {
+  background: #e6e6e6;
+  border-color: #e6e6e6;
+  color: #000;
+}
+
+.axon-console .btn-primary:hover,
+.axon-console button.btn-primary:hover {
+  background: #fff;
+  border-color: #fff;
+  transform: none;
+}
+
+.axon-console .btn-secondary {
+  background: transparent;
+  color: #ddd;
+}
+
+.axon-console .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #4a4a4a;
+  color: #fff;
+}
+
+.axon-console .btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.axon-console .btn-ghost:hover {
+  color: #fff;
+}
+
+.axon-console .btn-danger {
+  background: transparent;
+  border-color: rgba(255, 157, 177, 0.4);
+  color: #ff9db1;
+}
+
+.axon-console .btn-danger:hover {
+  background: rgba(255, 157, 177, 0.12);
+}
+
+.axon-console .btn-primary:disabled,
+.axon-console .btn-secondary:disabled,
+.axon-console .btn-danger:disabled {
+  opacity: 0.4;
+}
+
+/* 表格 */
+.axon-console .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.axon-console .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.axon-console .data-table th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.axon-console .data-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #1e1e1e;
+  color: #ddd;
+  vertical-align: middle;
+}
+
+.axon-console .data-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.axon-console .data-table tr:hover td {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.axon-console .table-primary {
+  color: #fff;
+  font-size: 12px;
+}
+
+.axon-console .data-table small {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.axon-console .row-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.axon-console .row-actions button {
+  border: 0;
+  background: transparent;
+  color: #cfcfcf;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.axon-console .row-actions button:hover {
+  color: #fff;
+}
+
+.axon-console .row-actions .danger-text,
+.axon-console .danger-text {
+  color: #ff9db1;
+}
+
+/* 表单 */
+.axon-console .field {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+.axon-console .field small {
+  color: #6f6f6f;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.axon-console .input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #eee;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.axon-console .input::placeholder {
+  color: #5c5c5c;
+}
+
+.axon-console .input:focus {
+  border-color: var(--accent);
+  background: rgba(170, 136, 255, 0.06);
+  box-shadow: none;
+}
+
+.axon-console textarea.input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.axon-console select.input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #888 50%), linear-gradient(135deg, #888 50%, transparent 50%);
+  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.axon-console option {
+  background: #111;
+  color: #eee;
+}
+
+.axon-console .form-grid,
+.axon-console .form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.axon-console .form-grid {
+  padding: 0;
+}
+
+.axon-console .form-wide {
+  grid-column: 1 / -1;
+}
+
+.axon-console .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* 卡片自己只是一层框，真正的栅格在里面的 form 上 */
+.axon-console .filter-card,
+.axon-console .task-create-card {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+}
+
+.axon-console .task-create-card {
+  display: block;
+}
+
+/* 流式折行：容器窄就少放几个，宽就多放几个，按钮永远贴本行右端 */
+.axon-console .task-create-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.axon-console .task-create-form > .field {
+  flex: 1 1 158px;
+  min-width: 0;
+}
+
+/* 标题给宽一点，剩下的字段收窄 */
+.axon-console .task-create-form > .field:first-child {
+  flex-grow: 2.2;
+}
+
+/* 旧布局在 1180 以下会给按钮挂 span 2，这里显式压掉 */
+.axon-console .task-create-button {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 96px;
+  grid-column: auto;
+  padding-inline: 18px;
+}
+
+/* 空状态 */
+.axon-console .empty-state {
+  min-height: 120px;
+  padding: 18px;
+  gap: 8px;
+  border: 1px dashed #262626;
+  color: var(--muted);
+}
+
+.axon-console .empty-state h3 {
+  color: #ddd;
+  font-size: 12.5px;
+}
+
+.axon-console .empty-state p {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.axon-console .empty-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+/* 时间线 */
+.axon-console .timeline-item {
+  grid-template-columns: 20px 1fr;
+  padding-bottom: 14px;
+}
+
+.axon-console .timeline-item:not(:last-child)::before {
+  left: 5px;
+  top: 14px;
+  width: 1px;
+  background: #202020;
+}
+
+.axon-console .timeline-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(170, 136, 255, 0.14);
+}
+
+.axon-console .timeline-item strong {
+  color: #fff;
+  font-size: 11.5px;
+}
+
+.axon-console .timeline-item span,
+.axon-console .timeline-item time {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* 看板 */
+/* 看板要并列才看得出流转 */
+.axon-console .kanban-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.axon-console .kanban-column {
+  min-height: 0;
+}
+
+.axon-console .kanban-column + .kanban-column {
+  border-top: 1px solid var(--line);
+}
+
+.axon-console .kanban-title span {
+  width: auto;
+  height: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.axon-console .task-card {
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #202020;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.015);
+  gap: 8px;
+}
+
+.axon-console .task-card-heading button {
+  color: #6a6a6a;
+  font-size: 16px;
+}
+
+.axon-console .task-card-heading button:hover {
+  color: #fff;
+}
+
+.axon-console .task-customer {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.axon-console .task-meta {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.axon-console .task-filters {
+  display: inline-flex;
+  gap: 0;
+  padding: 0;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+}
+
+.axon-console .task-filters button {
+  padding: 6px 12px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.axon-console .task-filters button:last-child {
+  border-right: 0;
+}
+
+.axon-console .task-filters button.active {
+  background: #e6e6e6;
+  color: #000;
+}
+
+/* 弹窗 */
+.axon .modal-backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 60;
+}
+
+.axon .modal {
+  width: min(720px, 100%);
+  max-height: 88vh;
+  padding: 22px;
+  border: 1px solid #333;
+  border-radius: 2px;
+  background: rgba(10, 10, 12, 0.94);
+  color: #ddd;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.7);
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  font-size: 12px;
+}
+
+.axon .modal-header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: #fff;
+}
+
+.axon .modal-close {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.axon .modal-close:hover {
+  color: #fff;
+  border-color: #555;
+}
+
+.axon .modal-actions {
+  position: sticky;
+  bottom: -22px;
+  background: #0a0a0c;
+  border-top: 1px solid var(--line);
+}
+
+/* 作品表格里的缩略图 */
+.axon-console .work-thumb,
+.axon-console .cover-preview {
+  border-radius: 2px;
+  background: #101010;
+  color: #6a6a6a;
+}
+
+.axon-console .work-sort button {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+  color: #aaa;
+}
+
+.axon-console .work-sort button:hover:not(:disabled) {
+  border-color: #555;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.axon-console .cover-upload,
+.axon-console .upload-button {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+  color: #ddd;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.axon-console .check-row,
+.axon-console .check-line {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.axon-console .tag-pill {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 400;
+  padding: 4px 8px;
+}
+
+.axon-console .tag-pill.selected {
+  border-color: var(--accent);
+  background: rgba(170, 136, 255, 0.14);
+  color: #dcd0ff;
+}
+
+/* 提示条 */
+.axon-console .alert,
+.axon-console .inline-error,
+.axon-console .error-card {
+  border: 1px solid var(--line);
+  border-left-width: 2px;
+  border-radius: 2px;
+  padding: 10px 12px;
+  font-size: 11px;
+  background: transparent;
+}
+
+.axon-console .alert-error,
+.axon-console .inline-error,
+.axon-console .error-card {
+  border-color: rgba(255, 157, 177, 0.4);
+  border-left-color: #ff9db1;
+  color: #ffbcc9;
+  background: rgba(255, 157, 177, 0.06);
+}
+
+.axon-console .alert-success {
+  border-color: rgba(158, 240, 192, 0.35);
+  border-left-color: #9ef0c0;
+  color: #b6f2cf;
+  background: rgba(158, 240, 192, 0.06);
+}
+
+.axon-console .alert-info {
+  border-color: rgba(157, 196, 255, 0.35);
+  border-left-color: #9dc4ff;
+  color: #c3dbff;
+  background: rgba(157, 196, 255, 0.06);
+}
+
+.axon-console .alert code {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  padding: 1px 4px;
+}
+
+/* 建表引导 */
+.axon-console .setup-card {
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  padding: 16px;
+  gap: 10px;
+}
+
+.axon-console .setup-card h2 {
+  color: #fff;
+  font-size: 13px;
+}
+
+.axon-console .setup-card p,
+.axon-console .setup-steps,
+.axon-console .setup-error {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.axon-console .setup-sql summary {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.axon-console .setup-sql pre {
+  border-radius: 2px;
+  background: #08080a;
+  border: 1px solid var(--line);
+  color: #b9c7d6;
+  font-size: 10.5px;
+}
+
+/* 详情页 */
+.axon-console .back-link,
+.axon-console .external-link {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.axon-console .detail-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.axon-console .detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.axon-console .detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.axon-console .detail-main,
+.axon-console .detail-side {
+  display: grid;
+  gap: 0;
+}
+
+.axon-console .detail-notes {
+  color: #c4c4c4;
+  font-size: 11.5px;
+  line-height: 1.8;
+}
+
+.axon-console .profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
+.axon-console .inline-form,
+.axon-console .task-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.axon-console .inline-form .btn-primary,
+.axon-console .task-form .btn-primary {
+  grid-column: span 2;
+}
+
+.axon-console .avatar {
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: #ddd;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.axon-console .member-cell {
+  gap: 8px;
+}
+
+.axon-console .tag-create {
+  grid-template-columns: 1fr auto;
+}
+
+/* ── 自适应 ─────────────────────────────────────────────── */
+
+@media (max-width: 1560px) {
+  .axon-about {
+    width: 330px;
+    right: 40px;
+  }
+
+  .axon-scrim {
+    width: 480px;
+  }
+
+  .axon-console {
+    right: 420px;
+  }
+}
+
+@media (max-width: 1240px) {
+  .axon-about,
+  .axon-scrim {
+    display: none;
+  }
+
+  .axon-console {
+    right: 32px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .axon-list {
+    display: none;
+  }
+
+  /* 左栏收了以后胶囊改成整行横滑，否则会压到控制台标题上 */
+  .axon-tags {
+    top: 120px;
+    left: 24px;
+    right: 24px;
+    width: auto;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .axon-tags::-webkit-scrollbar {
+    display: none;
+  }
+
+  .axon-console {
+    top: 158px;
+    left: 24px;
+  }
+}
+
+@media (max-width: 760px) {
+  .axon-brand {
+    top: 18px;
+    left: 18px;
+    gap: 10px;
+  }
+
+  .axon-brand svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .axon-brand b {
+    font-size: 16px;
+  }
+
+  .axon-brand span {
+    font-size: 10px;
+  }
+
+  .axon-counter {
+    top: 18px;
+    right: 18px;
+    width: 38px;
+    height: 38px;
+    font-size: 12px;
+  }
+
+  .axon-user {
+    top: 66px;
+    right: 18px;
+  }
+
+  .axon-user span {
+    display: none;
+  }
+
+  .axon-list,
+  .axon-about {
+    display: none;
+  }
+
+  /* 手机上胶囊留着，横着滑：面板要能切换 */
+  .axon-tags {
+    top: 64px;
+    left: 18px;
+    right: 18px;
+    width: auto;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .axon-tags::-webkit-scrollbar {
+    display: none;
+  }
+
+  .axon-console {
+    top: 102px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    padding: 16px 16px 26px;
+  }
+
+  .axon-console .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .axon-console .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .axon-console .form-grid,
+  .axon-console .form-grid-2,
+  .axon-console .profile-grid,
+  .axon-console .filter-card,
+  .axon-console .task-create-form,
+  .axon-console .kanban-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .axon-console .task-create-button {
+    grid-column: auto;
+  }
+}

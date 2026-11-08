@@ -1,0 +1,218 @@
+/* ---------- 点一下：水从指尖荡开 ---------- */
+/* 两层都按视口坐标铺满，点哪荡哪。
+   普通点击走 60：压在作品详情卡（90）下面，卡片浮起来正好把水接走，不用等它散完。
+   卡片里面的点击走 96：否则会被卡片自己的底纱糊掉。 */
+.wrip-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wrip-layer.is-over {
+  z-index: 96;
+}
+
+/* 容器是个 0×0 的锚点，环都用负 margin 拉回中心 */
+.wrip {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* 一圈波：外侧一道暗槽、内侧紧贴高光，再往外一层很淡的水色。
+   深色水面上暗槽看不出来，只剩白；白色卡片上白环看不见，只剩那道暗弧。
+   圆不是正圆（border-radius 四角不等），散开时才不像 UI 的选择框，而像水 */
+.wrip i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 420px;
+  height: 420px;
+  margin: -210px 0 0 -210px;
+  border-radius: 47% 53% 51% 49% / 52% 48% 53% 47%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0) 44%,
+    rgba(16, 66, 54, 0.2) 52%,
+    rgba(255, 255, 255, 0.86) 57.5%,
+    rgba(238, 253, 249, 0.38) 62%,
+    rgba(14, 60, 50, 0.14) 68%,
+    rgba(255, 255, 255, 0) 79%
+  );
+  /* 柔 1px：够化掉边上的硬口，又不至于糊成一片；
+     外面再挂一圈很淡的白光，水面上才像反光而不是画上去的线 */
+  filter: blur(1px);
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.18);
+  opacity: 0;
+  transform: scale(0.03);
+  animation: wrip-ring 900ms cubic-bezier(0.28, 0.02, 0.22, 1) forwards;
+}
+
+/* 三圈错开出场：外面的快、里面的慢，叠起来才像水而不是一圈光盘 */
+.wrip i:nth-of-type(2) {
+  width: 310px;
+  height: 310px;
+  margin: -155px 0 0 -155px;
+  border-radius: 51% 49% 48% 52% / 49% 52% 48% 51%;
+  animation-delay: 120ms;
+  animation-duration: 800ms;
+}
+
+.wrip i:nth-of-type(3) {
+  width: 205px;
+  height: 205px;
+  margin: -102.5px 0 0 -102.5px;
+  border-radius: 49% 51% 52% 48% / 51% 47% 52% 49%;
+  animation-delay: 230ms;
+  animation-duration: 700ms;
+}
+
+/* 触点上那一点反光：按下去的一瞬水面被压亮 */
+.wrip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 96px;
+  height: 96px;
+  margin: -48px 0 0 -48px;
+  border-radius: 50%;
+  /* 亮斑同样带一点墨调，白卡上才留得下压痕 */
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.66),
+    rgba(216, 236, 246, 0.2) 46%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  animation: wrip-flash 380ms ease-out forwards;
+}
+
+@keyframes wrip-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.03);
+  }
+  12% {
+    opacity: 0.55;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12) rotate(3deg);
+  }
+}
+
+@keyframes wrip-flash {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.22);
+  }
+  30% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+/* 晕动症：涟漪只是好看，不该因此难受 */
+@media (prefers-reduced-motion: reduce) {
+  .wrip-layer {
+    display: none;
+  }
+}
+
+/* 竖屏屏幕窄：同样的环会一口气铺满整块，按比例收一圈 */
+@media (max-width: 760px) {
+  .wrip i {
+    width: 300px;
+    height: 300px;
+    margin: -150px 0 0 -150px;
+  }
+
+  .wrip i:nth-of-type(2) {
+    width: 222px;
+    height: 222px;
+    margin: -111px 0 0 -111px;
+  }
+
+  .wrip i:nth-of-type(3) {
+    width: 148px;
+    height: 148px;
+    margin: -74px 0 0 -74px;
+  }
+}
+
+/* ---------- 紧凑档：管理系统的界面密，涟漪按 0.25 倍写死 ---------- */
+/* 不用 transform: scale() 缩放：带 transform 的祖先会让子元素的
+   backdrop-filter 整个不渲染（踩过），而且写死尺寸更好对动画节奏 */
+.wrip.is-compact i:nth-of-type(1) {
+  width: 105px;
+  height: 105px;
+  margin: -52.5px 0 0 -52.5px;
+}
+
+.wrip.is-compact i:nth-of-type(2) {
+  width: 77.5px;
+  height: 77.5px;
+  margin: -38.75px 0 0 -38.75px;
+}
+
+/* 内三圈继续按阶梯收紧：显示峰值约 45 / 32 / 23px，一眼能数出层次 */
+.wrip.is-compact i:nth-of-type(3) {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 49% 51% 52% 48% / 51% 47% 52% 49%;
+  animation-delay: 230ms;
+  animation-duration: 700ms;
+}
+
+/* 第 4、5 圈只在紧凑档渲染（组件按 compact 决定 <i> 个数）：
+   更小、更迟、更快散掉，一波赶着一波 */
+.wrip.is-compact i:nth-of-type(4) {
+  width: 28.75px;
+  height: 28.75px;
+  margin: -14.375px 0 0 -14.375px;
+  border-radius: 52% 48% 49% 51% / 48% 52% 51% 49%;
+  animation-delay: 300ms;
+  animation-duration: 660ms;
+}
+
+/* 最内圈 = 205 × 0.4 × 0.25 ≈ 20.5px，仍是当初定的 0.1 */
+.wrip.is-compact i:nth-of-type(5) {
+  width: 20.5px;
+  height: 20.5px;
+  margin: -10.25px 0 0 -10.25px;
+  border-radius: 50% 50% 48% 52% / 51% 49% 52% 48%;
+  animation-delay: 380ms;
+  animation-duration: 600ms;
+}
+
+
+/* 滤镜定义藏起来：0×0 还要 absolute，才不吃布局 */
+.wrip-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* ---------- 背景真的荡：点击时给水面背景挂上位移滤镜 ---------- */
+/* 背景层都是固定的伪元素，并且故意往外多铺了一圈（inset: -6% / -3%），
+   位移把边缘推开也不会露出底色。0.62 秒后 WaterRipple 会把类去掉，背景自动复原 */
+html.is-warping .home-page.is-works::before {
+  filter: blur(7px) saturate(1.06) brightness(1.01) url(#wrip-warp);
+}
+
+html.is-warping .auth-page::before {
+  filter: url(#wrip-warp);
+}
+
+html.is-warping .app-shell::before {
+  filter: blur(1.6px) saturate(1.05) url(#wrip-warp);
+}

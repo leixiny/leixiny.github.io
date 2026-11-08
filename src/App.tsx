@@ -2,12 +2,12 @@ import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-d
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import Layout from './components/Layout'
+import AxonLayout from './components/AxonLayout'
 import LoadingScreen from './components/LoadingScreen'
 import { markIntroDone } from './lib/intro'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
-import WorksPage from './pages/WorksPage'
+import WorksAdminPage from './pages/WorksAdminPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DashboardPage from './pages/DashboardPage'
 import CustomersPage from './pages/CustomersPage'
@@ -18,6 +18,15 @@ import ProfilePage from './pages/ProfilePage'
 
 function FullScreenLoading() {
   return <LoadingScreen />
+}
+
+/** 作品集已经换成独立的 3D 放映页（public/showcase.html）：
+ *  老地址 #/works 不再渲染旧的水面版，直接换成那一页，收藏夹里的链接也不会断 */
+function WorksShowcaseRedirect() {
+  useEffect(() => {
+    window.location.replace('showcase.html')
+  }, [])
+  return <FullScreenLoading />
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -55,8 +64,9 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       {/* 老地址还留着：页脚、「留言」链接都指着 /home */}
       <Route path="/home" element={<HomePage />} />
-      {/* 作品集是独立的一页，同样不用登录 */}
-      <Route path="/works" element={<WorksPage />} />
+      {/* 作品集 = 放映页，同一个页面，旧地址跳过去 */}
+      <Route path="/works" element={<WorksShowcaseRedirect />} />
+      <Route path="/showcase" element={<WorksShowcaseRedirect />} />
       <Route path="/login" element={<AuthPage />} />
       <Route
         path="/onboarding"
@@ -72,12 +82,13 @@ function AppRoutes() {
         element={(
           <RequireAuth>
             <RequireOrganization>
-              <Layout />
+              <AxonLayout />
             </RequireOrganization>
           </RequireAuth>
         )}
       >
         <Route index element={<DashboardPage />} />
+        <Route path="works" element={<WorksAdminPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="customers/:id" element={<CustomerDetailPage />} />
         <Route path="tasks" element={<TasksPage />} />
