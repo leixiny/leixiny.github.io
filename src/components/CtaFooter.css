@@ -1,0 +1,545 @@
+/* ---------- 结尾的 CTA + 页脚：黑场、一段丝带视频、一块蓝粉玻璃 ----------
+   站点是「深色开场 → 浅色正文 → 深色收尾」，这一屏就是收尾的那一下。
+   视频只有 6 秒、上下都是纯黑，所以整屏靠上下渐隐和它自然连成一片。 */
+
+.cta {
+  /* 橹穆应援色，拆通道是为了每层单独给透明度 */
+  --cta-sky: 174 228 255; /* #aee4ff 浅蓝 */
+  --cta-pink: 255 204 213; /* #ffccd5 浅粉 */
+  --cta-blue: 47 157 229; /* #2f9de5 派生加深 */
+  --cta-rose: 242 105 140; /* #f2698c 派生加深 */
+
+  position: relative;
+  overflow: clip;
+  background: #050608;
+  color: #fff;
+  scroll-margin-top: 72px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.cta-wrap {
+  width: 100%;
+  padding-inline: clamp(20px, 4.5vw, 72px);
+}
+
+/* ---------- 上半：视频 + 文案 ---------- */
+.cta-stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-height: min(720px, 84svh);
+  padding: clamp(88px, 12vh, 140px) clamp(20px, 4.5vw, 72px) clamp(64px, 8vh, 96px);
+}
+
+.cta-video {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 原片偏青绿，往蓝那边拨一点点，才接得上后面的应援色 */
+  filter: hue-rotate(16deg) saturate(1.08) contrast(1.02);
+  opacity: 0.94;
+}
+
+.cta-tint {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.cta-tint--blue {
+  background: radial-gradient(
+    46% 56% at 15% 44%,
+    rgb(var(--cta-blue) / 0.5) 0%,
+    rgb(var(--cta-blue) / 0) 72%
+  );
+}
+
+.cta-tint--pink {
+  background: radial-gradient(
+    44% 54% at 85% 64%,
+    rgb(var(--cta-rose) / 0.4) 0%,
+    rgb(var(--cta-rose) / 0) 74%
+  );
+}
+
+/* 上下两头化到纯黑（和下面的页脚连成一片），中间再压一块柔和的暗，
+   白字压在丝带的亮边上也不至于看不清 */
+.cta-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      54% 46% at 50% 47%,
+      rgb(4 5 9 / 0.66) 0%,
+      rgb(4 5 9 / 0.18) 58%,
+      rgb(4 5 9 / 0) 78%
+    ),
+    linear-gradient(
+      to bottom,
+      #050608 0%,
+      rgb(5 6 8 / 0.72) 9%,
+      rgb(5 6 8 / 0.16) 24%,
+      rgb(5 6 8 / 0) 38%,
+      rgb(5 6 8 / 0) 56%,
+      rgb(5 6 8 / 0.58) 80%,
+      #050608 96%
+    );
+}
+
+.cta-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 880px;
+  text-align: center;
+}
+
+.cta-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 clamp(20px, 2.6vw, 30px);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: rgb(214 230 255 / 0.66);
+  /* 丝带的亮边正好从这行字后面穿过去，给它一点暗垫 */
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.85);
+}
+
+.cta-kicker i {
+  width: clamp(26px, 4vw, 48px);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--cta-sky) / 0),
+    rgb(var(--cta-sky) / 0.85)
+  );
+}
+
+.cta-title {
+  margin: 0;
+  font-size: clamp(44px, 7.4vw, 108px);
+  font-weight: 680;
+  line-height: 0.97;
+  letter-spacing: -0.028em;
+  color: #fff;
+  /* 用 drop-shadow 而不是 text-shadow：下面那行字是 background-clip:text 的透明字，
+     text-shadow 会从透明的笔画里透出来，把渐变压成一层灰 */
+  filter: drop-shadow(0 14px 34px rgb(0 0 0 / 0.55));
+}
+
+.cta-title em {
+  /* 第二行走应援色渐变：蓝 → 白 → 粉，这是整屏唯一一处「有颜色」的字 */
+  font-style: normal;
+  background: linear-gradient(
+    98deg,
+    #8ed3ff 0%,
+    #d3ecff 26%,
+    #fff 45%,
+    #ffd3de 70%,
+    #f2698c 96%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cta-lead {
+  margin: clamp(22px, 2.8vw, 30px) auto 0;
+  max-width: 33em;
+  font-size: clamp(13.5px, 1.06vw, 15px);
+  font-weight: 400;
+  line-height: 1.95;
+  color: rgb(226 236 254 / 0.7);
+  text-shadow: 0 2px 14px rgb(0 0 0 / 0.7);
+  /* 中文换行别留一个孤零零的短尾行 */
+  text-wrap: balance;
+}
+
+.cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: clamp(30px, 3.6vw, 42px);
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+    background-color 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.cta-btn svg {
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.cta-btn:hover svg {
+  transform: translate(2px, -2px);
+}
+
+/* 玻璃按钮：几何（blur、::before 的 mask-composite 挖边）全部沿用组件类，
+   这里只把 1% 白的底换成一点冷白，描边换成「上蓝下粉、两侧化掉」 */
+.cta-btn--glass.liquid-glass-strong {
+  /* 底色上面压一道斜的薄光：黑场上 blur 没什么可糊的，
+     没这道反光，按钮就只是一颗带彩色描边的暗胶囊 */
+  background:
+    linear-gradient(
+      118deg,
+      rgb(255 255 255 / 0) 30%,
+      rgb(255 255 255 / 0.16) 37%,
+      rgb(255 255 255 / 0.04) 42%,
+      rgb(255 255 255 / 0) 50%
+    ),
+    linear-gradient(180deg, rgb(255 255 255 / 0.13) 0%, rgb(255 255 255 / 0.02) 58%),
+    rgb(255 255 255 / 0.06);
+  color: #fff;
+  box-shadow:
+    4px 4px 4px rgb(0 0 0 / 0.05),
+    inset 0 1px 1px rgb(255 255 255 / 0.32),
+    inset 0 -12px 18px -14px rgb(var(--cta-rose) / 0.3),
+    0 18px 44px -26px rgb(var(--cta-blue) / 1),
+    0 26px 66px -30px rgb(var(--cta-rose) / 0.85);
+}
+
+.cta-btn--glass.liquid-glass-strong::before {
+  padding: 1.3px;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--cta-sky) / 1) 0%,
+    rgb(var(--cta-sky) / 0.26) 30%,
+    rgb(255 255 255 / 0.08) 50%,
+    rgb(var(--cta-pink) / 0.3) 70%,
+    rgb(var(--cta-pink) / 1) 100%
+  );
+}
+
+.cta-btn--glass.liquid-glass-strong:hover {
+  background:
+    linear-gradient(
+      118deg,
+      rgb(255 255 255 / 0) 30%,
+      rgb(255 255 255 / 0.2) 37%,
+      rgb(255 255 255 / 0.06) 42%,
+      rgb(255 255 255 / 0) 50%
+    ),
+    linear-gradient(180deg, rgb(255 255 255 / 0.16) 0%, rgb(255 255 255 / 0.05) 58%),
+    rgb(255 255 255 / 0.1);
+  transform: translateY(-2px);
+}
+
+.cta-btn--solid {
+  background: #fff;
+  color: #08090f;
+}
+
+.cta-btn--solid:hover {
+  background-image: linear-gradient(100deg, var(--cta-sky), var(--cta-pink));
+  color: #0a0b11;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px -20px rgb(var(--cta-sky) / 0.6);
+}
+
+/* ---------- 中段：联系 + 留言（黑场上，不进视频，读起来才不闹） ---------- */
+.cta-deck {
+  position: relative;
+  padding: clamp(40px, 5.2vw, 72px) 0 clamp(6px, 1vw, 12px);
+}
+
+.cta-deck-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: clamp(30px, 5vw, 84px);
+  align-items: start;
+  padding-top: clamp(26px, 3.2vw, 40px);
+  border-top: 1px solid rgb(255 255 255 / 0.085);
+}
+
+.cta-label {
+  display: block;
+  margin: 0 0 14px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.2em;
+  color: rgb(255 255 255 / 0.32);
+  text-transform: uppercase;
+}
+
+.cta-mail {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(16px, 1.5vw, 19px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgb(255 255 255 / 0.92);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.cta-mail svg {
+  color: rgb(var(--cta-sky) / 0.9);
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.cta-mail:hover {
+  color: #fff;
+}
+
+.cta-mail:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.cta-id-note {
+  margin: 12px 0 0;
+  max-width: 26em;
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: rgb(255 255 255 / 0.42);
+}
+
+/* 留言：一颗暗玻璃胶囊 + 下面两行最近的留言 */
+.cta-say {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+  height: 42px;
+  margin: 0;
+  padding: 0 5px 0 16px;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.05);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cta-say:focus-within {
+  border-color: rgb(var(--cta-sky) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--cta-blue) / 0.16);
+}
+
+.cta-say input {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: #fff;
+  outline: none;
+}
+
+.cta-say input::placeholder {
+  color: rgb(255 255 255 / 0.32);
+}
+
+.cta-say-name {
+  flex: 0 0 58px;
+  width: 58px;
+  padding-right: 8px !important;
+  border-right: 1px solid rgb(255 255 255 / 0.1) !important;
+}
+
+.cta-say-text {
+  flex: 1 1 auto;
+}
+
+.cta-say button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgb(var(--cta-blue)), rgb(var(--cta-rose)));
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.cta-say button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.cta-say button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.cta-say-note {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: rgb(255 178 190 / 0.9);
+}
+
+.cta-log {
+  display: grid;
+  gap: 7px;
+  max-width: 440px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cta-log li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.44);
+}
+
+.cta-log strong {
+  flex: 0 0 auto;
+  font-weight: 650;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.cta-log span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cta-log time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.3);
+  font-variant-numeric: tabular-nums;
+}
+
+.cta-log .is-empty {
+  color: rgb(255 255 255 / 0.3);
+}
+
+.cta-log-count {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.3);
+}
+
+/* ---------- 底：一条极简页脚 ---------- */
+.cta-bar {
+  border-top: 1px solid rgb(255 255 255 / 0.075);
+}
+
+.cta-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding-block: 18px 26px;
+  font-size: 11.5px;
+  color: rgb(255 255 255 / 0.36);
+}
+
+.cta-bar-row p {
+  margin: 0;
+}
+
+.cta-bar-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+}
+
+.cta-bar-links a,
+.cta-bar-links button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.cta-bar-links a:hover,
+.cta-bar-links button:hover {
+  color: rgb(var(--cta-sky) / 0.95);
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 860px) {
+  .cta-deck-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+  }
+
+  .cta-stage {
+    min-height: min(600px, 82svh);
+  }
+
+  .cta-title {
+    font-size: clamp(40px, 10.6vw, 64px);
+    letter-spacing: -0.04em;
+  }
+
+  /* 手机上把那句安慰收起来：窄屏里它只会把副文挤成四行，
+     剩下的「留一句话就行」两行正好 */
+  .cta-lead br,
+  .cta-lead-more {
+    display: none;
+  }
+
+  .cta-bar-row {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .cta-btn {
+    height: 44px;
+    padding: 0 18px;
+    font-size: 13px;
+  }
+
+  .cta-actions {
+    gap: 10px;
+  }
+
+  .cta-say-name {
+    flex-basis: 48px;
+    width: 48px;
+  }
+}
