@@ -166,7 +166,7 @@ export default function TasksPage() {
                   <button type="button" className="danger-text" onClick={() => deleteTask(task.id)}>×</button>
                 </div>
                 {task.customers ? (
-                  <Link className="task-customer" to={`/customers/${task.customers.id}`}>{task.customers.company_name}</Link>
+                  <Link className="task-customer" to={`/app/customers/${task.customers.id}`}>{task.customers.company_name}</Link>
                 ) : (
                   <span className="muted">独立任务</span>
                 )}

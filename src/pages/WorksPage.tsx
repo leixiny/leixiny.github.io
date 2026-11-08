@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import WorksStrip from './WorksStrip'
+import WaterRipple from '../components/WaterRipple'
 import './HomePage.css'
 
 /**
@@ -46,7 +47,7 @@ export default function WorksPage() {
           </span>
           <Link to="/home?to=contact">留言</Link>
         </nav>
-        <Link className="hp-nav-enter" to="/">
+        <Link className="hp-nav-enter" to="/app">
           进入管理系统
           <i aria-hidden="true">→</i>
         </Link>
@@ -55,6 +56,8 @@ export default function WorksPage() {
       <main className="hp-works-main">
         <WorksStrip />
       </main>
+
+      <WaterRipple />
     </div>
   )
 }

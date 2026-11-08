@@ -1,14 +1,19 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { Alert, Button, Field, Input } from '../components/ui'
+import WaterRipple from '../components/WaterRipple'
 
 type Mode = 'signin' | 'signup' | 'forgot'
 
 export default function AuthPage() {
   const { session, configured } = useAuth()
   const navigate = useNavigate()
+  const here = useLocation()
+  // 从「进入管理系统」被拦下来的，登录完回到原来要去的那页
+  const next =
+    (here.state as { from?: { pathname?: string; search?: string } } | null)?.from?.pathname ?? '/app'
   const [mode, setMode] = useState<Mode>('signin')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -17,7 +22,7 @@ export default function AuthPage() {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
-  if (session) return <Navigate to="/" replace />
+  if (session) return <Navigate to={next} replace />
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -31,7 +36,7 @@ export default function AuthPage() {
       if (mode === 'signin') {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) throw signInError
-        navigate('/')
+        navigate(next)
       }
 
       if (mode === 'signup') {
@@ -46,7 +51,7 @@ export default function AuthPage() {
         })
         if (signUpError) throw signUpError
         if (data.session) {
-          navigate('/')
+          navigate(next)
         } else {
           setMessage('注册成功，请先到邮箱中确认链接，然后再登录。')
         }
@@ -77,6 +82,11 @@ export default function AuthPage() {
 
   return (
     <div className="auth-page">
+      {/* 游客只是被管理系统挡下来的，得有一条回首页的路 */}
+      <Link className="auth-back" to="/">
+        ← 回到首页
+      </Link>
+
       <section className="auth-panel">
         <div className="auth-brand">
           <div className="brand-mark large">S</div>
@@ -141,6 +151,8 @@ export default function AuthPage() {
           {mode === 'forgot' ? '返回登录' : '忘记密码？'}
         </button>
       </section>
+
+      <WaterRipple />
     </div>
   )
 }

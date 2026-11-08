@@ -9,8 +9,6 @@ import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
 import WaterRipple from '../components/WaterRipple'
 
-const baseUrl = import.meta.env.BASE_URL
-
 interface GuestbookRow {
   id: number
   name: string
@@ -889,7 +887,7 @@ export default function HomePage() {
             留言
           </button>
         </nav>
-        <Link className="hp-nav-enter" to="/">
+        <Link className="hp-nav-enter" to="/app">
           进入管理系统
           <i aria-hidden="true">→</i>
         </Link>
@@ -938,12 +936,9 @@ export default function HomePage() {
                 查看作品集
                 <i aria-hidden="true">→</i>
               </Link>
-              <Link className="hp-btn hp-btn--ghost" to="/">
+              <Link className="hp-btn hp-btn--ghost" to="/app">
                 进入管理系统
               </Link>
-              <a className="hp-link-quiet" href={`${baseUrl}resume.pdf`} download>
-                下载简历 ↓
-              </a>
             </div>
           </div>
         </div>
@@ -1041,7 +1036,7 @@ export default function HomePage() {
                   <Link to="/works">作品集</Link>
                 </li>
                 <li>
-                  <Link to="/">管理系统</Link>
+                  <Link to="/app">管理系统</Link>
                 </li>
                 <li>
                   <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>

@@ -150,7 +150,7 @@ export default function CustomerDetailPage() {
     if (!window.confirm(`确定删除项目「${customer.company_name}」吗？`)) return
     const { error: deleteError } = await supabase.from('customers').delete().eq('id', customer.id)
     if (deleteError) setError(deleteError.message)
-    else navigate('/customers')
+    else navigate('/app/customers')
   }
 
   async function addContact(event: React.FormEvent) {
@@ -300,12 +300,12 @@ export default function CustomerDetailPage() {
   }
 
   if (loading) return <PageHeader title="加载项目详情..." />
-  if (!customer) return <EmptyState title="项目不存在或你没有访问权限" action={<Link className="btn-primary" to="/customers">返回项目列表</Link>} />
+  if (!customer) return <EmptyState title="项目不存在或你没有访问权限" action={<Link className="btn-primary" to="/app/customers">返回项目列表</Link>} />
 
   return (
     <>
       <div className="detail-topline">
-        <Link to="/customers" className="back-link">← 项目列表</Link>
+        <Link to="/app/customers" className="back-link">← 项目列表</Link>
         <div className="detail-actions">
           <Button variant="secondary" onClick={() => setEditOpen(true)}>编辑资料</Button>
           {canDelete ? <Button variant="danger" onClick={deleteCustomer}>删除</Button> : null}

@@ -2,14 +2,15 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { initials } from '../lib/format'
+import WaterRipple from './WaterRipple'
 
 const navItems = [
-  { to: '/home', label: '个人主页', icon: '✦' },
-  { to: '/', label: '仪表盘', icon: '▦' },
-  { to: '/customers', label: '项目', icon: '◎' },
-  { to: '/tasks', label: '任务', icon: '✓' },
-  { to: '/team', label: '成员', icon: '☷' },
-  { to: '/profile', label: '我的', icon: '☻' },
+  { to: '/', label: '个人主页', icon: '✦' },
+  { to: '/app', label: '仪表盘', icon: '▦' },
+  { to: '/app/customers', label: '项目', icon: '◎' },
+  { to: '/app/tasks', label: '任务', icon: '✓' },
+  { to: '/app/team', label: '成员', icon: '☷' },
+  { to: '/app/profile', label: '我的', icon: '☻' },
 ]
 
 export default function Layout() {
@@ -37,7 +38,7 @@ export default function Layout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === '/app'}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <span className="nav-icon">{item.icon}</span>
@@ -61,6 +62,9 @@ export default function Layout() {
       <main className="main-content">
         <Outlet />
       </main>
+
+      {/* 全站的水：管理系统的每次点击也在水面荡开 */}
+      <WaterRipple />
     </div>
   )
 }

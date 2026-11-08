@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { Alert, Button, Field, Input } from '../components/ui'
+import WaterRipple from '../components/WaterRipple'
 
 export default function OnboardingPage() {
   const { refreshProfile } = useAuth()
@@ -27,7 +28,7 @@ export default function OnboardingPage() {
     }
 
     await refreshProfile()
-    navigate('/')
+    navigate('/app')
   }
 
   return (
@@ -53,6 +54,8 @@ export default function OnboardingPage() {
           <Button loading={loading}>创建并进入系统</Button>
         </form>
       </section>
+
+      <WaterRipple />
     </div>
   )
 }

@@ -80,7 +80,7 @@ export default function DashboardPage() {
       <PageHeader
         title="仪表盘"
         description="关键指标、最近项目、待办任务和实时活动会自动同步。"
-        action={<Link className="btn-primary" to="/customers">新增项目</Link>}
+        action={<Link className="btn-primary" to="/app/customers">新增项目</Link>}
       />
 
       <div className="stats-grid">
@@ -96,14 +96,14 @@ export default function DashboardPage() {
         <Card>
           <div className="section-title">
             <h2>最近项目</h2>
-            <Link to="/customers">查看全部</Link>
+            <Link to="/app/customers">查看全部</Link>
           </div>
           {customers.length === 0 ? (
             <EmptyState title="还没有项目" description="创建第一个项目，开始记录参与人和任务。" />
           ) : (
             <div className="list-stack">
               {customers.map((customer) => (
-                <Link key={customer.id} to={`/customers/${customer.id}`} className="list-row">
+                <Link key={customer.id} to={`/app/customers/${customer.id}`} className="list-row">
                   <div>
                     <strong>{customer.company_name}</strong>
                     <span>{customer.industry || '未设置分类'} · {customer.contact_count} 位参与人 · {customer.open_task_count} 个待办</span>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
         <Card>
           <div className="section-title">
             <h2>即将到期</h2>
-            <Link to="/tasks">任务看板</Link>
+            <Link to="/app/tasks">任务看板</Link>
           </div>
           {tasks.length === 0 ? (
             <EmptyState title="没有待办任务" description="可以在项目详情页创建相关任务。" />

@@ -169,7 +169,7 @@ export default function CustomersPage() {
                 {customers.map((customer) => (
                   <tr key={customer.id}>
                     <td>
-                      <Link className="table-primary" to={`/customers/${customer.id}`}>{customer.company_name}</Link>
+                      <Link className="table-primary" to={`/app/customers/${customer.id}`}>{customer.company_name}</Link>
                       <small>{customer.industry || '未设置分类'}</small>
                     </td>
                     <td>
