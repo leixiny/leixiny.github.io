@@ -228,7 +228,7 @@ addEventListener('load', () => setTimeout(begin, 80));
 /* 取证 / 分享单帧用：showcase.html?t=6 停在第六秒 */
 const qs = new URLSearchParams(location.search);
 const seek = qs.has('t') ? Math.max(0, parseFloat(qs.get('t')) || 0) : null;
-if (seek !== null) { p = pAtTime(seek); begun = true; settled = p >= 1; }
+if (seek !== null) { p = pAtTime(seek); begun = true; settled = p >= 1; if (settled) onSettle(); }
 
 /* ---------- pose ---------- */
 const op = new THREE.Vector3(), ot = new THREE.Vector3(), up = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0), vp = new THREE.Vector3();
