@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { onIntroDone } from '../lib/intro'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
+import GrowthSection from './GrowthSection'
 import type { LeiSeg } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
@@ -806,6 +807,10 @@ export default function HomePage() {
   }
 
   // 导航里的「留言」：滚到底部那块，顺手把光标放进输入框
+  function goGrowth() {
+    document.getElementById('growth')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   function goTalk() {
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
@@ -883,6 +888,9 @@ export default function HomePage() {
         </Link>
         <nav className="hp-nav-links" aria-label="页面导航">
           <Link to="/works">作品集</Link>
+          <button type="button" onClick={goGrowth}>
+            成长
+          </button>
           <button type="button" onClick={goTalk}>
             留言
           </button>
@@ -943,6 +951,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <GrowthSection />
 
       {/* 联系与留言收进页脚：小字、浅色，不占版块 */}
       <footer id="contact" className="hp-foot">
@@ -1034,6 +1044,9 @@ export default function HomePage() {
               <ul>
                 <li>
                   <Link to="/works">作品集</Link>
+                </li>
+                <li>
+                  <button type="button" onClick={goGrowth}>个人成长</button>
                 </li>
                 <li>
                   <Link to="/app">管理系统</Link>
