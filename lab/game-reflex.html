@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>反应测试 · 雷馨怡</title>
+<meta name="description" content="等方块变成粉色再点，五次取平均，看看你的反应在多少毫秒。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .g-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g-scores div { padding: 10px 12px; border-radius: 12px; background: var(--soft); }
+  .g-scores small { display: block; font-size: 11px; color: var(--mute); letter-spacing: .04em; }
+  .g-scores b { font-size: clamp(20px, 2.4vw, 26px); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+  .g-btn {
+    width: 100%; margin-top: 12px; height: 42px;
+    border: 1px solid var(--line-2); border-radius: 12px; background: #fff;
+    font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ink-2);
+    cursor: pointer; transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .g-btn:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* ---------- 试验场 ---------- */
+  .arena {
+    position: relative; display: grid; place-items: center; gap: 10px;
+    min-height: clamp(280px, 40vw, 400px); padding: 24px;
+    border-radius: 20px; border: 1px solid var(--line);
+    background: #fbfcfd; cursor: pointer; text-align: center;
+    transition: background .12s linear, border-color .12s linear, box-shadow .2s var(--ease);
+    user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .arena:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+  .arena.is-wait { background: #eaf4fc; border-color: rgb(47 157 229 / .35); }
+  .arena.is-go {
+    background: var(--grad); border-color: transparent;
+    box-shadow: 0 14px 40px rgb(242 105 140 / .28);
+  }
+  .arena.is-early { background: #fdeef3; border-color: rgb(242 105 140 / .3); }
+
+  .a-big {
+    font-size: clamp(26px, 5vw, 46px); font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .arena.is-go .a-big, .arena.is-go .a-sub { color: #fff; }
+  .a-sub { margin: 0; font-size: 13px; color: var(--mute); }
+  .a-unit { font-size: .42em; font-weight: 700; letter-spacing: 0; opacity: .7; margin-left: 4px; }
+
+  /* ---------- 五次成绩 ---------- */
+  .rounds { display: flex; gap: 8px; margin-top: 12px; }
+  .rounds i {
+    flex: 1; display: grid; place-items: center; height: 40px; border-radius: 10px;
+    background: var(--soft); color: var(--faint); font-style: normal; font-size: 12.5px;
+    font-variant-numeric: tabular-nums; transition: background .2s var(--ease), color .2s var(--ease);
+  }
+  .rounds i.on { background: #eaf4fc; color: #24506f; font-weight: 700; }
+  .rounds i.bad { background: #fdeef3; color: #9c3453; font-weight: 700; }
+  .rounds i.now { box-shadow: inset 0 0 0 1px var(--blue); }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>游戏间</b> / 08</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Reflex / Timing</span>
+  <h1 class="lab-title">从蓝到粉，你花了多少毫秒？</h1>
+  <p class="lab-lede">
+    点一下开始，然后等 —— 方块变成粉色的一瞬间再点。抢跑算犯规，这一轮要重来。
+    五次取平均，300ms 以内已经比大多数人快。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>成绩</h2><span id="stateTag">未开始</span></div>
+        <div class="g-scores">
+          <div><small>平均</small><b id="avg">—</b></div>
+          <div><small>最快</small><b id="best">—</b></div>
+        </div>
+        <button class="g-btn" id="go" type="button">开始第一轮 →</button>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>参考</h2><span>毫秒</span></div>
+        <p class="note">
+          视觉刺激的反应时间通常在 200–300ms；手机屏幕比显示器略慢一点。
+          抢跑不算「快」，所以这里会记成犯规，不进平均。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="arena" id="arena" role="button" tabindex="0" aria-label="反应测试区">
+        <div class="a-big" id="big">点一下开始</div>
+        <p class="a-sub" id="sub">五次取平均 · 空格也能点</p>
+      </div>
+      <div class="rounds" id="rounds"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>成绩只留在当前页面 · 刷新即清零</span>
+  <nav class="lab-more">
+    <em>其它游戏</em>
+    <a href="game-2048.html">2048</a>
+    <a href="game-snake.html">贪吃蛇</a>
+    <a href="game-memory.html">记忆方格</a>
+    <a href="../showcase.html">看作品集 →</a>
+  </nav>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const arena = $('arena');
+const TOTAL = 5;
+
+let state = 'idle';   // idle | wait | go | early | done
+let round = 0;
+let times = [];       // 每轮：毫秒，或 'x' 表示抢跑
+let goAt = 0;
+let tTimer = 0;
+
+const roundsEl = $('rounds');
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('i');
+  d.textContent = '—';
+  roundsEl.appendChild(d);
+}
+
+function setState(next, big, sub) {
+  state = next;
+  arena.className = 'arena' + (next === 'wait' ? ' is-wait' : next === 'go' ? ' is-go' : next === 'early' ? ' is-early' : '');
+  $('big').innerHTML = big;
+  $('sub').textContent = sub;
+}
+
+function paintRounds() {
+  [...roundsEl.children].forEach((d, i) => {
+    const v = times[i];
+    d.className = i === round && state !== 'done' ? 'now' : '';
+    if (v === undefined) { d.textContent = '—'; return; }
+    if (v === 'x') { d.textContent = '抢跑'; d.className += ' bad'; return; }
+    d.textContent = v + 'ms';
+    d.className += v <= 300 ? ' on' : '';
+  });
+}
+
+function reset() {
+  clearTimeout(tTimer);
+  times = [];
+  round = 0;
+  paintRounds();
+  $('avg').textContent = '—';
+  $('best').textContent = '—';
+  $('go').textContent = '重开一次';
+  $('stateTag').textContent = '进行中';
+}
+
+function nextRound() {
+  if (round >= TOTAL) return finish();
+  paintRounds();
+  setState('wait', '别急…', `第 ${round + 1} / ${TOTAL} 轮 · 等它变粉`);
+  tTimer = setTimeout(() => {
+    setState('go', '点！', '');
+    goAt = performance.now();
+  }, 1200 + Math.random() * 1600);
+}
+
+function press() {
+  if (state === 'idle' || state === 'done') { reset(); nextRound(); return; }
+  if (state === 'between') { clearTimeout(tTimer); nextRound(); return; }
+  if (state === 'wait') {
+    times[round] = 'x';
+    round += 1;
+    paintRounds();
+    setState('early', '太早了', '这一轮不算 · 马上重来');
+    tTimer = setTimeout(nextRound, 900);
+    return;
+  }
+  if (state === 'go') {
+    const ms = Math.round(performance.now() - goAt);
+    times[round] = ms;
+    round += 1;
+    paintRounds();
+    const shown = `<span id="v">${ms}</span><span class="a-unit">ms</span>`;
+    if (round >= TOTAL) {
+      finish(ms);
+    } else {
+      setState('idle', shown, `${ms <= 300 ? '很快' : ms <= 400 ? '正常' : '再来一轮找手感'} · 点一下继续`);
+      state = 'between';
+      tTimer = setTimeout(nextRound, 900);
+    }
+    return;
+  }
+}
+
+function finish() {
+  const valid = times.filter((t) => typeof t === 'number');
+  if (!valid.length) { setState('done', '全是抢跑', '点一下重来'); $('go').textContent = '重开一次'; return; }
+  const avg = Math.round(valid.reduce((a, b) => a + b, 0) / valid.length);
+  const best = Math.min(...valid);
+  $('avg').textContent = avg + 'ms';
+  $('best').textContent = best + 'ms';
+  $('stateTag').textContent = '完成';
+  state = 'done';
+  setState('done', `<span id="v">${avg}</span><span class="a-unit">ms</span>`, `五次平均 · 最快 ${best}ms · 点一下重来`);
+  paintRounds();
+  $('go').textContent = '再来五次 →';
+}
+
+arena.addEventListener('click', press);
+arena.addEventListener('keydown', (e) => {
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); press(); }
+});
+$('go').addEventListener('click', (e) => { e.stopPropagation(); reset(); nextRound(); });
+</script>
+</body>
+</html>
