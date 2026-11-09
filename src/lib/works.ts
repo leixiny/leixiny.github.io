@@ -85,6 +85,33 @@ export async function listAllWorks(): Promise<{ works: Work[]; error?: string }>
   return { works: sortWorks((data ?? []).map(toWork)) }
 }
 
+/** 前台作品集：库里有已发布的就用库，否则退回打包进站的 projects.json */
+export async function listPublicWorks(): Promise<{ works: Work[] }> {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('works')
+      .select('*')
+      .eq('published', true)
+      .order('sort', { ascending: true })
+    if (!error && data && data.length) return { works: sortWorks(data.map(toWork)) }
+  }
+  try {
+    const res = await fetch('projects.json')
+    if (!res.ok) return { works: [] }
+    const json = (await res.json()) as { projects?: Array<Record<string, unknown>> }
+    const works = (json.projects ?? []).map((p, i) =>
+      toWork({
+        ...p,
+        sort: typeof p.sort === 'number' ? p.sort : i,
+        uploaded_at: p.uploadedAt ?? p.uploaded_at,
+      }),
+    )
+    return { works: sortWorks(works) }
+  } catch {
+    return { works: [] }
+  }
+}
+
 function makeId(title: string): string {
   const slug = title
     .toLowerCase()
