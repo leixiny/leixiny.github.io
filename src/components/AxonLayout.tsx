@@ -18,12 +18,42 @@ const chips = [
   { to: '/', label: '首页' },
 ]
 
-/** 左栏四张卡：作品封面 + 两行说明 */
-const cards = [
-  { title: '客户任务管理系统', meta: '界面 · 内部工具', note: '全栈\n上线', cover: 'covers/crm-cut.webp' },
-  { title: '把简历做成网站', meta: '排版 · 动效', note: '个人\n设计', cover: 'covers/website-cut.webp' },
-  { title: '区域消费差异看板', meta: '数据 · 图表', note: '分析\n可视化', cover: 'covers/dashboard-cut.webp' },
-  { title: '问卷 → 优先级', meta: '调研 · 归纳', note: '流程\n方法', cover: 'covers/survey-cut.webp' },
+type IndexCard = {
+  title: string
+  meta: string
+  note: string
+  to: string
+  cover: string
+  /** 独立静态页，不走 SPA 路由 */
+  external?: boolean
+}
+
+/** 左栏三张卡：前台三个页面 + 实拍封面 + 两行说明。
+    以前这里是四张作品档案，点进去全是同一个「作品」页；
+    后台真正缺的是「出去看一眼」的入口，所以换成站点自己的三页 */
+const cards: IndexCard[] = [
+  {
+    title: '成长页',
+    meta: '学习 · 爱好',
+    note: '前台\n区块',
+    to: '/?to=growth',
+    cover: 'covers/page-growth.webp',
+  },
+  {
+    title: '首页',
+    meta: '开屏 · 水滴',
+    note: '入口\n主页',
+    to: '/',
+    cover: 'covers/page-home.webp',
+  },
+  {
+    title: '作品集',
+    meta: '放映 · 档案',
+    note: '独立\n页面',
+    to: 'showcase.html',
+    cover: 'covers/page-works.webp',
+    external: true,
+  },
 ]
 
 const STAR =
@@ -94,35 +124,49 @@ export default function AxonLayout() {
           <button className="axon-chip" type="button" onClick={signOut}>退出</button>
         </nav>
 
-        <aside className="axon-list" aria-label="作品索引">
-          <div className="axon-list-head">索引 <s>/</s> index</div>
-          {cards.map((card, i) => (
-            <NavLink
-              key={card.title}
-              to="/app/works"
-              className="axon-card"
-              onPointerEnter={() => prefetch('/app/works')}
-            >
-              <div className="axon-thumb">
-                <img
-                  src={card.cover}
-                  alt=""
-                  width={220}
-                  height={160}
-                  decoding="async"
-                  loading={i < 2 ? 'eager' : 'lazy'}
-                  fetchPriority={i === 0 ? 'high' : 'auto'}
-                />
-              </div>
-              <div className="axon-meta">
-                <span className="axon-card-title">
-                  {card.title}
-                  <em>{card.meta}</em>
-                </span>
-                <span className="axon-card-note">{card.note}</span>
-              </div>
-            </NavLink>
-          ))}
+        <aside className="axon-list" aria-label="站点索引">
+          <div className="axon-list-head">索引 <s>/</s> pages</div>
+          {cards.map((card, i) => {
+            const body = (
+              <>
+                <div className="axon-thumb">
+                  <img
+                    src={card.cover}
+                    alt=""
+                    width={220}
+                    height={160}
+                    decoding="async"
+                    loading={i < 2 ? 'eager' : 'lazy'}
+                    fetchPriority={i === 0 ? 'high' : 'auto'}
+                  />
+                </div>
+                <div className="axon-meta">
+                  <span className="axon-card-title">
+                    {card.title}
+                    <em>{card.meta}</em>
+                  </span>
+                  <span className="axon-card-note">{card.note}</span>
+                </div>
+              </>
+            )
+
+            // 作品集是独立的静态页（showcase.html），交给浏览器跳；另外两页回前台路由
+            return card.external ? (
+              <a key={card.title} className="axon-card" href={card.to}>
+                {body}
+              </a>
+            ) : (
+              <NavLink
+                key={card.title}
+                to={card.to}
+                className="axon-card"
+                onPointerEnter={() => prefetch('/')}
+                onFocus={() => prefetch('/')}
+              >
+                {body}
+              </NavLink>
+            )
+          })}
         </aside>
 
         <section className="axon-console" ref={consoleRef}>

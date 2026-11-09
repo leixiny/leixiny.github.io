@@ -672,13 +672,19 @@ export default function HomePage() {
   const [justLiked, setJustLiked] = useState(false)
   const wetRef = useRef<HTMLDivElement>(null)
 
-  // 作品页的「留言」带 ?to=contact 过来：落到位后滚到页脚，并把光标放进输入框
+  // 带 ?to=growth / ?to=contact 过来：等页面落位，再滚到那一块（留言顺手把光标放进输入框）
+  // 后台索引里的「成长页」就是走这条路
   useEffect(() => {
     const q = new URLSearchParams(window.location.hash.split('?')[1] || '')
-    if (q.get('to') !== 'contact') return
+    const to = q.get('to')
+    if (to !== 'growth' && to !== 'contact') return
     const t = window.setTimeout(() => {
-      document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-      window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
+      document
+        .getElementById(to)
+        ?.scrollIntoView({ behavior: 'smooth', block: to === 'growth' ? 'start' : 'end' })
+      if (to === 'contact') {
+        window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
+      }
     }, 260)
     return () => window.clearTimeout(t)
   }, [])
