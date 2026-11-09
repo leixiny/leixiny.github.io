@@ -17,32 +17,37 @@ let silentAttempted = false
  * 没过期就直接信本地那一个 —— 不额外发请求，进后台还是上次那种秒开。
  */
 async function resolveSession(): Promise<Session | null> {
-  const { data, error } = await supabase.auth.getSession()
-  let current = error ? null : data.session
+  try {
+    const { data, error } = await supabase.auth.getSession()
+    let current = error ? null : data.session
 
-  if (current) {
-    const exp = current.expires_at ?? 0
-    const stale = exp > 0 && exp * 1000 < Date.now() + 30_000
-    if (stale) {
-      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
-      if (refreshError || !refreshed.session) {
-        // 空壳 session 留着只会让后台查询一路 401，先清掉
-        await supabase.auth.signOut({ scope: 'local' })
-        current = null
-      } else {
-        current = refreshed.session
+    if (current) {
+      const exp = current.expires_at ?? 0
+      const stale = exp > 0 && exp * 1000 < Date.now() + 30_000
+      if (stale) {
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError || !refreshed.session) {
+          // 空壳 session 留着只会让后台查询一路 401，先清掉
+          await supabase.auth.signOut({ scope: 'local' })
+          current = null
+        } else {
+          current = refreshed.session
+        }
       }
     }
+
+    if (current || silentAttempted) return current
+    silentAttempted = true
+
+    const creds = readRemembered()
+    if (!creds) return null
+
+    const { data: signIn } = await supabase.auth.signInWithPassword(creds)
+    return signIn.session ?? null
+  } catch {
+    // 断网、接口挂了都不该把人卡在加载页：当成没登录，交给登录页处理
+    return null
   }
-
-  if (current || silentAttempted) return current
-  silentAttempted = true
-
-  const creds = readRemembered()
-  if (!creds) return null
-
-  const { data: signIn } = await supabase.auth.signInWithPassword(creds)
-  return signIn.session ?? null
 }
 
 interface AuthContextValue {
