@@ -2,14 +2,15 @@ import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
-import type HlsPlayer from 'hls.js'
+import ribbonPoster from '../assets/loading-ribbon.webp'
 import './CtaFooter.css'
 
 /* 6 秒无缝循环的一段黑丝带：中间一条青色高光和一道细亮边，上下都是纯黑，
-   正好在上面压白字。封面图先顶上，进视野了才真的拉流 */
-const HLS_SRC = 'https://stream.mux.com/Jwr2RhmsNrd6GEspBNgm02vJsRZAGlaoQIh4AucGdASw.m3u8'
-const POSTER =
-  'https://image.mux.com/Jwr2RhmsNrd6GEspBNgm02vJsRZAGlaoQIh4AucGdASw/thumbnail.webp?time=2&width=1600'
+   正好在上面压白字。封面图先顶上，进视野了才真的拉流。
+   和首屏加载页用的是同一支本地 mp4（157KB）：早先挂 mux 的 m3u8，
+   manifest 在境外常常直接被掐断（ERR_ABORTED），整屏只剩一张封面 */
+const VIDEO_SRC = '/loading-ribbon.mp4'
+const POSTER = ribbonPoster
 
 type Props = {
   onTalk: () => void
@@ -27,48 +28,13 @@ export default function CtaFooter({ onTalk, onGrowth, children }: Props) {
     // 系统里开了「减少动态」就只留封面：这一屏是装饰，不值得为它动起来
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    let hls: HlsPlayer | null = null
     let dead = false
-    let booted = false
-
-    async function boot() {
-      if (dead || booted || !v) return
-      booted = true
-
-      /* 按需加载：hls.js 有 160KB，不该跟着首页首包一起下来。
-         必须先问 Hls.isSupported() —— Edge/Chrome 对
-         `canPlayType('application/vnd.apple.mpegurl')` 会回一句 "maybe"，
-         照那个答案走原生路径，结果就是一张永远不动的封面 */
-      const { default: Hls } = await import('hls.js')
-      if (dead) return
-
-      if (Hls.isSupported()) {
-        hls = new Hls({
-          enableWorker: true,
-          capLevelToPlayerSize: true,
-          maxBufferLength: 8,
-        })
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          void v?.play().catch(() => {})
-        })
-        hls.loadSource(HLS_SRC)
-        hls.attachMedia(v)
-        return
-      }
-
-      // Safari 走这条：原生就能放 m3u8
-      if (v.canPlayType('application/vnd.apple.mpegurl')) {
-        v.src = HLS_SRC
-        void v.play().catch(() => {})
-      }
-    }
 
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
-            void boot()
-            void v.play().catch(() => {})
+            if (!dead) void v.play().catch(() => {})
           } else {
             // 滚出视野就停：这层模糊视频一直在解码，没必要替它烧电
             v.pause()
@@ -82,7 +48,6 @@ export default function CtaFooter({ onTalk, onGrowth, children }: Props) {
     return () => {
       dead = true
       io.disconnect()
-      hls?.destroy()
     }
   }, [])
 
@@ -92,12 +57,13 @@ export default function CtaFooter({ onTalk, onGrowth, children }: Props) {
         <video
           ref={videoRef}
           className="cta-video"
+          src={VIDEO_SRC}
           poster={POSTER}
           autoPlay
           loop
           muted
           playsInline
-          preload="none"
+          preload="metadata"
           aria-hidden="true"
           tabIndex={-1}
         />
