@@ -7,6 +7,22 @@ import WaterRipple from '../components/WaterRipple'
 
 type Mode = 'signin' | 'signup' | 'forgot'
 
+/** 上次登录成功的凭据。存 localStorage（和 Supabase 自己放 session 的位置同一档安全级别），
+    登录页一出现就填好 —— 这个站就自己一个人用，第二次起不该再敲密码 */
+const REMEMBER_KEY = 'axon:remember'
+
+function readRemembered(): { email: string; password: string } {
+  try {
+    const raw = JSON.parse(localStorage.getItem(REMEMBER_KEY) || 'null')
+    if (raw && typeof raw.email === 'string' && typeof raw.password === 'string') return raw
+  } catch {
+    /* 坏了就当没记过 */
+  }
+  return { email: '', password: '' }
+}
+
+const remembered = readRemembered()
+
 export default function AuthPage() {
   const { session, configured } = useAuth()
   const navigate = useNavigate()
@@ -16,8 +32,8 @@ export default function AuthPage() {
     (here.state as { from?: { pathname?: string; search?: string } } | null)?.from?.pathname ?? '/app'
   const [mode, setMode] = useState<Mode>('signin')
   const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState(remembered.email)
+  const [password, setPassword] = useState(remembered.password)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -36,6 +52,8 @@ export default function AuthPage() {
       if (mode === 'signin') {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) throw signInError
+        // 成功这一次才记住：下次登录页一打开就是填好的
+        localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email, password }))
         navigate(next)
       }
 
@@ -51,6 +69,8 @@ export default function AuthPage() {
         })
         if (signUpError) throw signUpError
         if (data.session) {
+          // 注册即登录，同样记下来
+          localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email, password }))
           navigate(next)
         } else {
           setMessage('注册成功，请先到邮箱中确认链接，然后再登录。')
