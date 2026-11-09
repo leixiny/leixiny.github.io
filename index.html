@@ -5,9 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>雷馨怡 · 数字经济 | 个人主页与任务管理系统</title>
+    <!-- 加载页那支 157KB 的丝带：在解析 HTML 时就开下，和 bundle 并行。
+         low 优先级：它再小也是装饰，不该压过 CSS 和首包 JS -->
+    <link rel="preload" href="./loading-ribbon.mp4" as="video" type="video/mp4" fetchpriority="low" />
     <!-- 首屏加载页是深色丝带的，先把底色铺上：bundle 到之前不会闪一下白 -->
     <style>html{background:#05060a}</style>
-    <script type="module" crossorigin src="./assets/index-Dld6yQJk.js"></script>
+    <script type="module" crossorigin src="./assets/index-I5jWcqZG.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-NboV1P29.css">
   </head>
   <body>
