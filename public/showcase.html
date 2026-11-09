@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>作品集 · 雷馨怡</title>
-<meta name="description" content="雷馨怡的作品集：四个能上手玩的数据小工具 —— A/B 显著性检验、留存队列、预算分配、定价弹性。">
+<meta name="description" content="雷馨怡的作品集：四个数据分析小工具，加四个能上手玩的小游戏。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 18'%3E%3Cpath d='M11 0l11 18h-6.2L11 9.6 6.2 18H0z' fill='%23f4f1ea'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,7 +113,7 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
       <div class="hl" id="l1" aria-hidden="true"><span>让数据说话</span></div>
       <div class="hl" id="l2" aria-hidden="true"><span>让作品落地</span></div>
     </h1>
-    <div id="cap">四个小工具，都能上手改参数。</div>
+    <div id="cap">四个工具，四个游戏，都能上手。</div>
     <div id="glow"></div>
     <div id="cross"><i>+</i></div>
     <div id="rule"></div>
@@ -125,8 +125,8 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
       <nav class="acts"><a href="mailto:3121410697@qq.com"><i></i>聊一聊</a><a href="index.html#/app">回管理系统<em>→</em></a><a href="index.html">回首页<b></b></a></nav>
     </header>
     <footer class="bot" id="bot">
-      <p>不做只给结论的看板 —— 每个工具都能自己改参数，看数字怎么跟着变。</p>
-      <div class="mid">实验<s>/</s>留存<s>/</s>预算<s>/</s>定价</div>
+      <p>四个工具用来把数字讲清，四个游戏用来把交互练熟 —— 都能直接打开玩。</p>
+      <div class="mid">工具<s>/</s>游戏</div>
       <div class="r" id="more">自动放映中</div>
     </footer>
     <div id="name"></div>
@@ -154,12 +154,16 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 <script type="module">
 import * as THREE from 'three';
 
-/* 四件作品的封面：都是能直接打开来玩的数据小工具（lab/*.html），封面按同一比例截 */
+/* 八件作品的封面：四个数据工具 + 四个小游戏，都是 lab/*.html，能直接打开来玩 */
 const WORKS = [
   ['A/B 显著性检验', 'covers/lab-ab.webp'],
   ['留存队列分析', 'covers/lab-retention.webp'],
   ['预算分配沙盘', 'covers/lab-budget.webp'],
   ['定价弹性沙盘', 'covers/lab-pricing.webp'],
+  ['2048', 'covers/game-2048.webp'],
+  ['贪吃蛇', 'covers/game-snake.webp'],
+  ['记忆方格', 'covers/game-memory.webp'],
+  ['反应测试', 'covers/game-reflex.webp'],
 ];
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -215,7 +219,7 @@ void main(){
   gl_FragColor=vec4(mix(c,vec3(1.),edge*.1),a*fade);
 }`;
 const loader = new THREE.TextureLoader();
-// 四件作品在轨道上跑两遍：缎带够长，绕出去的时候也不会只剩孤零零一张
+// 八件作品在轨道上跑两遍：缎带够长，绕出去的时候也不会只剩孤零零一张
 const REEL = [...WORKS, ...WORKS];
 const pending = new Set(WORKS.map(w => w[1]));
 const cards = REEL.map(([title, src], i) => {
@@ -238,19 +242,20 @@ const cards = REEL.map(([title, src], i) => {
 
 /* ---------- layout ---------- */
 const GZ = 8;
-let W = 1, H = 1, asp = 1, cols = 2, rows = 2, tanH = .3153;
+let W = 1, H = 1, asp = 1, cols = 4, rows = 2, tanH = .3153;
 function resize() {
   W = innerWidth; H = innerHeight; asp = W / H;
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(W, H, false);
   camera.aspect = asp; camera.fov = asp < 16 / 9 ? Math.atan(.561 / asp) * 360 / Math.PI : FOV; camera.updateProjectionMatrix();
   tanH = Math.tan(camera.fov * Math.PI / 360);
-  // 四件作品：横屏 2×2，竖屏 1×4
-  cols = asp < .9 ? 1 : 2; rows = asp < .9 ? 4 : 2;
+  // 八件作品：横屏 4×2，竖屏 2×4
+  cols = asp < .9 ? 2 : 4; rows = asp < .9 ? 4 : 2;
   }
 addEventListener('resize', resize); resize(); buildPath();
 function grid(i) {
   const vh = 2 * GZ * tanH, vw = vh * asp;
-  const gw = vw * (asp < .9 ? .92 : .74), gap = gw * .017;
+  // 八件作品横着排四列，网格占宽给到 .80，卡片不至于太小
+  const gw = vw * (asp < .9 ? .92 : .80), gap = gw * .017;
   // 宽和高两边都试一次，取小的那个：短而宽的窗口也不会把网格顶出画面
   const fitW = (gw - gap * (cols - 1)) / cols;
   const fitH = ((vh * .8 - gap * 1.6 * (rows - 1)) / rows) * CARD_AR;

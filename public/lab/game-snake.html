@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贪吃蛇 · 雷馨怡</title>
+<meta name="description" content="方向键或手指滑动控制蛇头，吃到粉色果子就长一格，越吃越快。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .g-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g-scores div { padding: 10px 12px; border-radius: 12px; background: var(--soft); }
+  .g-scores small { display: block; font-size: 11px; color: var(--mute); letter-spacing: .04em; }
+  .g-scores b { font-size: clamp(20px, 2.4vw, 26px); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+  .g-btn {
+    width: 100%; margin-top: 12px; height: 42px;
+    border: 1px solid var(--line-2); border-radius: 12px; background: #fff;
+    font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ink-2);
+    cursor: pointer; transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .g-btn:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .stage-wrap {
+    position: relative; border: 1px solid var(--line); border-radius: 20px;
+    padding: clamp(10px, 1.4vw, 16px);
+    background: linear-gradient(160deg, #fbfcfd, #f6f7f9);
+  }
+  #cv {
+    display: block; width: 100%; max-width: 560px; margin: 0 auto;
+    aspect-ratio: 1; border-radius: 12px; background: #fff;
+    touch-action: none; cursor: crosshair;
+  }
+  .veil {
+    position: absolute; inset: clamp(10px, 1.4vw, 16px);
+    display: grid; place-content: center; gap: 8px; text-align: center;
+    border-radius: 14px; background: rgb(255 255 255 / .88); backdrop-filter: blur(4px);
+    transition: opacity .2s var(--ease);
+  }
+  .veil[hidden] { display: none; }
+  .veil b { font-size: clamp(17px, 2.2vw, 21px); letter-spacing: -.015em; }
+  .veil p { margin: 0; font-size: 12.5px; color: var(--mute); }
+  .veil .big { font-size: clamp(30px, 5vw, 42px); font-weight: 800; letter-spacing: -.03em;
+    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .speed { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 11.5px; color: var(--mute); }
+  .speed i { flex: 1; height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; display: block; }
+  .speed i b { display: block; height: 100%; width: 0%; background: var(--grad); transition: width .3s var(--ease); }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>游戏间</b> / 06</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Arcade / Snake</span>
+  <h1 class="lab-title">越吃越快，也越容易撞上自己</h1>
+  <p class="lab-lede">
+    13 × 13 的格子，蛇头吃一颗果子长一节，速度每吃一次快一点。
+    撞墙或者咬到自己就结束 —— 空格暂停，方向键 / WASD / 手指滑动都能转。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>本局</h2><span id="stateTag">待开始</span></div>
+        <div class="g-scores">
+          <div><small>长度</small><b id="len">3</b></div>
+          <div><small>最高</small><b id="best">0</b></div>
+        </div>
+        <div class="speed">
+          <span>速度</span>
+          <i><b id="spdBar"></b></i>
+          <span id="spdTxt">1.0×</span>
+        </div>
+        <button class="g-btn" id="go" type="button">开始 →</button>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>为什么写它</h2><span>一次练手</span></div>
+        <p class="note">
+          整个游戏只有一张 canvas 和一条 requestAnimationFrame 循环：蛇身按序号从蓝到粉渐变，
+          吃到果子时把整条颜色重新插值一遍。没有引擎、没有依赖，一个文件跑起来。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-wrap">
+        <canvas id="cv" aria-label="贪吃蛇游戏区"></canvas>
+        <div class="veil" id="veil">
+          <b>准备好了就按开始</b>
+          <p>方向键 / WASD · 空格暂停 · 手机可以直接划</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>最好成绩存在这台机器的浏览器里</span>
+  <nav class="lab-more">
+    <em>其它游戏</em>
+    <a href="game-2048.html">2048</a>
+    <a href="game-memory.html">记忆方格</a>
+    <a href="game-reflex.html">反应测试</a>
+    <a href="../showcase.html">看作品集 →</a>
+  </nav>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const cv = $('cv');
+const ctx = cv.getContext('2d');
+const G = 13;                       // 13 × 13 格，格子大一点，手机上更好看清
+const BASE_STEP = 158;              // 起步每步 158ms
+const MIN_STEP = 76;
+
+let snake, dir, queued, food, score, best, step, acc, last, state;
+
+best = Number(localStorage.getItem('labSnake.best') || 0);
+$('best').textContent = best;
+
+const COL_A = [47, 157, 229];   // 蓝
+const COL_B = [242, 105, 140];  // 粉
+const mix = (a, b, t) => `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)} ${Math.round(a[1] + (b[1] - a[1]) * t)} ${Math.round(a[2] + (b[2] - a[2]) * t)})`;
+
+function reset() {
+  snake = [{ x: 7, y: 6 }, { x: 6, y: 6 }, { x: 5, y: 6 }, { x: 4, y: 6 }];
+  dir = { x: 1, y: 0 };
+  queued = null;
+  score = 0; step = BASE_STEP; acc = 0; last = 0;
+  placeFood();
+  $('len').textContent = snake.length;
+  $('spdBar').style.width = '0%';
+  $('spdTxt').textContent = '1.0×';
+}
+
+function placeFood() {
+  const free = [];
+  for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+    if (!snake.some((s) => s.x === x && s.y === y)) free.push({ x, y });
+  }
+  food = free[Math.floor(Math.random() * free.length)];
+}
+
+function fit() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const css = cv.clientWidth || 480;
+  cv.width = Math.round(css * dpr);
+  cv.height = Math.round(css * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+
+function draw() {
+  const S = (cv.clientWidth || 480) / G;
+  const W = cv.clientWidth || 480, H = cv.clientHeight || W;
+  ctx.clearRect(0, 0, W, H);
+
+  // 底格：极浅的点阵，让格子有刻度感
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f7f8fb';
+  for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+    if ((x + y) % 2) continue;
+    ctx.fillRect(x * S, y * S, S, S);
+  }
+
+  if (!food) return;
+  // 果子：粉色圆点 + 外圈呼吸
+  const pulse = 1 + 0.06 * Math.sin(performance.now() / 260);
+  ctx.beginPath();
+  ctx.arc((food.x + 0.5) * S, (food.y + 0.5) * S, S * 0.3 * pulse, 0, Math.PI * 2);
+  ctx.fillStyle = '#f2698c';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc((food.x + 0.5) * S, (food.y + 0.5) * S, S * 0.42 * pulse, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgb(242 105 140 / .28)';
+  ctx.lineWidth = Math.max(1.5, S * 0.08);
+  ctx.stroke();
+
+  // 蛇身：从头到尾从蓝插值到粉
+  const n = snake.length;
+  for (let i = n - 1; i >= 0; i--) {
+    const s = snake[i];
+    const t = n === 1 ? 0 : i / (n - 1);
+    const pad = S * (i === 0 ? 0.05 : 0.09);
+    ctx.fillStyle = mix(COL_A, COL_B, t);
+    const r = S * 0.34;
+    const x = s.x * S + pad, y = s.y * S + pad, w = S - pad * 2;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, w, r);
+    else ctx.rect(x, y, w, w);
+    ctx.fill();
+  }
+
+  // 眼睛朝行进方向看
+  const head = snake[0], S2 = S;
+  const ex = (head.x + 0.5) * S2 + dir.x * S2 * 0.12, ey = (head.y + 0.5) * S2 + dir.y * S2 * 0.12;
+  const off = S2 * 0.13;
+  ctx.fillStyle = '#fff';
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(ex + (dir.x ? 0 : off * s), ey + (dir.y ? 0 : off * s), S2 * 0.075, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function tick() {
+  if (queued) {
+    const nd = queued;
+    queued = null;
+    if (nd.x !== -dir.x || nd.y !== -dir.y) dir = nd;
+  }
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+  if (head.x < 0 || head.y < 0 || head.x >= G || head.y >= G || snake.some((s) => s.x === head.x && s.y === head.y)) {
+    return over();
+  }
+  snake.unshift(head);
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    $('len').textContent = snake.length;
+    if (snake.length > best) {
+      best = snake.length;
+      localStorage.setItem('labSnake.best', String(best));
+      $('best').textContent = best;
+    }
+    step = Math.max(MIN_STEP, step - 4);
+    const speed = Math.round((BASE_STEP / step) * 10) / 10;
+    $('spdBar').style.width = Math.min(100, ((BASE_STEP - step) / (BASE_STEP - MIN_STEP)) * 100) + '%';
+    $('spdTxt').textContent = speed.toFixed(1) + '×';
+    placeFood();
+  } else {
+    snake.pop();
+  }
+  draw();
+}
+
+function frame(t) {
+  if (state !== 'run') return;
+  if (!last) last = t;
+  acc += t - last;
+  last = t;
+  while (acc >= step) { acc -= step; tick(); if (state !== 'run') return; }
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function veil(html) {
+  const v = $('veil');
+  if (!html) { v.hidden = true; return; }
+  v.innerHTML = html;
+  v.hidden = false;
+}
+
+function start() {
+  reset();
+  state = 'run';
+  last = 0; acc = 0;
+  $('stateTag').textContent = '进行中';
+  $('go').textContent = '重开一局';
+  veil(null);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function pause() {
+  if (state === 'run') { state = 'pause'; $('stateTag').textContent = '已暂停'; veil('<b>暂停中</b><p>空格或「继续」接着跑</p>'); $('go').textContent = '继续 →'; }
+  else if (state === 'pause') { state = 'run'; $('stateTag').textContent = '进行中'; $('go').textContent = '重开一局'; veil(null); last = 0; requestAnimationFrame(frame); }
+}
+
+function over() {
+  state = 'over';
+  $('stateTag').textContent = '结束了';
+  $('go').textContent = '再来一局 →';
+  veil(`<div class="big">${snake.length}</div><b>这一局长到 ${snake.length} 节</b><p>最高 ${best} 节 · 按空格或点「再来一局」</p>`);
+}
+
+function turn(x, y) {
+  if (state !== 'run') return;
+  if (x === -dir.x && y === -dir.y) return;
+  queued = { x, y };
+}
+
+const KEYS = {
+  ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+  w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0], W: [0, -1], S: [0, 1], A: [-1, 0], D: [1, 0],
+};
+addEventListener('keydown', (e) => {
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (state === 'run' || state === 'pause') pause();
+    else start();
+    return;
+  }
+  const k = KEYS[e.key];
+  if (!k) return;
+  e.preventDefault();
+  if (state === 'idle' || state === 'over') start();
+  turn(k[0], k[1]);
+});
+
+$('go').addEventListener('click', () => {
+  if (state === 'pause') pause();
+  else start();
+});
+
+let p0 = null;
+cv.addEventListener('pointerdown', (e) => { p0 = { x: e.clientX, y: e.clientY }; });
+cv.addEventListener('pointerup', (e) => {
+  if (!p0) return;
+  const dx = e.clientX - p0.x, dy = e.clientY - p0.y;
+  p0 = null;
+  if (Math.hypot(dx, dy) < 20) return;
+  if (state === 'idle' || state === 'over') start();
+  if (Math.abs(dx) > Math.abs(dy)) turn(dx > 0 ? 1 : -1, 0);
+  else turn(0, dy > 0 ? 1 : -1);
+});
+cv.addEventListener('pointercancel', () => { p0 = null; });
+
+state = 'idle';
+reset();
+addEventListener('resize', fit);
+fit();
+</script>
+</body>
+</html>

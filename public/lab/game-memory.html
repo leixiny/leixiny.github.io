@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>记忆方格 · 雷馨怡</title>
+<meta name="description" content="先亮几格，再原样点回来。级数越高，亮得越短、格数越多。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .g-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g-scores div { padding: 10px 12px; border-radius: 12px; background: var(--soft); }
+  .g-scores small { display: block; font-size: 11px; color: var(--mute); letter-spacing: .04em; }
+  .g-scores b { font-size: clamp(20px, 2.4vw, 26px); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+  .g-btn {
+    width: 100%; margin-top: 12px; height: 42px;
+    border: 1px solid var(--line-2); border-radius: 12px; background: #fff;
+    font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ink-2);
+    cursor: pointer; transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .g-btn:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .board-wrap {
+    border: 1px solid var(--line); border-radius: 20px; padding: clamp(10px, 1.4vw, 16px);
+    background: linear-gradient(160deg, #fbfcfd, #f6f7f9);
+  }
+  .mboard {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(7px, 1vw, 11px);
+    width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 1;
+  }
+  .mcell {
+    position: relative; border: 0; padding: 0; border-radius: 12px; background: #eef0f4;
+    cursor: pointer; transition: background .18s var(--ease), transform .12s var(--ease), box-shadow .18s var(--ease);
+  }
+  .mcell:disabled { cursor: default; }
+  .mcell.on { background: var(--grad); box-shadow: 0 4px 14px rgb(47 157 229 / .25); }
+  .mcell.done { background: rgb(47 157 229 / .85); }
+  .mcell.miss { background: #f2698c; animation: shake .3s var(--ease); }
+  .mcell.reveal { background: rgb(47 157 229 / .28); }
+  @keyframes shake { 0%,100% { transform: none } 30% { transform: translateX(-3px) } 60% { transform: translateX(3px) } }
+
+  .timer { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 14px; }
+  .timer i { display: block; height: 100%; width: 100%; background: var(--grad); transform-origin: left; }
+  .hintline { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 11.5px; color: var(--mute); }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>游戏间</b> / 07</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Memory / Grid</span>
+  <h1 class="lab-title">亮过的格子，你还能原样点回来吗？</h1>
+  <p class="lab-lede">
+    5 × 5 的方格，先亮起几格，再一起熄掉。按原位点回去，全对就升一级 ——
+    每升一级多一格、少给一点时间。错一次就结束。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>进度</h2><span id="stateTag">待开始</span></div>
+        <div class="g-scores">
+          <div><small>本局级数</small><b id="level">0</b></div>
+          <div><small>最高</small><b id="best">0</b></div>
+        </div>
+        <button class="g-btn" id="go" type="button">开始 →</button>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>规则</h2><span>5 × 5</span></div>
+        <p class="note">
+          第 1 关亮 3 格，之后每关多 1 格、最多 12 格。看的时候可以默念位置，
+          点的时候不用按顺序 —— 但对错只看位置。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="board-wrap">
+        <div class="mboard" id="board" role="group" aria-label="记忆方格"></div>
+        <div class="timer"><i id="bar"></i></div>
+        <div class="hintline"><span id="hint">点「开始」先看一遍</span><span id="left"></span></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>最好级数存在这台机器的浏览器里</span>
+  <nav class="lab-more">
+    <em>其它游戏</em>
+    <a href="game-2048.html">2048</a>
+    <a href="game-snake.html">贪吃蛇</a>
+    <a href="game-reflex.html">反应测试</a>
+    <a href="../showcase.html">看作品集 →</a>
+  </nav>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const N = 5;
+const board = $('board');
+
+let cells = [];
+let target = new Set();
+let picked = new Set();
+let level = 0;
+let state = 'idle';   // idle | show | recall | fail
+let timer = 0;
+let best = Number(localStorage.getItem('labMemory.best') || 0);
+$('best').textContent = best;
+
+for (let i = 0; i < N * N; i++) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'mcell';
+  b.disabled = true;
+  b.addEventListener('click', () => pick(i));
+  board.appendChild(b);
+  cells.push(b);
+}
+
+const clearAll = () => cells.forEach((c) => { c.className = 'mcell'; c.disabled = true; });
+
+function round() {
+  level += 1;
+  $('level').textContent = level;
+  picked = new Set();
+  target = new Set();
+  const want = Math.min(12, level + 2);
+  while (target.size < want) target.add(Math.floor(Math.random() * N * N));
+
+  clearAll();
+  for (const i of target) cells[i].classList.add('on');
+  $('left').textContent = `还差 ${want} 格`;
+  $('hint').textContent = '记住这些位置';
+
+  const ms = Math.max(420, 1050 - level * 55);
+  const bar = $('bar');
+  bar.style.transition = 'none';
+  bar.style.transform = 'scaleX(1)';
+  // 下一帧再启动过渡，进度条才会真的走
+  requestAnimationFrame(() => {
+    bar.style.transition = `transform ${ms}ms linear`;
+    bar.style.transform = 'scaleX(0)';
+  });
+
+  state = 'show';
+  $('stateTag').textContent = '记忆';
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    for (const i of target) cells[i].classList.remove('on');
+    state = 'recall';
+    cells.forEach((c) => { c.disabled = false; });
+    $('stateTag').textContent = '点回来';
+    $('hint').textContent = '按原位点，点错就结束';
+  }, ms);
+}
+
+function pick(i) {
+  if (state !== 'recall' || picked.has(i)) return;
+  if (target.has(i)) {
+    picked.add(i);
+    cells[i].classList.add('done');
+    const left = target.size - picked.size;
+    $('left').textContent = left ? `还差 ${left} 格` : '全对';
+    if (!left) {
+      state = 'pass';
+      cells.forEach((c) => { c.disabled = true; });
+      $('hint').textContent = '对了，准备下一关';
+      $('stateTag').textContent = '过关';
+      if (level > best) {
+        best = level;
+        localStorage.setItem('labMemory.best', String(best));
+        $('best').textContent = best;
+      }
+      timer = setTimeout(round, 620);
+    }
+  } else {
+    fail(i);
+  }
+}
+
+function fail(i) {
+  state = 'fail';
+  clearTimeout(timer);
+  cells.forEach((c) => { c.disabled = true; });
+  cells[i].classList.add('miss');
+  for (const t of target) if (!picked.has(t)) cells[t].classList.add('reveal');
+  $('stateTag').textContent = '结束了';
+  $('hint').textContent = `点错了 · 走到第 ${level} 关`;
+  $('left').textContent = '按「再来」重开';
+  $('go').textContent = '再来一局 →';
+}
+
+function start() {
+  level = 0;
+  best = Math.max(best, Number(localStorage.getItem('labMemory.best') || 0));
+  clearAll();
+  $('go').textContent = '重开一局';
+  round();
+}
+
+$('go').addEventListener('click', start);
+</script>
+</body>
+</html>

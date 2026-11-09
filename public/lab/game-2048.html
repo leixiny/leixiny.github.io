@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2048 · 雷馨怡</title>
+<meta name="description" content="方向键或手指滑动，把相同数字合成一块：一个下午就能刷完的小游戏。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .g-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g-scores div {
+    padding: 10px 12px; border-radius: 12px; background: var(--soft);
+  }
+  .g-scores small { display: block; font-size: 11px; color: var(--mute); letter-spacing: .04em; }
+  .g-scores b { font-size: clamp(20px, 2.4vw, 26px); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+  .g-btn {
+    width: 100%; margin-top: 12px; height: 42px;
+    border: 1px solid var(--line-2); border-radius: 12px; background: #fff;
+    font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ink-2);
+    cursor: pointer; transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .g-btn:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* ---------- 棋盘 ---------- */
+  .board-wrap {
+    border: 1px solid var(--line); border-radius: 20px; padding: clamp(10px, 1.4vw, 16px);
+    background: linear-gradient(160deg, #fbfcfd, #f6f7f9);
+  }
+  .board {
+    position: relative;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(7px, 1vw, 11px);
+    aspect-ratio: 1; width: 100%; max-width: 520px; margin: 0 auto;
+    touch-action: none; user-select: none;
+  }
+  .cell { position: relative; border-radius: 12px; background: #eef0f4; }
+  .tile {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    border-radius: 12px; font-weight: 800; letter-spacing: -.03em;
+    font-size: clamp(20px, 4.4vw, 34px); font-variant-numeric: tabular-nums;
+    transition: transform .12s var(--ease), opacity .12s linear;
+  }
+  .tile.is-new { animation: pop .16s var(--ease); }
+  .tile.is-merged { animation: bump .18s var(--ease); }
+  @keyframes pop { from { transform: scale(.2); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes bump { 0% { transform: scale(1) } 45% { transform: scale(1.14) } 100% { transform: scale(1) } }
+
+  /* 数值越大越靠近粉色，2048 直接上渐变 */
+  [data-v="2"]    { background: #f1f3f7; color: #6b7280; }
+  [data-v="4"]    { background: #e6edf6; color: #4b5a6b; }
+  [data-v="8"]    { background: #d7e9f8; color: #2c5f85; }
+  [data-v="16"]   { background: #c4def5; color: #24506f; }
+  [data-v="32"]   { background: #aed1f1; color: #1d4560; }
+  [data-v="64"]   { background: #93c1ea; color: #17394f; }
+  [data-v="128"]  { background: #f7dbe4; color: #8a3350; }
+  [data-v="256"]  { background: #f4c3d3; color: #7d2745; }
+  [data-v="512"]  { background: #f0a8bf; color: #6b1c39; }
+  [data-v="1024"] { background: #ea8dab; color: #fff; }
+  [data-v="2048"] { background: var(--grad); color: #fff; }
+  [data-v="4096"] { background: linear-gradient(100deg, #f2698c, #2f9de5); color: #fff; }
+
+  .board.is-over::after {
+    content: '没有能动的方向了 · 点「新开一局」';
+    position: absolute; inset: 0; display: grid; place-items: center;
+    border-radius: 14px; background: rgb(255 255 255 / .82); backdrop-filter: blur(3px);
+    font-size: 13.5px; font-weight: 700; color: var(--ink-2); text-align: center; padding: 20px;
+  }
+  .board.is-won::after {
+    content: '够了，2048 到手 · 还能接着玩';
+    position: absolute; inset: 0; display: grid; place-items: center;
+    border-radius: 14px; background: rgb(255 255 255 / .82); backdrop-filter: blur(3px);
+    font-size: 13.5px; font-weight: 700; color: var(--ink-2); text-align: center; padding: 20px;
+  }
+  .board.is-won, .board.is-over { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>游戏间</b> / 05</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Puzzle / 2048</span>
+  <h1 class="lab-title">把两格合成一格，能刷到多大？</h1>
+  <p class="lab-lede">
+    方向键、WASD，或者直接在棋盘上滑。两个相同数字撞在一起就合成一个翻倍的数字，
+    每合成一次加一次分 —— 2048 只是个坐标，不是终点。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>本局</h2><span id="status">进行中</span></div>
+        <div class="g-scores">
+          <div><small>分数</small><b id="score">0</b></div>
+          <div><small>最高</small><b id="best">0</b></div>
+        </div>
+        <button class="g-btn" id="new" type="button">新开一局</button>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>怎么玩</h2><span>4 × 4</span></div>
+        <p class="note">
+          所有格子会一起往你按的方向挪，撞到边界就停。相同数字相撞会合并 —— 合并出来的那一格加的分就是它的数值。
+          最大那个数尽量锁在一个角上，别让它来回跑。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="board-wrap">
+        <div class="board" id="board" role="group" aria-label="2048 棋盘"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>最好成绩存在这台机器的浏览器里 · 换台设备从零开始</span>
+  <nav class="lab-more">
+    <em>其它游戏</em>
+    <a href="game-snake.html">贪吃蛇</a>
+    <a href="game-memory.html">记忆方格</a>
+    <a href="game-reflex.html">反应测试</a>
+    <a href="../showcase.html">看作品集 →</a>
+  </nav>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const N = 4;
+const boardEl = $('board');
+let grid, score, best, over, won;
+
+best = Number(localStorage.getItem('lab2048.best') || 0);
+$('best').textContent = best;
+
+// 先把 16 个底格铺好，瓦片之后挂进去
+const cells = [];
+for (let i = 0; i < N * N; i++) {
+  const d = document.createElement('div');
+  d.className = 'cell';
+  boardEl.appendChild(d);
+  cells.push(d);
+}
+
+function empty() {
+  const out = [];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!grid[r][c]) out.push([r, c]);
+  return out;
+}
+
+function spawn() {
+  const holes = empty();
+  if (!holes.length) return null;
+  const [r, c] = holes[Math.floor(Math.random() * holes.length)];
+  grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+  return [r, c];
+}
+
+function reset() {
+  grid = Array.from({ length: N }, () => Array(N).fill(0));
+  score = 0; over = false; won = false;
+  boardEl.classList.remove('is-over', 'is-won');
+  spawn(); spawn();
+  paint();
+  $('status').textContent = '进行中';
+}
+
+/** 一行往左挤：先合并，再补零。返回新行和被合并的列号 */
+function slide(line) {
+  const nums = line.filter((v) => v);
+  const out = [];
+  const merged = [];
+  let gained = 0;
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] === nums[i + 1]) {
+      const v = nums[i] * 2;
+      merged.push(out.length);
+      out.push(v);
+      gained += v;
+      i++;
+    } else out.push(nums[i]);
+  }
+  while (out.length < N) out.push(0);
+  return { out, merged, gained };
+}
+
+function rotate(g) {
+  // 顺时针转一次：统一按「往左推」处理四个方向
+  return Array.from({ length: N }, (_, r) => Array.from({ length: N }, (_, c) => g[N - 1 - c][r]));
+}
+
+function apply(dir) {
+  if (over) return;
+  // 把棋盘转到「向左推」的视角，推完再转回来
+  let g = grid.map((row) => row.slice());
+  for (let i = 0; i < dir; i++) g = rotate(g);
+  let moved = false, gained = 0;
+  g = g.map((row, r) => {
+    const { out, gained: gg } = slide(row);
+    gained += gg;
+    if (out.some((v, i) => v !== row[i])) moved = true;
+    return out;
+  });
+  for (let i = 0; i < (4 - dir) % 4; i++) g = rotate(g);
+  if (!moved) return;
+
+  grid = g;
+  score += gained;
+  if (score > best) { best = score; localStorage.setItem('lab2048.best', String(best)); $('best').textContent = best; }
+  $('score').textContent = score;
+
+  const born = spawn();
+  paint(born);
+  check();
+}
+
+/** 重画 16 格；born 是新冒出来的那一格，给它一个弹出来的动画 */
+function paint(born) {
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const v = grid[r][c];
+    const cell = cells[r * N + c];
+    cell.innerHTML = '';
+    if (!v) continue;
+    const t = document.createElement('div');
+    t.className = 'tile';
+    t.dataset.v = v;
+    t.textContent = v;
+    if (born && born[0] === r && born[1] === c) t.classList.add('is-new');
+    cell.appendChild(t);
+  }
+}
+
+function check() {
+  if (!won && grid.flat().includes(2048)) {
+    won = true;
+    boardEl.classList.add('is-won');
+  }
+  const full = empty().length === 0;
+  if (!full) return;
+  // 满了还有相邻相同的，就还能动
+  let can = false;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const v = grid[r][c];
+    if (r < N - 1 && grid[r + 1][c] === v) can = true;
+    if (c < N - 1 && grid[r][c + 1] === v) can = true;
+  }
+  if (!can) {
+    over = true;
+    boardEl.classList.remove('is-won');
+    boardEl.classList.add('is-over');
+    $('status').textContent = '这局结束了';
+  }
+}
+
+// 合并动画：先清掉旧标记，再给合并出来的格子加一下
+const KEYMAP = {
+  ArrowLeft: 0, ArrowUp: 1, ArrowRight: 2, ArrowDown: 3,
+  a: 0, w: 1, d: 2, s: 3, A: 0, W: 1, D: 2, S: 3,
+};
+addEventListener('keydown', (e) => {
+  if (e.key in KEYMAP) { e.preventDefault(); apply(KEYMAP[e.key]); }
+});
+
+// 手指：滑出去超过 24px 才算一个方向
+let p0 = null;
+boardEl.addEventListener('pointerdown', (e) => { p0 = { x: e.clientX, y: e.clientY }; });
+boardEl.addEventListener('pointerup', (e) => {
+  if (!p0) return;
+  const dx = e.clientX - p0.x, dy = e.clientY - p0.y;
+  p0 = null;
+  if (Math.hypot(dx, dy) < 24) {
+    // 点一下就把提示层关掉，胜利之后还能接着玩
+    if (boardEl.classList.contains('is-won')) boardEl.classList.remove('is-won');
+    return;
+  }
+  apply(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 2 : 0) : (dy > 0 ? 3 : 1));
+});
+boardEl.addEventListener('pointercancel', () => { p0 = null; });
+
+$('new').addEventListener('click', reset);
+reset();
+</script>
+</body>
+</html>
