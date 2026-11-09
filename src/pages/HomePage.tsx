@@ -1,11 +1,10 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { onIntroDone } from '../lib/intro'
 import { prefetchAdmin } from '../lib/prefetch'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
-import SaySection from './SaySection'
 import type { LeiSeg } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
@@ -667,27 +666,28 @@ function WipeWord() {
 }
 
 export default function HomePage() {
+  const navigate = useNavigate()
   const [likes, setLikes] = useState<number | null>(null)
   const [views, setViews] = useState<number | null>(null)
   const [justLiked, setJustLiked] = useState(false)
   const wetRef = useRef<HTMLDivElement>(null)
 
-  // 带 ?to=growth / ?to=contact 过来：等页面落位，再滚到那一块（留言顺手把光标放进输入框）
-  // 后台索引里的「成长页」就是走这条路
+  // 带 ?to=contact 过来：等页面落位，再滚到留言那块并放进光标。
+  // ?to=growth 是老地址（后台索引里的「成长页」还指着它），成长已经独立成页，直接送过去
   useEffect(() => {
     const q = new URLSearchParams(window.location.hash.split('?')[1] || '')
     const to = q.get('to')
-    if (to !== 'growth' && to !== 'contact') return
+    if (to === 'growth') {
+      navigate('/growth', { replace: true })
+      return
+    }
+    if (to !== 'contact') return
     const t = window.setTimeout(() => {
-      document
-        .getElementById(to)
-        ?.scrollIntoView({ behavior: 'smooth', block: to === 'growth' ? 'start' : 'end' })
-      if (to === 'contact') {
-        window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
-      }
+      document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
     }, 260)
     return () => window.clearTimeout(t)
-  }, [])
+  }, [navigate])
 
   /* 进后台的包先在空闲时下好：真点「进入管理系统」时是同步打开的，
      不用再等那几份分块。放到 3 秒后，不跟首屏的字体和底图抢带宽 */
@@ -821,6 +821,11 @@ export default function HomePage() {
     }
   }
 
+  // 导航里的「成长」已经不在这一页了，整页跳过去
+  function goGrowth() {
+    navigate('/growth')
+  }
+
   function goTalk() {
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
@@ -898,6 +903,9 @@ export default function HomePage() {
         </Link>
         <nav className="hp-nav-links" aria-label="页面导航">
           <a href="showcase.html">作品集</a>
+          <button type="button" onClick={goGrowth}>
+            成长
+          </button>
           <button type="button" onClick={goTalk}>
             留言
           </button>
@@ -959,86 +967,86 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 收尾：白纸结束，整幅转黑，只留联系方式与留言 */}
-      <SaySection>
-        <div className="hp-say-grid">
-          <div className="hp-say-col">
-            <span className="hp-say-label">联系</span>
-            {contacts.map((c) =>
-              c.href ? (
-                <a key={c.label} className="hp-say-mail" href={c.href} download={c.download}>
-                  {c.label}
-                  <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
-                </a>
-              ) : (
-                <span key={c.label} className="hp-say-mail">
-                  {c.label}
-                </span>
-              ),
-            )}
-            <p className="hp-say-note">
-              武汉理工大学 · 数字经济，家在安徽安庆宿松。用数据讲清商业问题，把分析做成能落地的决策。
-            </p>
-          </div>
+      {/* 收尾只有一块白：联系方式 + 留言框。个人成长已经搬去 #/growth 自己一页 */}
+      <section className="hp-say hp-say--paper" id="contact" aria-label="联系方式与留言">
+        <div className="hp-wrap hp-say-inner">
+          <div className="hp-say-grid">
+            <div className="hp-say-col">
+              <span className="hp-say-label">联系</span>
+              {contacts.map((c) =>
+                c.href ? (
+                  <a key={c.label} className="hp-say-mail" href={c.href} download={c.download}>
+                    {c.label}
+                    <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
+                  </a>
+                ) : (
+                  <span key={c.label} className="hp-say-mail">
+                    {c.label}
+                  </span>
+                ),
+              )}
+            </div>
 
-          <div className="hp-say-col">
-            <span className="hp-say-label">留言</span>
-            <form className="hp-say-form" onSubmit={handleSubmit}>
-              <input
-                className="hp-say-name"
-                value={name}
-                maxLength={24}
-                disabled={interactDisabled}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="昵称"
-                aria-label="昵称，可留空"
-              />
-              <input
-                ref={sayRef}
-                className="hp-say-text"
-                value={message}
-                maxLength={200}
-                disabled={interactDisabled}
-                onChange={(e) => {
-                  setMessage(e.target.value)
-                  if (notice) setNotice('')
-                }}
-                placeholder="留一句话…"
-                aria-label="留言内容"
-              />
-              <button type="submit" disabled={submitting || interactDisabled} aria-label="发布留言">
-                {submitting ? '…' : '↑'}
-              </button>
-            </form>
+            <div className="hp-say-col">
+              <span className="hp-say-label">留言</span>
+              <form className="hp-say-form" onSubmit={handleSubmit}>
+                <input
+                  className="hp-say-name"
+                  value={name}
+                  maxLength={24}
+                  disabled={interactDisabled}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="昵称"
+                  aria-label="昵称，可留空"
+                />
+                <input
+                  ref={sayRef}
+                  className="hp-say-text"
+                  value={message}
+                  maxLength={200}
+                  disabled={interactDisabled}
+                  onChange={(e) => {
+                    setMessage(e.target.value)
+                    if (notice) setNotice('')
+                  }}
+                  placeholder="留一句话…"
+                  aria-label="留言内容"
+                />
+                <button type="submit" disabled={submitting || interactDisabled} aria-label="发布留言">
+                  {submitting ? '…' : '↑'}
+                </button>
+              </form>
 
-            {(notice || interactDisabled) && (
-              <p className="hp-say-error">
-                {notice
-                  || (guestbookState === 'offline' ? '留言暂未接通，配好数据库就活' : '留言暂时不可用')}
-              </p>
-            )}
+              {(notice || interactDisabled) && (
+                <p className="hp-say-error">
+                  {notice
+                    || (guestbookState === 'offline' ? '留言暂未接通，配好数据库就活' : '留言暂时不可用')}
+                </p>
+              )}
 
-            <ul className="hp-say-log">
-              {messages.slice(0, 2).map((m) => (
-                <li key={m.id}>
-                  <strong>{m.name || '访客'}</strong>
-                  <span>{m.message}</span>
-                  <time>{formatDate(m.created_at)}</time>
-                </li>
-              ))}
-              {guestbookState === 'loading' && <li className="is-empty">正在读取留言…</li>}
-              {guestbookState === 'ready' && !messages.length && <li className="is-empty">还没有留言</li>}
-            </ul>
-            {messages.length > 2 && <p className="hp-say-count">共 {messages.length} 条</p>}
+              <ul className="hp-say-log">
+                {messages.slice(0, 2).map((m) => (
+                  <li key={m.id}>
+                    <strong>{m.name || '访客'}</strong>
+                    <span>{m.message}</span>
+                    <time>{formatDate(m.created_at)}</time>
+                  </li>
+                ))}
+                {guestbookState === 'loading' && <li className="is-empty">正在读取留言…</li>}
+                {guestbookState === 'ready' && !messages.length && <li className="is-empty">还没有留言</li>}
+              </ul>
+              {messages.length > 2 && <p className="hp-say-count">共 {messages.length} 条</p>}
+            </div>
           </div>
         </div>
-      </SaySection>
+      </section>
 
       <footer className="hp-end">
         <div className="hp-wrap hp-end-row">
           <p>© 2026 雷馨怡 · 武汉理工大学</p>
           <nav className="hp-end-links" aria-label="页脚导航">
             <a href="showcase.html">作品集</a>
+            <Link to="/growth">个人成长</Link>
             <Link to="/app">管理系统</Link>
             <button
               type="button"

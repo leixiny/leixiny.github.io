@@ -5,6 +5,7 @@ import { createPage } from './lazyPage'
  * 在预取和路由两边用的是同一个函数 —— 预取过的那一份不会再下一次。
  */
 export const AuthPage = createPage(() => import('../pages/AuthPage'), 'none')
+export const GrowthPage = createPage(() => import('../pages/GrowthPage'), 'none')
 export const OnboardingPage = createPage(() => import('../pages/OnboardingPage'), 'none')
 export const DashboardPage = createPage(() => import('../pages/DashboardPage'))
 export const CustomersPage = createPage(() => import('../pages/CustomersPage'))

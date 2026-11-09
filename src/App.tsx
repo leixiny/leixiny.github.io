@@ -10,6 +10,7 @@ import {
   CustomerDetailPage,
   CustomersPage,
   DashboardPage,
+  GrowthPage,
   OnboardingPage,
   ProfilePage,
   TasksPage,
@@ -48,17 +49,8 @@ function RequireAuth({ children }: { children: ReactNode }) {
       </div>
     )
   }
-  // 游客能进来逛，只是编辑要登录：记下想去哪，登录完直接送回去
+  // 只有创始空间这一页还留着登录挡板：它是给自己用的，游客没有去的入口
   if (!session) return <Navigate to="/login" replace state={{ from: here }} />
-
-  return children
-}
-
-function RequireOrganization({ children }: { children: ReactNode }) {
-  const { profile, loading } = useAuth()
-
-  if (loading) return <FullScreenLoading />
-  if (!profile?.organization_id) return <Navigate to="/onboarding" replace />
 
   return children
 }
@@ -82,6 +74,8 @@ function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         {/* 老地址还留着：页脚、「留言」链接都指着 /home */}
         <Route path="/home" element={<HomePage />} />
+        {/* 个人成长自己一页：首页只留开屏和留言 */}
+        <Route path="/growth" element={<GrowthPage />} />
         {/* 作品集 = 放映页，同一个页面，旧地址跳过去 */}
         <Route path="/works" element={<WorksShowcaseRedirect />} />
         <Route path="/showcase" element={<WorksShowcaseRedirect />} />
@@ -94,17 +88,9 @@ function AppRoutes() {
             </RequireAuth>
           )}
         />
-        {/* 管理系统（改作品、改项目）才需要登录 */}
-        <Route
-          path="/app"
-          element={(
-            <RequireAuth>
-              <RequireOrganization>
-                <AxonLayout />
-              </RequireOrganization>
-            </RequireAuth>
-          )}
-        >
+        {/* 管理系统不再挡登录：游客进来能看作品库，改动保存才需要登录；
+            自己的设备上会用记住的账号静默登回去，跟原来一样是完整权限 */}
+        <Route path="/app" element={<AxonLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="works" element={<WorksAdminPage />} />
           <Route path="customers" element={<CustomersPage />} />
