@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>定价弹性沙盘 · 雷馨怡</title>
+<meta name="description" content="需求随价格变化的弹性模型：拖动价格，实时看需求、收入、利润与最优定价。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .curve-panel { padding-bottom: 12px; }
+  .curve-panel svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; font-size: 11.5px; color: var(--mute); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 16px; height: 3px; border-radius: 2px; display: block; }
+
+  .slider-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .slider-row b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .slider-row span { font-size: 12px; color: var(--mute); }
+
+  .price-big { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 6px; }
+  .price-big b { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -.025em; }
+  .price-big span { font-size: 12.5px; color: var(--mute); }
+
+  .opt-card {
+    margin-top: 16px; padding: 14px 16px; border-radius: 14px;
+    background: linear-gradient(100deg, rgb(47 157 229 / .08), rgb(242 105 140 / .08));
+    border: 1px solid rgb(47 157 229 / .18);
+  }
+  .opt-card b { display: block; font-size: 13px; color: var(--ink-2); margin-bottom: 4px; }
+  .opt-card p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); }
+  .opt-card strong { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>数据实验室</b> / 04</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Pricing / Elasticity</span>
+  <h1 class="lab-title">涨价会赚更多，还是把人吓跑？</h1>
+  <p class="lab-lede">
+    需求随价格上升而下降，但「收入」和「利润」的最高点往往不在同一个价位。
+    拖动价格和弹性，看两条曲线怎么分叉 —— 这是定价讨论里最容易被忽略的一层。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>价格</h2><span id="priceTag">基准 ¥29</span></div>
+        <div class="price-big">
+          <b id="priceNum">¥39</b>
+          <span id="priceHint">比基准高 34%</span>
+        </div>
+        <input id="price" type="range" min="8" max="120" step="1" value="39" aria-label="当前价格">
+
+        <div class="field" style="margin-top:18px">
+          <div class="slider-row"><span>需求弹性</span><b id="eNum">1.60</b></div>
+          <input id="elasticity" type="range" min="0.6" max="3" step="0.05" value="1.6" aria-label="需求弹性">
+          <div class="note" style="margin-top:2px">弹性越大，涨价时流失越快。&gt; 1 才是「有价格敏感度」。</div>
+        </div>
+
+        <div class="field">
+          <div class="slider-row"><span>单位成本</span><b id="cNum">¥12</b></div>
+          <input id="cost" type="range" min="2" max="40" step="1" value="12" aria-label="单位成本">
+        </div>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>模型</h2><span>常数弹性</span></div>
+        <p class="note">
+          需求 = 基准需求 × (价格 / 基准价格)<sup>−弹性</sup>。基准价 ¥29 时卖出 1,000 件。
+          弹性恒定是这个模型最偷懒的假设 —— 真实需求通常在某个价位会突然掉档。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="panel curve-panel">
+        <div class="panel-head"><h2>收入与利润</h2><span id="chartTag">当前 ¥39</span></div>
+        <svg id="chart" viewBox="0 0 660 320" role="img" aria-label="收入与利润随价格变化"></svg>
+        <div class="legend">
+          <span><i style="background:#2f9de5"></i>收入 = 价格 × 需求</span>
+          <span><i style="background:#f2698c"></i>利润 =（价格 − 成本）× 需求</span>
+          <span><i style="background:#c9c9cf"></i>虚线 = 各自最高点</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="stat-row">
+          <dl class="stat"><dt>销量</dt><dd id="qty">—</dd></dl>
+          <dl class="stat"><dt>收入</dt><dd id="rev">—</dd></dl>
+          <dl class="stat"><dt>利润</dt><dd id="profit">—</dd></dl>
+        </div>
+
+        <div class="opt-card">
+          <b>利润最大价 <span id="optPrice">¥36</span></b>
+          <p id="optText">按当前弹性，利润最高的价位在 ¥36 附近，比你现在的位置高/低一些。</p>
+        </div>
+
+        <p class="note" id="eNote"></p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>示例模型，仅作演示 · 常数弹性需求</span>
+  <a href="../showcase.html">看作品集 →</a>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const P0 = 29, Q0 = 1000;
+
+let price = 39, e = 1.6, cost = 12;
+
+const demand = (p) => Q0 * Math.pow(p / P0, -e);
+const revenue = (p) => p * demand(p);
+const profit = (p) => (p - cost) * demand(p);
+
+const money = (n) => '¥' + Math.round(n).toLocaleString('zh-CN');
+const num = (n) => Math.round(n).toLocaleString('zh-CN');
+
+// 利润最大价：常数弹性 + 常数边际成本下，P* = c·e/(e−1)
+function optimalPrice() {
+  if (e <= 1) return null;
+  return (cost * e) / (e - 1);
+}
+
+function renderChart() {
+  const svg = $('chart');
+  const W = 660, H = 320;
+  const pad = { l: 52, r: 18, t: 18, b: 38 };
+  const pMin = 8, pMax = 120;
+  const samples = [];
+  let maxY = 1;
+  for (let i = 0; i <= 160; i++) {
+    const p = pMin + ((pMax - pMin) * i) / 160;
+    const r = revenue(p);
+    // 售价低于成本时利润为负：不画到坐标轴下面去，压到 0 线
+    const pf = Math.max(0, profit(p));
+    maxY = Math.max(maxY, r, pf);
+    samples.push({ p, r, pf });
+  }
+  maxY *= 1.1;
+
+  const x = (p) => pad.l + ((p - pMin) / (pMax - pMin)) * (W - pad.l - pad.r);
+  const y = (v) => pad.t + (1 - v / maxY) * (H - pad.t - pad.b);
+
+  let s = '';
+  // 网格
+  for (let i = 0; i <= 4; i++) {
+    const v = (maxY / 4) * i;
+    s += `<line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="#eeeef1"/>`;
+    s += `<text x="${pad.l - 10}" y="${y(v) + 4}" text-anchor="end" font-size="10.5" fill="#a1a1aa">${v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v)}</text>`;
+  }
+  for (const p of [8, 29, 60, 90, 120]) {
+    s += `<text x="${x(p)}" y="${H - 14}" text-anchor="middle" font-size="10.5" fill="#a1a1aa">¥${p}</text>`;
+  }
+
+  const path = (key) => samples.map((d, i) => (i ? 'L' : 'M') + x(d.p).toFixed(1) + ',' + y(d[key]).toFixed(1)).join(' ');
+
+  // 收入面积
+  s += `<defs>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f9de5" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#2f9de5" stop-opacity="0"/>
+    </linearGradient>
+  </defs>`;
+  s += `<path d="${path('r')} L${x(pMax)},${y(0)} L${x(pMin)},${y(0)} Z" fill="url(#area)"/>`;
+  s += `<path d="${path('r')}" fill="none" stroke="#2f9de5" stroke-width="2.4" stroke-linecap="round"/>`;
+  s += `<path d="${path('pf')}" fill="none" stroke="#f2698c" stroke-width="2.4" stroke-linecap="round"/>`;
+
+  // 两个最高点
+  let bestR = samples[0], bestP = samples[0];
+  for (const d of samples) {
+    if (d.r > bestR.r) bestR = d;
+    if (d.pf > bestP.pf) bestP = d;
+  }
+  s += `<line x1="${x(bestR.p)}" y1="${y(0)}" x2="${x(bestR.p)}" y2="${y(bestR.r)}" stroke="#c9c9cf" stroke-dasharray="3 4"/>`;
+  s += `<line x1="${x(bestP.p)}" y1="${y(0)}" x2="${x(bestP.p)}" y2="${y(bestP.pf)}" stroke="#c9c9cf" stroke-dasharray="3 4"/>`;
+  s += `<circle cx="${x(bestP.p)}" cy="${y(bestP.pf)}" r="4.5" fill="#fff" stroke="#f2698c" stroke-width="2"/>`;
+
+  // 当前价格竖线
+  s += `<line x1="${x(price)}" y1="${pad.t}" x2="${x(price)}" y2="${y(0)}" stroke="#0a0a0b" stroke-opacity=".18"/>`;
+  s += `<circle cx="${x(price)}" cy="${y(revenue(price))}" r="4" fill="#2f9de5"/>`;
+  s += `<circle cx="${x(price)}" cy="${y(Math.max(0, profit(price)))}" r="4" fill="#f2698c"/>`;
+  s += `<text x="${x(price)}" y="${pad.t - 4}" text-anchor="middle" font-size="10.5" fill="#71717a">当前</text>`;
+
+  svg.innerHTML = s;
+}
+
+function render() {
+  const p = price;
+  const q = demand(p);
+  const r = revenue(p);
+  const pf = profit(p);
+  const opt = optimalPrice();
+
+  $('priceNum').textContent = money(p);
+  $('priceTag').textContent = `基准 ¥${P0}`;
+  $('priceHint').textContent = `${p >= P0 ? '比基准高' : '比基准低'} ${Math.abs(Math.round((p / P0 - 1) * 100))}%`;
+  $('eNum').textContent = e.toFixed(2);
+  $('cNum').textContent = money(cost);
+  $('chartTag').textContent = `当前 ¥${p}`;
+
+  $('qty').textContent = num(q);
+  $('rev').textContent = money(r);
+  $('profit').textContent = money(pf);
+
+  $('optPrice').textContent = opt == null ? '没有有限解' : money(opt);
+  if (opt == null) {
+    $('optText').textContent = '弹性 ≤ 1 时需求对价格不敏感，涨价几乎不掉量 —— 收入没有上限，利润会一路涨到需求崩掉为止。';
+  } else {
+    const gap = (opt - p) / p;
+    $('optText').textContent = `按当前弹性与成本，利润最高的价位在 ${money(opt)} 附近，比你现在${gap > 0.03 ? '高 ' + Math.round(gap * 100) + '%' : gap < -0.03 ? '低 ' + Math.round(-gap * 100) + '%' : '几乎重合'}。`;
+  }
+
+  $('eNote').innerHTML = e > 1
+    ? `当前弹性 ${e.toFixed(2)} &gt; 1：涨价 1%，需求大约掉 ${e.toFixed(2)}%，收入会下降 —— 这时候提价要靠「价值感」把弹性压下来。`
+    : `当前弹性 ${e.toFixed(2)} ≤ 1：涨价 1%，需求掉不到 1%，收入反而增加。价格弹性低于 1 的品类，最忌讳的是不敢提价。`;
+
+  renderChart();
+}
+
+for (const id of ['price', 'elasticity', 'cost']) {
+  $(id).addEventListener('input', (ev) => {
+    const v = Number(ev.target.value);
+    if (id === 'price') price = v;
+    if (id === 'elasticity') e = v;
+    if (id === 'cost') cost = v;
+    render();
+  });
+}
+
+render();
+</script>
+</body>
+</html>

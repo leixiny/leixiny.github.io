@@ -4,14 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>作品集 · 雷馨怡</title>
-<meta name="description" content="雷馨怡的作品：客户任务管理系统、个人网站、区域消费差异数据看板、用户调研。">
+<meta name="description" content="雷馨怡的作品集：四个能上手玩的数据小工具 —— A/B 显著性检验、留存队列、预算分配、定价弹性。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 18'%3E%3Cpath d='M11 0l11 18h-6.2L11 9.6 6.2 18H0z' fill='%23f4f1ea'/%3E%3C/svg%3E">
-<!-- 字体走本地 woff2（latin 子集，页面里的中文本来就走系统字体栈）：
-     fonts.googleapis.com 在境内时通时断，整块样式会被它拖住 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/ibm-plex-mono-400.woff2) format('woff2')}
-@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/ibm-plex-mono-500.woff2) format('woff2')}
-@font-face{font-family:'Inter Tight';font-style:normal;font-weight:400 600;font-display:swap;src:url(fonts/inter-tight.woff2) format('woff2')}
 :root{--bg:#0a0a0b;--ink:#f4f1ea;--mid:#8d8b86;--line:rgba(244,241,234,.14)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
@@ -98,8 +96,6 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 @media (prefers-reduced-motion:reduce){
   .hl{will-change:auto}
 }
-/* 画面全画在 canvas 上，作品文字另放一份不可见但可读的：给搜索引擎和读屏软件 */
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 </style>
 <script type="importmap">
 {
@@ -117,7 +113,7 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
       <div class="hl" id="l1" aria-hidden="true"><span>让数据说话</span></div>
       <div class="hl" id="l2" aria-hidden="true"><span>让作品落地</span></div>
     </h1>
-    <div id="cap">四个作品，四种把想法做成东西的方式。</div>
+    <div id="cap">四个小工具，都能上手改参数。</div>
     <div id="glow"></div>
     <div id="cross"><i>+</i></div>
     <div id="rule"></div>
@@ -126,45 +122,16 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
     <header class="top" id="top">
       <div class="logo"><svg viewBox="0 0 22 18"><path d="M11 0l11 18h-6.200L11 9.600 6.200 18H0z"/></svg>雷馨怡</div>
       <div id="pager"><span title="重播">←</span><span title="直接看作品">→</span></div>
-      <nav class="acts"><a href="index.html#/app">回管理系统<em>→</em></a><a href="index.html">回首页<b></b></a></nav>
+      <nav class="acts"><a href="mailto:3121410697@qq.com"><i></i>聊一聊</a><a href="index.html#/app">回管理系统<em>→</em></a><a href="index.html">回首页<b></b></a></nav>
     </header>
     <footer class="bot" id="bot">
-      <p>客户系统、数据看板、用户调研、网站 —— 都从真实问题做到能用。</p>
-      <div class="mid">产品<s>/</s>数据<s>/</s>调研<s>/</s>网站</div>
+      <p>不做只给结论的看板 —— 每个工具都能自己改参数，看数字怎么跟着变。</p>
+      <div class="mid">实验<s>/</s>留存<s>/</s>预算<s>/</s>定价</div>
       <div class="r" id="more">自动放映中</div>
     </footer>
     <div id="name"></div>
   </main>
 </div>
-
-<!-- 放映内容全画在 canvas 上；这一份文字版与 projects.json 同步，给搜索引擎和读屏软件 -->
-<section class="sr-only" aria-label="作品列表">
-  <h2>雷馨怡的作品</h2>
-  <article>
-    <h3>客户任务管理系统 SupaProject</h3>
-    <p>2026.10 · 全栈开发 · React / TypeScript / Supabase</p>
-    <p>能真实落地的全栈任务管理系统：客户、任务、看板三视图联动，带登录鉴权。</p>
-    <p>结果：完整可用的任务管理系统——本网站即由它驱动。</p>
-  </article>
-  <article>
-    <h3>把简历做成可访问的网站</h3>
-    <p>2026.10 · 设计与开发 · Vibe Coding / 静态部署 / 内容结构</p>
-    <p>纸质简历承载不了作品细节，用 Vibe Coding 一个下午完成单页站点并部署。</p>
-    <p>结果：首屏 3 秒内可读完核心信息，手机端无横向滚动、无需缩放。</p>
-  </article>
-  <article>
-    <h3>区域消费差异数据看板</h3>
-    <p>2026.06 · 数据处理与可视化 · Power BI / 数据清洗 / 可视化</p>
-    <p>合并三份公开数据统一口径，用 Power BI 做出覆盖 31 个省份的联动看板。</p>
-    <p>结果：被选为课程展示案例，评分 A。</p>
-  </article>
-  <article>
-    <h3>312 份问卷变成 3 条产品优先级</h3>
-    <p>2026.03 — 2026.05 · 独立负责 · 用户调研 / 需求排序 / 问卷设计</p>
-    <p>为校园二手平台做留存诊断：问卷 + 深访交叉分析，把需求按影响面排序。</p>
-    <p>结果：3 条优先级被采纳进入排期，其中首条已上线，次月留存回升。</p>
-  </article>
-</section>
 
 <div id="detail" hidden>
   <div class="d-sheet" role="dialog" aria-modal="true" aria-labelledby="d-title">
@@ -187,12 +154,12 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 <script type="module">
 import * as THREE from 'three';
 
-/* 四件作品的封面，和作品档案用的是同一套图 */
+/* 四件作品的封面：都是能直接打开来玩的数据小工具（lab/*.html），封面按同一比例截 */
 const WORKS = [
-  ['客户任务管理系统', 'covers/crm-cut.webp'],
-  ['把简历做成网站', 'covers/website-cut.webp'],
-  ['区域消费差异看板', 'covers/dashboard-cut.webp'],
-  ['问卷 → 优先级', 'covers/survey-cut.webp'],
+  ['A/B 显著性检验', 'covers/lab-ab.webp'],
+  ['留存队列分析', 'covers/lab-retention.webp'],
+  ['预算分配沙盘', 'covers/lab-budget.webp'],
+  ['定价弹性沙盘', 'covers/lab-pricing.webp'],
 ];
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -260,8 +227,7 @@ const cards = REEL.map(([title, src], i) => {
     mat.uniforms.cover.value.set(va > ca ? ca / va : 1, va > ca ? 1 : va / ca);
     mat.uniforms.ready.value = 1;
     // 四张图都到齐再起幕，别让人看见空卡片
-    pending.delete(src); if (!pending.size) begin();
-  });
+    pending.delete(src); if (!pending.size) begin();  });
   tex.colorSpace = THREE.NoColorSpace; tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = false;
   tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   mat.uniforms.map.value = tex;
@@ -573,9 +539,11 @@ function openDetail(c) {
   const cta = $('d-cta'), t = $('d-cta-t'), url = w.url || '';
   if (url) {
     const ext = /^https?:/i.test(url);
+    // 实验室里的小网页：相对路径的 .html，单独开一个标签看，放映页留着不动
+    const labPage = !ext && /(^|\/)lab\/[\w-]+\.html$/i.test(url);
     cta.href = ext ? url : (url.startsWith('#') ? 'index.html' + url : url);
-    t.textContent = ext ? '打开作品' : url.includes('index.html') ? '打开网站' : '进入系统';
-    if (ext) { cta.target = '_blank'; cta.rel = 'noreferrer'; } else { cta.removeAttribute('target'); cta.removeAttribute('rel'); }
+    t.textContent = ext ? '打开作品' : labPage ? '打开网页' : url.includes('index.html') ? '打开网站' : '进入系统';
+    if (ext || labPage) { cta.target = '_blank'; cta.rel = 'noreferrer'; } else { cta.removeAttribute('target'); cta.removeAttribute('rel'); }
   } else {
     // 没有公开网址的（课程作业那两件）：留一个聊天的口子
     cta.href = 'mailto:3121410697@qq.com'; cta.removeAttribute('target'); cta.removeAttribute('rel');
