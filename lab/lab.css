@@ -333,6 +333,11 @@ input[type='range']::-moz-range-thumb {
 .lab-foot a { color: var(--mute); text-decoration: none; }
 .lab-foot a:hover { color: var(--ink); }
 
+/* 四个工具互链：从任意一个都能走到另外三个 */
+.lab-more { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 14px; }
+.lab-more em { font-style: normal; color: var(--faint); margin-right: 2px; }
+.lab-more a[aria-current='page'] { color: var(--ink); }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
