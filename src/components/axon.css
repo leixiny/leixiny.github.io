@@ -223,18 +223,6 @@
   color: #fff;
 }
 
-/* 游客身份：和「退出」同一档的小字链接，别喧宾夺主 */
-.axon-user .axon-guest {
-  color: var(--muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color 0.3s;
-}
-
-.axon-user .axon-guest:hover {
-  color: #fff;
-}
-
 /* ── 胶囊导航 ───────────────────────────────────────────── */
 
 .axon-tags {

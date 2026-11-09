@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useRef } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { prefetch, prefetchAdmin } from '../lib/prefetch'
@@ -60,7 +60,7 @@ const STAR =
   '20.00,10.80 21.76,15.75 26.51,13.49 24.25,18.24 29.20,20.00 24.25,21.76 26.51,26.51 21.76,24.25 20.00,29.20 18.24,24.25 13.49,26.51 15.75,21.76 10.80,20.00 15.75,18.24 13.49,13.49 18.24,15.75'
 
 export default function AxonLayout() {
-  const { session, profile, organization } = useAuth()
+  const { profile, organization } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const consoleRef = useRef<HTMLElement>(null)
@@ -101,17 +101,8 @@ export default function AxonLayout() {
         <div className="axon-counter" title="分区数">07</div>
 
         <div className="axon-user">
-          {session ? (
-            <>
-              <span>{profile?.email}</span>
-              <button type="button" onClick={signOut}>退出</button>
-            </>
-          ) : (
-            /* 游客身份进来的：给一条登录的路，登录一次以后就一直是完整权限 */
-            <Link className="axon-guest" to="/login">
-              游客浏览中 · 登录后可编辑
-            </Link>
-          )}
+          <span>{profile?.email}</span>
+          <button type="button" onClick={signOut}>退出</button>
         </div>
 
         <nav className="axon-tags" aria-label="分区">

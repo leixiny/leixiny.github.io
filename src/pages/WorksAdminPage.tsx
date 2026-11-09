@@ -10,7 +10,6 @@ import {
   type WorkDraft,
 } from '../lib/works'
 import { peek, put } from '../lib/cache'
-import { useAuth } from '../context/AuthContext'
 import { Badge, Button, Card, EmptyState, Field, Input, Modal, PageHeader, Textarea } from '../components/ui'
 // 建表脚本直接打进包里：还没执行迁移时，页面上就能复制去 Supabase 跑
 import setupSql from '../../supabase/migrations/0003_works.sql?raw'
@@ -31,8 +30,6 @@ const emptyDraft = (sort: number): WorkDraft => ({
 })
 
 export default function WorksAdminPage() {
-  // 游客也能进后台：作品库公开可读，改动保存才需要登录
-  const { session } = useAuth()
   // 切走再切回来时先用上次的列表，别又白一次
   const [works, setWorks] = useState<Work[]>(() => peek<Work[]>('works') ?? [])
   const [loading, setLoading] = useState(() => !peek('works'))
@@ -55,20 +52,17 @@ export default function WorksAdminPage() {
   }, [load])
 
   function openCreate() {
-    if (!session) return
     setDraft(emptyDraft(works.length))
     setModalOpen(true)
   }
 
   function openEdit(work: Work) {
-    if (!session) return
     const { id, ...rest } = work
     setDraft({ ...rest, id })
     setModalOpen(true)
   }
 
   async function handleSave() {
-    if (!session) return
     if (!draft.title.trim()) {
       setError('标题不能为空')
       return
@@ -86,7 +80,6 @@ export default function WorksAdminPage() {
   }
 
   async function handleDelete(work: Work) {
-    if (!session) return
     if (!window.confirm(`删除「${work.title}」？作品集会立刻少一件，删掉就找不回来了。`)) return
     const { error: deleteError } = await deleteWork(work.id)
     if (deleteError) setError(deleteError)
@@ -94,7 +87,6 @@ export default function WorksAdminPage() {
   }
 
   async function handleMove(work: Work, dir: -1 | 1) {
-    if (!session) return
     const { error: moveError } = await moveWork(works, work.id, dir)
     if (moveError) setError(moveError)
     else await load(true)
@@ -112,7 +104,7 @@ export default function WorksAdminPage() {
             <a className="btn-secondary" href="showcase.html" target="_blank" rel="noreferrer">
               前台看看
             </a>
-            <Button onClick={openCreate} disabled={!dbReady || !session}>
+            <Button onClick={openCreate} disabled={!dbReady}>
               新增作品
             </Button>
           </div>
@@ -121,16 +113,6 @@ export default function WorksAdminPage() {
 
       {!dbReady ? <SetupCard message={error} onDone={load} /> : null}
 
-      {!session && dbReady ? (
-        <Card className="guest-card">
-          <b>游客模式</b>
-          <p>
-            作品库可以随便看。要新增、编辑或删除，先到右上角「登录」一次 ——
-            这台设备记住你之后，以后进来就再也不用登了。
-          </p>
-        </Card>
-      ) : null}
-
       <Card>
         {loading && works.length === 0 ? (
           <EmptyState title="正在读取作品…" />
@@ -138,7 +120,7 @@ export default function WorksAdminPage() {
           <EmptyState
             title="还没有作品"
             description="新增第一件，它会立刻出现在作品集那一页。"
-            action={dbReady && session ? <Button onClick={openCreate}>新增作品</Button> : undefined}
+            action={dbReady ? <Button onClick={openCreate}>新增作品</Button> : undefined}
           />
         ) : (
           <div className="table-wrap">
@@ -173,13 +155,13 @@ export default function WorksAdminPage() {
                       <Badge tone={work.published ? 'green' : 'amber'}>{work.published ? '已发布' : '草稿'}</Badge>
                     </td>
                     <td className="work-sort">
-                      <button type="button" onClick={() => handleMove(work, -1)} disabled={i === 0 || !session} aria-label="上移">
+                      <button type="button" onClick={() => handleMove(work, -1)} disabled={i === 0} aria-label="上移">
                         ↑
                       </button>
                       <button
                         type="button"
                         onClick={() => handleMove(work, 1)}
-                        disabled={i === works.length - 1 || !session}
+                        disabled={i === works.length - 1}
                         aria-label="下移"
                       >
                         ↓
@@ -187,8 +169,8 @@ export default function WorksAdminPage() {
                     </td>
                     <td>
                       <div className="row-actions">
-                        <button type="button" onClick={() => openEdit(work)} disabled={!session}>编辑</button>
-                        <button type="button" className="danger-text" onClick={() => handleDelete(work)} disabled={!session}>删除</button>
+                        <button type="button" onClick={() => openEdit(work)}>编辑</button>
+                        <button type="button" className="danger-text" onClick={() => handleDelete(work)}>删除</button>
                       </div>
                     </td>
                   </tr>
