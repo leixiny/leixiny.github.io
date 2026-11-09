@@ -1,7 +1,8 @@
-/* 首屏加载页：深色底 + 一块液态玻璃，玻璃里是会翻字的 Loading。
+/* 首屏加载页：一段黑丝带视频打底 + 一块液态玻璃，玻璃里是会翻字的 Loading。
    玻璃的配方来自 .liquid-glass-strong（index.css 的 @layer components）：
    几乎全透的底 + 大半径 backdrop blur + 一圈中段渐隐的描边。
-   这里只做两件它没管的事：把描边换成橹穆应援色，以及在玻璃背后铺一层蓝粉光。 */
+   这里只做三件它没管的事：把描边换成橹穆应援色、在玻璃背后铺一层蓝粉光、
+   以及给底下的视频配一套「应援色 + 压暗」的蒙版。 */
 
 .ld-screen {
   /* 橹穆应援色：#aee4ff 浅蓝 / #ffccd5 浅粉。
@@ -19,22 +20,118 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  background:
-    radial-gradient(50% 42% at 27% 30%, rgb(var(--ld-blue) / 0.3) 0%, rgb(var(--ld-blue) / 0) 74%),
-    radial-gradient(46% 40% at 76% 70%, rgb(var(--ld-rose) / 0.24) 0%, rgb(var(--ld-rose) / 0) 76%),
-    #05060a;
+  /* 兜底色：视频还没到、或者浏览器不给放的时候，就是这块近黑 ——
+     不是纯黑，留一点点蓝，跟丝带的青绿接得上 */
+  background: #05060a;
   color: #eef2ff;
   transition: opacity 520ms ease, visibility 520ms;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 四周压一圈暗角：把注意力收到中间那块玻璃上 */
+/* ---------- 底：丝带视频 ---------- */
+/* 满屏铺一层：视频本身上下都是黑的，靠下面那层蒙版把它化进底色，
+   屏幕上就只剩中间那条光带在慢慢淌 */
+.ld-film {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ld-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 原片偏青绿，往蓝那边拨一点，才接得上后面两层应援色 */
+  filter: hue-rotate(16deg) saturate(1.1) contrast(1.03);
+  opacity: 0.96;
+  /* 封面（一张 webp）先顶上，流到了再接着放：淡进来，别硬切。
+     再叠一层极慢的推近与横移：封面在动，这一段就不像一张静止的照片；
+     真流接上以后这层位移只有 1%~2%，看不出来，也不会打架 */
+  animation:
+    ld-film-in 900ms ease both,
+    ld-film-drift 20s ease-in-out infinite alternate;
+}
+
+@keyframes ld-film-drift {
+  from {
+    transform: scale(1.02) translate3d(-0.6%, 0.4%, 0);
+  }
+  to {
+    transform: scale(1.07) translate3d(0.9%, -0.7%, 0);
+  }
+}
+
+@keyframes ld-film-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.96;
+  }
+}
+
+/* 两团 screen 光：左蓝右粉，把青绿的丝带按到应援色上 */
+.ld-tint {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+}
+
+.ld-tint--blue {
+  background: radial-gradient(
+    46% 58% at 14% 42%,
+    rgb(var(--ld-blue) / 0.52) 0%,
+    rgb(var(--ld-blue) / 0) 72%
+  );
+}
+
+.ld-tint--pink {
+  background: radial-gradient(
+    44% 56% at 86% 62%,
+    rgb(var(--ld-rose) / 0.44) 0%,
+    rgb(var(--ld-rose) / 0) 74%
+  );
+}
+
+/* 上下两头化到近黑（和玻璃、和随后的首页连成一片），
+   中间再压一层柔和的暗：玻璃是 50px 的大模糊，背后不能太亮，
+   不然胶囊会糊成一团灰 */
+.ld-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      54% 44% at 50% 50%,
+      rgb(4 5 9 / 0.52) 0%,
+      rgb(4 5 9 / 0.16) 60%,
+      rgb(4 5 9 / 0) 82%
+    ),
+    linear-gradient(
+      to bottom,
+      #05060a 0%,
+      rgb(5 6 8 / 0.62) 9%,
+      rgb(5 6 8 / 0.1) 24%,
+      rgb(5 6 8 / 0) 46%,
+      rgb(5 6 8 / 0) 62%,
+      rgb(5 6 8 / 0.42) 84%,
+      #05060a 100%
+    );
+}
+
+/* 四周压一圈暗角：把注意力收到中间那块玻璃上。
+   z-index 只压在视频之上、玻璃之下 —— 视频自己已经有上下渐隐了，
+   这一层再重就成了一个黑洞 */
 .ld-screen::after {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
-  background: radial-gradient(78% 78% at 50% 50%, rgb(0 0 0 / 0) 42%, rgb(0 0 0 / 0.55) 100%);
+  background: radial-gradient(78% 78% at 50% 50%, rgb(0 0 0 / 0) 44%, rgb(0 0 0 / 0.5) 100%);
 }
 
 .ld-screen.is-out {
@@ -45,6 +142,7 @@
 
 .ld-stage {
   position: relative;
+  z-index: 2;
   display: grid;
   place-items: center;
 }
@@ -288,14 +386,36 @@
     filter: blur(16px);
   }
 
+  /* 手机屏幕窄，两团光按比例会显得很满：收一点，让丝带还是主角 */
+  .ld-tint--blue {
+    background: radial-gradient(
+      64% 42% at 12% 40%,
+      rgb(var(--ld-blue) / 0.42) 0%,
+      rgb(var(--ld-blue) / 0) 72%
+    );
+  }
+
+  .ld-tint--pink {
+    background: radial-gradient(
+      62% 40% at 88% 62%,
+      rgb(var(--ld-rose) / 0.36) 0%,
+      rgb(var(--ld-rose) / 0) 74%
+    );
+  }
+
 }
 
-/* 系统里关了动效：字直接摆好，玻璃也不浮上来 */
+/* 系统里关了动效：字直接摆好，玻璃不浮上来，丝带也不漂 */
 @media (prefers-reduced-motion: reduce) {
   .ld-glass,
   .ld-l.is-flip,
   .ld-g.is-hit {
     animation: none;
+  }
+
+  .ld-video {
+    animation: none;
+    opacity: 0.96;
   }
 }
 

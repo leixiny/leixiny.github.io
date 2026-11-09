@@ -10,7 +10,6 @@ import type { LeiSeg } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
 import WaterRipple from '../components/WaterRipple'
-import CtaFooter from '../components/CtaFooter'
 import { ArrowUpRight } from 'lucide-react'
 
 interface GuestbookRow {
@@ -917,7 +916,7 @@ export default function HomePage() {
           <div className="hp-hero-top">
             <p className="hp-kicker">
               <span className="hp-kicker-line" />
-              数字经济 · 本科二年级
+              武汉理工大学 · 数字经济
             </p>
 
             <div className="hp-stats">
@@ -962,86 +961,99 @@ export default function HomePage() {
         </div>
       </section>
 
-      <GrowthSection />
+      {/* 收尾并进「个人成长」：白纸结束，整幅转黑，联系与留言都在这一块里 */}
+      <GrowthSection>
+        <div className="hp-say-grid">
+          <div className="hp-say-col">
+            <span className="hp-say-label">联系</span>
+            {contacts.map((c) =>
+              c.href ? (
+                <a key={c.label} className="hp-say-mail" href={c.href} download={c.download}>
+                  {c.label}
+                  <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
+                </a>
+              ) : (
+                <span key={c.label} className="hp-say-mail">
+                  {c.label}
+                </span>
+              ),
+            )}
+            <p className="hp-say-note">
+              武汉理工大学 · 数字经济，家在安徽安庆宿松。用数据讲清商业问题，把分析做成能落地的决策。
+            </p>
+          </div>
 
-      {/* 收尾：黑场 + 一段丝带视频 + 蓝粉玻璃；联系与留言收在视频下面 */}
-      <CtaFooter onTalk={goTalk} onGrowth={goGrowth}>
-        <div className="cta-deck">
-          <div className="cta-wrap">
-            <div className="cta-deck-grid">
-              <div>
-                <span className="cta-label">联系</span>
-                {contacts.map((c) =>
-                  c.href ? (
-                    <a key={c.label} className="cta-mail" href={c.href} download={c.download}>
-                      {c.label}
-                      <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
-                    </a>
-                  ) : (
-                    <span key={c.label} className="cta-mail">
-                      {c.label}
-                    </span>
-                  ),
-                )}
-                <p className="cta-id-note">
-                  数字经济 · 本科二年级。用数据讲清商业问题，把分析做成能落地的决策。
-                </p>
-              </div>
+          <div className="hp-say-col">
+            <span className="hp-say-label">留言</span>
+            <form className="hp-say-form" onSubmit={handleSubmit}>
+              <input
+                className="hp-say-name"
+                value={name}
+                maxLength={24}
+                disabled={interactDisabled}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="昵称"
+                aria-label="昵称，可留空"
+              />
+              <input
+                ref={sayRef}
+                className="hp-say-text"
+                value={message}
+                maxLength={200}
+                disabled={interactDisabled}
+                onChange={(e) => {
+                  setMessage(e.target.value)
+                  if (notice) setNotice('')
+                }}
+                placeholder="留一句话…"
+                aria-label="留言内容"
+              />
+              <button type="submit" disabled={submitting || interactDisabled} aria-label="发布留言">
+                {submitting ? '…' : '↑'}
+              </button>
+            </form>
 
-              <div>
-                <span className="cta-label">留言</span>
-                <form className="cta-say" onSubmit={handleSubmit}>
-                  <input
-                    className="cta-say-name"
-                    value={name}
-                    maxLength={24}
-                    disabled={interactDisabled}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="昵称"
-                    aria-label="昵称，可留空"
-                  />
-                  <input
-                    ref={sayRef}
-                    className="cta-say-text"
-                    value={message}
-                    maxLength={200}
-                    disabled={interactDisabled}
-                    onChange={(e) => {
-                      setMessage(e.target.value)
-                      if (notice) setNotice('')
-                    }}
-                    placeholder="留一句话…"
-                    aria-label="留言内容"
-                  />
-                  <button type="submit" disabled={submitting || interactDisabled} aria-label="发布留言">
-                    {submitting ? '…' : '↑'}
-                  </button>
-                </form>
+            {(notice || interactDisabled) && (
+              <p className="hp-say-error">
+                {notice
+                  || (guestbookState === 'offline' ? '留言暂未接通，配好数据库就活' : '留言暂时不可用')}
+              </p>
+            )}
 
-                {(notice || interactDisabled) && (
-                  <p className="cta-say-note">
-                    {notice
-                      || (guestbookState === 'offline' ? '留言暂未接通，配好数据库就活' : '留言暂时不可用')}
-                  </p>
-                )}
-
-                <ul className="cta-log">
-                  {messages.slice(0, 2).map((m) => (
-                    <li key={m.id}>
-                      <strong>{m.name || '访客'}</strong>
-                      <span>{m.message}</span>
-                      <time>{formatDate(m.created_at)}</time>
-                    </li>
-                  ))}
-                  {guestbookState === 'loading' && <li className="is-empty">正在读取留言…</li>}
-                  {guestbookState === 'ready' && !messages.length && <li className="is-empty">还没有留言</li>}
-                </ul>
-                {messages.length > 2 && <p className="cta-log-count">共 {messages.length} 条</p>}
-              </div>
-            </div>
+            <ul className="hp-say-log">
+              {messages.slice(0, 2).map((m) => (
+                <li key={m.id}>
+                  <strong>{m.name || '访客'}</strong>
+                  <span>{m.message}</span>
+                  <time>{formatDate(m.created_at)}</time>
+                </li>
+              ))}
+              {guestbookState === 'loading' && <li className="is-empty">正在读取留言…</li>}
+              {guestbookState === 'ready' && !messages.length && <li className="is-empty">还没有留言</li>}
+            </ul>
+            {messages.length > 2 && <p className="hp-say-count">共 {messages.length} 条</p>}
           </div>
         </div>
-      </CtaFooter>
+      </GrowthSection>
+
+      <footer className="hp-end">
+        <div className="hp-wrap hp-end-row">
+          <p>© 2026 雷馨怡 · 武汉理工大学</p>
+          <nav className="hp-end-links" aria-label="页脚导航">
+            <a href="showcase.html">作品集</a>
+            <button type="button" onClick={goGrowth}>
+              个人成长
+            </button>
+            <Link to="/app">管理系统</Link>
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              回到顶部 ↑
+            </button>
+          </nav>
+        </div>
+      </footer>
 
       <WaterRipple />
     </div>

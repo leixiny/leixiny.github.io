@@ -21,16 +21,27 @@ export interface Hobby {
   note: string
 }
 
+export interface ProfileItem {
+  key: string
+  value: string
+}
+
 export const GROWTH = {
   kicker: '个人成长',
   title: '把学过的东西，慢慢变成能做的事。',
-  lead: '本科学的是数字经济，真正上手的是数据、产品和一点点前端。下面这些是学过的路径，和让我保持好奇的那几件事。',
+  lead: '本科在武汉理工大学读数字经济，真正上手的是数据、产品和一点点前端。下面这些是学过的路径，和让我保持好奇的那几件事。',
 }
+
+/** 标题下面那行小字：学历和籍贯，一行读完，不铺成简历 */
+export const PROFILE: ProfileItem[] = [
+  { key: '学历', value: '武汉理工大学 · 数字经济' },
+  { key: '籍贯', value: '安徽安庆宿松' },
+]
 
 export const TIMELINE: TimelineItem[] = [
   {
     period: '2025.09 — 至今',
-    title: '汕头大学 · 数字经济',
+    title: '武汉理工大学 · 数字经济',
     note: '本科在读。宏微观经济学、统计学、计量经济学打底，课程之外补了 Python 和数据库，习惯把结论写成别人看得懂的话。',
     tags: ['经济学', '统计学', 'Python'],
   },
@@ -51,23 +62,13 @@ export const TIMELINE: TimelineItem[] = [
 export const HOBBIES: Hobby[] = [
   {
     mark: '01',
-    title: '摄影',
-    note: '爱拍水面、光斑和城市里的边角，这个站点的背景图就是自己拍的。',
+    title: '羽毛球',
+    note: '一周两三场，最喜欢双打里那种来回拉扯的节奏。跑不动的时候才明白，落点比力气重要。',
   },
   {
     mark: '02',
-    title: '排版与设计',
-    note: '对留白、字距和动效的节奏有强迫症，喜欢把界面做得安静一点。',
-  },
-  {
-    mark: '03',
-    title: '游泳',
-    note: '水里最不需要想事情，一次两千米，上来之后问题往往就有答案了。',
-  },
-  {
-    mark: '04',
-    title: '阅读',
-    note: '商业和人文交替读，读完会写几行笔记，偶尔变成一篇文章。',
+    title: '轮滑',
+    note: '傍晚沿着江边刷一段，风大、路也不算平。摔过两次以后学会了把重心放低，和做事的道理差不多。',
   },
 ]
 
