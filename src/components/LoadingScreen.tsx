@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import ribbonPoster from '../assets/loading-ribbon.webp'
-import ribbonVideo from '../assets/loading-ribbon.mp4'
 import './LoadingScreen.css'
 
 /**
@@ -39,9 +38,10 @@ const LETTERS: { ch: string; flip?: number; hit?: number }[] = [
   { ch: 'g', flip: 560 },
 ]
 
-/* 同一条黑丝带，本地一份。封面是同一支片截的一帧 webp：
-   视频还在解码的那几十毫秒里先顶上，不至于闪一下黑 */
-const VIDEO_SRC = ribbonVideo
+/* 同一条黑丝带，本地一份。放在 public/ 是为了路径固定 —— index.html 里提前
+   preload 它，下载就能和 bundle 解析并行，不必等 React 挂载才问 CDN 要。
+   封面是同一支片截的一帧 webp：视频还在解码的那几十毫秒里先顶上，不至于闪一下黑 */
+const VIDEO_SRC = '/loading-ribbon.mp4'
 
 export default function LoadingScreen({ leaving = false }: { leaving?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null)
