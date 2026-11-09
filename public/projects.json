@@ -3,7 +3,7 @@
     {
       "id": "crm",
       "title": "客户任务管理系统 SupaProject",
-      "cover": "covers/crm.jpg",
+      "cover": "covers/crm-cut.webp",
       "uploadedAt": "2026-10-28",
       "period": "2026.10",
       "role": "全栈开发",
@@ -21,13 +21,14 @@
     {
       "id": "website",
       "title": "把简历做成可访问的网站",
-      "cover": "covers/website.jpg",
+      "cover": "covers/website-cut.webp",
       "uploadedAt": "2026-10-25",
       "period": "2026.10",
       "role": "设计与开发",
       "summary": "纸质简历承载不了作品细节，用 Vibe Coding 一个下午完成单页站点并部署。",
       "result": "首屏 3 秒内可读完核心信息，手机端无横向滚动、无需缩放。",
       "tags": ["Vibe Coding", "静态部署", "内容结构"],
+      "url": "index.html",
       "milestones": [
         { "date": "2026-10-25", "title": "上午：定结构与文案", "desc": "内容与代码分离，确定能力/作品/联系三大块。" },
         { "date": "2026-10-25", "title": "下午：开发与构建", "desc": "自然语言驱动开发，构建为静态站点。" },
@@ -38,7 +39,7 @@
     {
       "id": "dashboard",
       "title": "区域消费差异数据看板",
-      "cover": "covers/dashboard.jpg",
+      "cover": "covers/dashboard-cut.webp",
       "uploadedAt": "2026-06-20",
       "period": "2026.06",
       "role": "数据处理与可视化",
@@ -55,7 +56,7 @@
     {
       "id": "survey",
       "title": "312 份问卷变成 3 条产品优先级",
-      "cover": "covers/survey.jpg",
+      "cover": "covers/survey-cut.webp",
       "uploadedAt": "2026-05-18",
       "period": "2026.03 — 2026.05",
       "role": "独立负责",
