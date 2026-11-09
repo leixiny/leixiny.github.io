@@ -88,6 +88,7 @@ export default function LoadingScreen({ leaving = false }: { leaving?: boolean }
           tabIndex={-1}
           disablePictureInPicture
         />
+        <span className="ld-grade" />
         <span className="ld-tint ld-tint--blue" />
         <span className="ld-tint ld-tint--pink" />
         <span className="ld-veil" />
