@@ -1,16 +1,20 @@
 import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
-import type HlsPlayer from 'hls.js'
 import ribbonPoster from '../assets/loading-ribbon.webp'
+import ribbonVideo from '../assets/loading-ribbon.mp4'
 import './LoadingScreen.css'
 
 /**
  * 首屏加载页：一段黑丝带视频打底 + 一块液态玻璃，玻璃里是会翻字的 Loading。
  *
- * 视频原先是收尾那一屏（留言）的背景，现在挪到开场：6 秒无缝循环，
+ * 视频原先是收尾那一屏（留言）的背景，现在挪到开场：6 秒循环，
  * 上下都是纯黑，中间一条青绿高光横向淌过去 —— 正好衬得住一块横向的胶囊玻璃。
- * hls.js 是动态导入的：它 160KB，不该跟着首屏包一起下来；而且是手机流量 / 省流量模式
- * 或者系统里关了动效时，连拉都不拉，只留一张封面。
+ *
+ * 这一段是本地 157KB 的 mp4（从 mux 那支 6 秒片的最低档分片拼出来的单个 fMP4，
+ * 480×270，本来就压在 blur 和暗色蒙版底下，看不清分辨率）。
+ * 早先直接挂 mux 的 m3u8：manifest 要 1.1s 才回来，加载页 1.5s 就淡出了 ——
+ * 用户实际只看到一张静止封面，还白搭了 362KB 的 hls.js。
+ * 换成同源小文件后首帧几十毫秒就出来，整条 hls 依赖也一起删了。
  *
  * 玻璃本体用的是 index.css 里那套 .liquid-glass-strong（Tailwind `@layer components`）：
  * 几乎全透的底 + blur(50px) + 一圈 1.4px、中段渐隐的描边 —— 描边亮在两头、
@@ -35,10 +39,9 @@ const LETTERS: { ch: string; flip?: number; hit?: number }[] = [
   { ch: 'g', flip: 560 },
 ]
 
-/* 同一条黑丝带。封面是本地一张 26KB 的 webp（从视频里截的一帧），
-   跟 bundle 一起下来，不用等 mux 的图床 —— 上一版让它走远端，
-   窗口 load 被拖到 1.6s，加载页多停了小半秒，还经常来不及显示 */
-const HLS_SRC = 'https://stream.mux.com/Jwr2RhmsNrd6GEspBNgm02vJsRZAGlaoQIh4AucGdASw.m3u8'
+/* 同一条黑丝带，本地一份。封面是同一支片截的一帧 webp：
+   视频还在解码的那几十毫秒里先顶上，不至于闪一下黑 */
+const VIDEO_SRC = ribbonVideo
 
 export default function LoadingScreen({ leaving = false }: { leaving?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -47,55 +50,20 @@ export default function LoadingScreen({ leaving = false }: { leaving?: boolean }
     const v = videoRef.current
     if (!v) return
 
-    // 关了动效，或手机开了省流量：这一屏只是过场，不值得为它拉一段流
+    // 关了动效，或手机开了省流量：这一屏只是过场，静帧就够
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    if (conn?.saveData) return
-
-    let hls: HlsPlayer | null = null
-    let dead = false
-    let timer = 0
-
-    async function boot() {
-      if (dead || !v) return
-
-      /* 先让首屏的画面出来（加载页自己的底图和玻璃），再拉流 ——
-         它跟首包的字体、底图抢带宽。
-         用轻量构建 hls.js/light：字幕、备用音轨这一层背景用不到，体积小一截 */
-      const { default: Hls } = await import('hls.js/light')
-      if (dead) return
-
-      if (Hls.isSupported()) {
-        hls = new Hls({
-          enableWorker: true,
-          // 这层视频压在一块 blur + 暗色蒙版之下，按容器尺寸挑档就够，不必给到最高清；
-          // 再从最低一档起播：封面只等它几十毫秒，不是几秒
-          capLevelToPlayerSize: true,
-          startLevel: 0,
-          maxBufferLength: 3,
-        })
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          void v?.play().catch(() => {})
-        })
-        hls.loadSource(HLS_SRC)
-        hls.attachMedia(v)
-        return
-      }
-
-      // Safari 原生就能放 m3u8
-      if (v.canPlayType('application/vnd.apple.mpegurl')) {
-        v.src = HLS_SRC
-        void v.play().catch(() => {})
-      }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      v.pause()
+      v.removeAttribute('autoplay')
+      return
+    }
+    if (conn?.saveData) {
+      v.preload = 'none'
+      v.pause()
+      return
     }
 
-    timer = window.setTimeout(() => void boot(), 140)
-
-    return () => {
-      dead = true
-      window.clearTimeout(timer)
-      hls?.destroy()
-    }
+    void v.play().catch(() => {})
   }, [])
 
   return (
@@ -110,12 +78,13 @@ export default function LoadingScreen({ leaving = false }: { leaving?: boolean }
         <video
           ref={videoRef}
           className="ld-video"
+          src={VIDEO_SRC}
           poster={ribbonPoster}
           autoPlay
           loop
           muted
           playsInline
-          preload="none"
+          preload="auto"
           tabIndex={-1}
           disablePictureInPicture
         />
