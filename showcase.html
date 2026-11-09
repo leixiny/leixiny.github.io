@@ -50,9 +50,40 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 .bot .r:after{content:"";width:22px;height:1px;background:var(--ink)}
 #rule{position:absolute;left:3.5vw;right:3.5vw;top:50%;height:1px;background:var(--line);transform-origin:left;transform:scaleX(0)}
 #name{position:absolute;left:0;top:0;padding:6px 11px;background:var(--ink);color:var(--bg);border-radius:99px;font-size:11.5px;font-weight:600;letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .16s;white-space:nowrap}
+/* ---------- 作品详情：点定格后的卡片弹出，数据来自 projects.json ---------- */
+#detail{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:5vh 4vw;background:rgba(8,8,10,.78);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .24s}
+#detail.is-open{opacity:1;pointer-events:auto}
+.d-sheet{display:grid;grid-template-columns:minmax(0,46%) 1fr;width:min(940px,100%);max-height:86vh;background:#121214;border:1px solid var(--line);overflow:hidden;transform:translateY(12px);transition:transform .24s}
+#detail.is-open .d-sheet{transform:none}
+.d-art{position:relative;min-height:0;background:#0a0a0b;border-right:1px solid var(--line)}
+.d-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.d-body{padding:26px 30px 22px;overflow:auto;min-width:0;display:flex;flex-direction:column;gap:12px}
+.d-meta{font:400 11px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mid)}
+.d-title{font-size:clamp(20px,2.6vw,30px);font-weight:500;letter-spacing:-.01em;line-height:1.2}
+.d-desc{font-size:14px;line-height:1.65;color:var(--ink)}
+.d-result{display:flex;gap:12px;align-items:baseline;border-top:1px solid var(--line);padding-top:12px}
+.d-result span{font:400 10.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--mid);white-space:nowrap}
+.d-result p{font-size:13px;line-height:1.6;color:var(--mid)}
+.d-tags{list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.d-tags li{font:400 11px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:var(--mid);border:1px solid var(--line);border-radius:99px;padding:3px 10px}
+.d-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:8px}
+.d-count{font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:var(--mid)}
+.d-cta{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border:1px solid rgba(244,241,234,.55);border-radius:99px;color:var(--ink);text-decoration:none;font-size:12.5px;font-weight:500;letter-spacing:.05em;transition:background .2s,color .2s}
+.d-cta:hover{background:var(--ink);color:var(--bg)}
+.d-cta em{font-style:normal;transition:transform .2s}
+.d-cta:hover em{transform:translate(2px,-2px)}
+#d-close{position:absolute;top:calc(5vh + 10px);right:calc(4vw + 10px);width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:rgba(10,10,11,.6);color:var(--ink);font-size:19px;line-height:1;cursor:pointer;transition:background .2s,color .2s}
+#d-close:hover{background:var(--ink);color:var(--bg)}
 @media (max-width:760px){
   .top{left:18px;right:18px;top:18px}.bot{left:18px;right:18px;bottom:18px;grid-template-columns:1fr auto}.bot .mid{display:none}
   #hint,#pager,#cap{display:none}.bot p{max-width:17em;font-size:11px}
+  /* 详情：竖屏上下排，截图在上、文字在下，整层可滚 */
+  #detail{padding:3vh 3.5vw}
+  .d-sheet{grid-template-columns:1fr;max-height:90vh}
+  .d-art{aspect-ratio:16/10;border-right:0;border-bottom:1px solid var(--line)}
+  .d-body{padding:18px 18px 16px;gap:10px}
+  .d-foot{flex-wrap:wrap}
+  #d-close{top:calc(3vh + 8px);right:calc(3.5vw + 8px)}
   /* 三个出口在 390 宽下会挤成两行：收字号和左右留白，并且不许折行 */
   .acts{gap:5px}
   .acts a{height:28px;padding:0 9px;font-size:10.5px;letter-spacing:0;white-space:nowrap}
@@ -100,6 +131,24 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
     </footer>
     <div id="name"></div>
   </main>
+</div>
+
+<div id="detail" hidden>
+  <div class="d-sheet" role="dialog" aria-modal="true" aria-labelledby="d-title">
+    <figure class="d-art"><img id="d-img" alt=""></figure>
+    <div class="d-body">
+      <p class="d-meta" id="d-meta"></p>
+      <h2 class="d-title" id="d-title"></h2>
+      <p class="d-desc" id="d-desc"></p>
+      <div class="d-result" id="d-result"><span>结果</span><p id="d-result-p"></p></div>
+      <ul class="d-tags" id="d-tags"></ul>
+      <div class="d-foot">
+        <span class="d-count" id="d-count"></span>
+        <a class="d-cta" id="d-cta" href="#"><span id="d-cta-t"></span><em aria-hidden="true">↗</em></a>
+      </div>
+    </div>
+  </div>
+  <button id="d-close" aria-label="关闭">×</button>
 </div>
 
 <script type="module">
@@ -185,7 +234,7 @@ const cards = REEL.map(([title, src], i) => {
   mat.uniforms.map.value = tex;
   const geo = new THREE.PlaneGeometry(1, 1, NX, NY);
   const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; scene.add(mesh);
-  return {i, title, tex, geo, mat, mesh, inGrid:false, sc:1, scT:1};
+  return {i, title, src, tex, geo, mat, mesh, inGrid:false, sc:1, scT:1};
 });
 
 /* ---------- layout ---------- */
@@ -382,11 +431,12 @@ stageEl.addEventListener('wheel', e => {
 
 // 拖动平移（放大之后才有意义），手机单指拖、双指捏
 const pts = new Map();
-let drag = null, pinch = null;
+let drag = null, pinch = null, downPt = null;
 stageEl.addEventListener('pointerdown', e => {
   // 顶栏/底栏上的按钮不当拖动，否则 setPointerCapture 会把 click 抢走
   if (e.target.closest && e.target.closest('.top, .bot')) return;
   pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  downPt = pts.size === 1 ? {x:e.clientX, y:e.clientY} : null;
   if (!settled) return;
   if (pts.size === 1) {
     drag = {x:e.clientX, y:e.clientY, cx:camTo.x, cy:camTo.y};
@@ -423,10 +473,17 @@ stageEl.addEventListener('pointermove', e => {
   const hit = pick(e);
   for (const c of cards) c.scT = hit === c ? 1.05 : 1;
   nameEl.style.opacity = hit ? 1 : 0;
+  stageEl.style.cursor = hit ? 'pointer' : camTo.k > 1.02 ? 'grab' : 'default';
   if (hit) { nameEl.textContent = hit.title; nameEl.style.transform = `translate(${e.clientX + 14}px,${e.clientY + 16}px)`; }
 });
 function endPointer(e) {
   pts.delete(e.pointerId);
+  // 原地抬手（没拖、没捏）就是「点开这件作品」
+  if (settled && downPt && !pts.size && Math.hypot(e.clientX - downPt.x, e.clientY - downPt.y) < 8) {
+    const hit = pick(e);
+    if (hit) openDetail(hit);
+  }
+  downPt = null;
   if (pts.size < 2) pinch = null;
   if (!pts.size) {
     drag = null;
@@ -457,6 +514,50 @@ function loop(now) {
   render();
 }
 requestAnimationFrame(loop);
+
+/* ---------- 作品详情：点定格后的卡片弹出 ----------
+   资料和前台作品集共用 public/projects.json（后台改完这里也跟着变），
+   按封面路径对上号；JSON 拉不到就退回只剩标题，卡片照样能点 */
+let WORK_INFO = {};
+fetch('projects.json').then(r => r.ok ? r.json() : null).then(d => {
+  for (const p of (d && d.projects) || []) WORK_INFO[p.cover] = p;
+}).catch(() => {});
+
+const detail = $('detail');
+function openDetail(c) {
+  const w = WORK_INFO[c.src] || {};
+  $('d-img').src = c.src;
+  $('d-img').alt = c.title;
+  $('d-title').textContent = w.title || c.title;
+  $('d-meta').textContent = [w.period, w.role].filter(Boolean).join('  ·  ');
+  $('d-desc').textContent = w.summary || '';
+  $('d-result').style.display = w.result ? '' : 'none';
+  if (w.result) $('d-result-p').textContent = w.result;
+  const tags = $('d-tags');
+  tags.innerHTML = '';
+  for (const t of w.tags || []) { const li = document.createElement('li'); li.textContent = t; tags.appendChild(li); }
+  $('d-count').textContent = String((c.i % WORKS.length) + 1).padStart(2, '0') + ' / ' + String(WORKS.length).padStart(2, '0');
+  const cta = $('d-cta'), t = $('d-cta-t'), url = w.url || '';
+  if (url) {
+    const ext = /^https?:/i.test(url);
+    cta.href = ext ? url : (url.startsWith('#') ? 'index.html' + url : url);
+    t.textContent = ext ? '打开作品' : url.includes('index.html') ? '打开网站' : '进入系统';
+    if (ext) { cta.target = '_blank'; cta.rel = 'noreferrer'; } else { cta.removeAttribute('target'); cta.removeAttribute('rel'); }
+  } else {
+    // 没有公开网址的（课程作业那两件）：留一个聊天的口子
+    cta.href = 'mailto:3121410697@qq.com'; cta.removeAttribute('target'); cta.removeAttribute('rel');
+    t.textContent = '聊聊这个作品';
+  }
+  detail.hidden = false;
+  requestAnimationFrame(() => detail.classList.add('is-open'));
+}
+function closeDetail() {
+  detail.classList.remove('is-open');
+  setTimeout(() => { detail.hidden = true; }, 260);
+}
+detail.addEventListener('click', e => { if (e.target === detail) closeDetail(); });
+$('d-close').addEventListener('click', closeDetail);
+addEventListener('keydown', e => { if (e.key === 'Escape' && !detail.hidden) closeDetail(); });
 
 /* ---------- pager：← 从头再放一遍，→ 直接跳到最后 ---------- */
 const pagerSr = document.querySelectorAll('#pager span');
