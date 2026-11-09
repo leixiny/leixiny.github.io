@@ -1,0 +1,1 @@
+var e=new Map,t=3e5;function n(n){let r=e.get(n);if(r){if(Date.now()-r.at>t)e.delete(n);else return r.data}}function r(t,n){e.set(t,{data:n,at:Date.now()})}function i(e,t=260){let n=0,r=(...r)=>{window.clearTimeout(n),n=window.setTimeout(()=>e(...r),t)};return r.cancel=()=>window.clearTimeout(n),r}export{n,r,i as t};
