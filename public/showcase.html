@@ -39,6 +39,8 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 .acts a{display:flex;align-items:center;gap:9px;height:32px;padding:0 15px;border:1px solid rgba(244,241,234,.55);border-radius:99px;color:var(--ink);text-decoration:none;font-size:12px;font-weight:500;letter-spacing:.06em;transition:background .2s,color .2s}
 .acts a:hover{background:var(--ink);color:var(--bg)}
 .acts a i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.acts a em{font-style:normal;font-size:12px;line-height:1;transition:transform .2s}
+.acts a:hover em{transform:translateX(2px)}
 .acts a b{display:block;width:13px;height:7px;border-top:1px solid currentColor;border-bottom:1px solid currentColor}
 #hint{position:absolute;left:50%;top:33px;transform:translateX(-50%);font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:var(--ink);padding-bottom:6px;border-bottom:1px solid var(--line);text-decoration:none}
 .bot{position:absolute;left:32px;right:32px;bottom:26px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;font-size:12.5px;line-height:1.35;pointer-events:none}
@@ -51,6 +53,14 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 @media (max-width:760px){
   .top{left:18px;right:18px;top:18px}.bot{left:18px;right:18px;bottom:18px;grid-template-columns:1fr auto}.bot .mid{display:none}
   #hint,#pager,#cap{display:none}.bot p{max-width:17em;font-size:11px}
+  /* 三个出口在 390 宽下会挤成两行：收字号和左右留白，并且不许折行 */
+  .acts{gap:5px}
+  .acts a{height:28px;padding:0 9px;font-size:10.5px;letter-spacing:0;white-space:nowrap}
+  .acts a i{width:5px;height:5px}
+}
+@media (max-width:400px){
+  /* 再窄一点就只剩两个入口：邮件在手机上本来就能从系统邮件里发 */
+  .acts a[href^="mailto"]{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   .hl{will-change:auto}
@@ -81,7 +91,7 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
     <header class="top" id="top">
       <div class="logo"><svg viewBox="0 0 22 18"><path d="M11 0l11 18h-6.200L11 9.600 6.200 18H0z"/></svg>雷馨怡</div>
       <div id="pager"><span title="重播">←</span><span title="直接看作品">→</span></div>
-      <nav class="acts"><a href="mailto:3121410697@qq.com"><i></i>聊一聊</a><a href="index.html">回首页<b></b></a></nav>
+      <nav class="acts"><a href="mailto:3121410697@qq.com"><i></i>聊一聊</a><a href="index.html#/app">回管理系统<em>→</em></a><a href="index.html">回首页<b></b></a></nav>
     </header>
     <footer class="bot" id="bot">
       <p>客户系统、数据看板、用户调研、网站 —— 都从真实问题做到能用。</p>
