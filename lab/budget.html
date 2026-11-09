@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>预算分配模拟器 · 雷馨怡</title>
+<meta name="description" content="三个投放渠道的边际回报递减模型：拖动分配，实时看总转化与每块钱的边际产出。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .budget-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .budget-line b { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.02em; }
+  .budget-line span { font-size: 12px; color: var(--mute); }
+
+  .ch { margin-top: 16px; }
+  .ch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+  .ch-name { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+  .ch-name i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+  .ch-num { font-size: 12.5px; color: var(--mute); font-variant-numeric: tabular-nums; }
+  .ch-num b { color: var(--ink); font-weight: 700; }
+
+  .ch-track { position: relative; height: 8px; border-radius: 999px; background: var(--soft); overflow: hidden; }
+  .ch-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; transition: width .25s var(--ease); }
+
+  /* 滑杆叠在色条上：只留一个拇指，视觉上就是「拖这根条」 */
+  .ch input[type='range'] {
+    position: relative;
+    z-index: 1;
+    height: 20px;
+    margin: -14px 0 0;
+    background: transparent;
+  }
+  .ch input[type='range']::-webkit-slider-runnable-track { height: 8px; background: transparent; }
+  .ch input[type='range']::-moz-range-track { height: 8px; background: transparent; }
+  .ch input[type='range']::-webkit-slider-thumb { width: 16px; height: 16px; }
+  .ch input[type='range']::-moz-range-thumb { width: 14px; height: 14px; }
+
+  .ch-foot {
+    display: flex; flex-wrap: wrap; gap: 4px 14px;
+    margin-top: 6px; font-size: 11.5px; color: var(--faint);
+  }
+  .ch-foot b { color: var(--ink-2); font-weight: 650; }
+
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    border-radius: 14px;
+    background: var(--soft);
+    margin-top: 18px;
+  }
+  .compare > div { text-align: center; }
+  .compare small { display: block; font-size: 11.5px; color: var(--mute); margin-bottom: 4px; }
+  .compare b { font-size: clamp(20px, 2.4vw, 26px); letter-spacing: -.02em; }
+  .compare .arrow { font-size: 18px; color: var(--faint); }
+  .compare .gain { color: var(--pink); font-size: 12.5px; font-weight: 650; margin-top: 2px; }
+
+  .hint-inline { font-size: 12px; color: var(--mute); margin-top: 10px; line-height: 1.65; }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>数据实验室</b> / 03</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Growth / Budget</span>
+  <h1 class="lab-title">钱该往哪个渠道多放一点？</h1>
+  <p class="lab-lede">
+    每个渠道都有边际回报递减：信息流投得越多，最后一块钱带来的转化越少。
+    拖一拖分配比例，看看总转化怎么变；再点一下「按边际回报重排」，看理论最优能多拿多少。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>预算</h2><span id="budgetTag">每月</span></div>
+        <div class="budget-line">
+          <b id="budgetNum">¥12,000</b>
+          <span>总预算</span>
+        </div>
+        <input id="budget" type="range" min="6000" max="30000" step="1000" value="12000" aria-label="总预算">
+
+        <div class="hint-inline">
+          分配比例始终合计 100%。拖动某一档，另外两档会按原比例让位。
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>渠道分配</h2><span id="mixTag">70 / 20 / 10</span></div>
+        <div id="channels"></div>
+        <div style="margin-top:16px">
+          <button class="btn btn-ghost" id="optimize" type="button">按边际回报重排</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>这个月能拿多少</h2><span id="cpaTag">混合 CPA ¥13.8</span></div>
+
+        <div class="stat-row">
+          <dl class="stat"><dt>总转化</dt><dd id="totalConv">—</dd></dl>
+          <dl class="stat"><dt>混合 CPA</dt><dd id="cpa">—</dd></dl>
+          <dl class="stat"><dt>最高边际渠道</dt><dd id="bestCh" style="font-size:19px">—</dd></dl>
+        </div>
+
+        <div class="compare">
+          <div>
+            <small id="nowLabel">当前分配</small>
+            <b id="nowConv">—</b>
+            <div class="gain" id="nowGain">转化 / 月</div>
+          </div>
+          <span class="arrow">→</span>
+          <div>
+            <small id="optLabel">同样预算的最优解</small>
+            <b id="optConv">—</b>
+            <div class="gain" id="optGain">—</div>
+          </div>
+        </div>
+
+        <p class="note" id="optNote">
+          最优解把预算分到每个渠道的「最后一块钱产出」相等为止 —— 饱和模型下的水位填充。
+        </p>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>模型</h2><span>示例参数</span></div>
+        <p class="note">
+          每个渠道的转化是 <strong>转化 = k × (1 − e^(−花费 / s))</strong>：k 是天花板，s 是饱和速度。
+          边际回报 = 导数，也就是「再加 ¥1 能多换几个转化」。真实投放里这两个参数要用历史数据拟合。
+        </p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>示例参数，仅作演示 · 饱和响应模型</span>
+  <a href="../showcase.html">看作品集 →</a>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const money = (n) => '¥' + Math.round(n).toLocaleString('zh-CN');
+const num = (n) => Math.round(n).toLocaleString('zh-CN');
+
+const CH = [
+  { id: 'feed', name: '信息流', k: 520, s: 4200, color: '#2f9de5' },
+  { id: 'search', name: '搜索', k: 380, s: 2600, color: '#7c8cf8' },
+  { id: 'content', name: '内容', k: 260, s: 1800, color: '#f2698c' },
+];
+const conv = (c, x) => c.k * (1 - Math.exp(-x / c.s));
+const marginal = (c, x) => (c.k / c.s) * Math.exp(-x / c.s);
+
+let budget = 12000;
+let mix = { feed: 70, search: 20, content: 10 };
+/** 点过「按边际回报重排」之后，记下重排前的那一份，用来比前后 */
+let before = null;
+
+function spendOf(c) { return (budget * mix[c.id]) / 100; }
+
+function totalFor(m) {
+  return CH.reduce((sum, c) => sum + conv(c, (budget * m[c.id]) / 100), 0);
+}
+
+// 水 filling：把预算切成 400 份，每一份给当下边际回报最高的渠道
+function optimalMix() {
+  const spend = { feed: 0, search: 0, content: 0 };
+  const step = budget / 400;
+  for (let i = 0; i < 400; i++) {
+    let best = CH[0], bestV = -1;
+    for (const c of CH) {
+      const v = marginal(c, spend[c.id]);
+      if (v > bestV) { bestV = v; best = c; }
+    }
+    spend[best.id] += step;
+  }
+  const m = {};
+  for (const c of CH) m[c.id] = (spend[c.id] / budget) * 100;
+  return m;
+}
+
+function renderChannels() {
+  const box = $('channels');
+  box.innerHTML = '';
+  for (const c of CH) {
+    const x = spendOf(c);
+    const cv = conv(c, x);
+    const mg = marginal(c, x);
+    const el = document.createElement('div');
+    el.className = 'ch';
+    el.innerHTML = `
+      <div class="ch-head">
+        <span class="ch-name"><i style="background:${c.color}"></i>${c.name}</span>
+        <span class="ch-num"><b>${money(x)}</b> · ${Math.round(mix[c.id])}%</span>
+      </div>
+      <div class="ch-track"><div class="ch-fill" style="width:${mix[c.id]}%;background:${c.color}"></div></div>
+      <input type="range" min="0" max="100" step="1" value="${Math.round(mix[c.id])}" data-ch="${c.id}" aria-label="${c.name}分配比例">
+      <div class="ch-foot">
+        <span>转化 <b>${num(cv)}</b></span>
+        <span>边际 <b>${(mg * 1000).toFixed(1)}</b> / 千元</span>
+        <span>CPA <b>${money(x / Math.max(cv, 1))}</b></span>
+      </div>`;
+    box.appendChild(el);
+  }
+  for (const input of box.querySelectorAll('input[type=range]')) {
+    input.addEventListener('input', () => setMix(input.dataset.ch, Number(input.value)));
+  }
+}
+
+function setMix(id, val) {
+  before = null;
+  val = Math.max(0, Math.min(100, val));
+  const others = CH.filter((c) => c.id !== id);
+  const rest = 100 - val;
+  const oldRest = others.reduce((s, c) => s + mix[c.id], 0);
+  if (oldRest <= 0.001) {
+    mix[others[0].id] = rest / 2;
+    mix[others[1].id] = rest / 2;
+  } else {
+    mix[others[0].id] = (mix[others[0].id] / oldRest) * rest;
+    mix[others[1].id] = (mix[others[1].id] / oldRest) * rest;
+  }
+  mix[id] = val;
+  render();
+}
+
+function render() {
+  $('budgetNum').textContent = money(budget);
+  $('mixTag').textContent = CH.map((c) => Math.round(mix[c.id])).join(' / ');
+
+  renderChannels();
+
+  const total = totalFor(mix);
+  const cpa = budget / Math.max(total, 1);
+  $('totalConv').textContent = num(total);
+  $('cpa').textContent = money(cpa);
+  $('cpaTag').textContent = `混合 CPA ${money(cpa)}`;
+
+  let best = CH[0];
+  for (const c of CH) if (marginal(c, spendOf(c)) > marginal(best, spendOf(best))) best = c;
+  $('bestCh').textContent = best.name;
+
+  const opt = optimalMix();
+  const optTotal = totalFor(opt);
+  if (before) {
+    // 刚重排过：左边留着重排前的真实分配，右边就是现在屏幕上的数
+    const g = (total / Math.max(before.total, 1) - 1) * 100;
+    $('nowLabel').textContent = '重排前';
+    $('optLabel').textContent = '重排后';
+    $('nowConv').textContent = num(before.total);
+    $('nowGain').textContent = before.mix;
+    $('optConv').textContent = num(total);
+    $('optGain').textContent = '+' + g.toFixed(1) + '%';
+    $('optGain').style.color = 'var(--pink)';
+    $('optNote').innerHTML = `同样 <strong>${money(budget)}</strong> 的预算，按边际回报重排后多拿 <strong>${num(total - before.total)}</strong> 个转化。再拖动滑杆，就是在这个新起点上继续调。`;
+  } else {
+    $('nowLabel').textContent = '当前分配';
+    $('optLabel').textContent = '同样预算的最优解';
+    $('nowConv').textContent = num(total);
+    $('nowGain').textContent = '转化 / 月';
+    $('optConv').textContent = num(optTotal);
+    const gain = total > 0 ? (optTotal / total - 1) * 100 : 0;
+    $('optGain').textContent = (gain >= 0.05 ? '+' : '') + gain.toFixed(1) + '%';
+    $('optGain').style.color = gain > 1 ? 'var(--pink)' : 'var(--mute)';
+
+    $('optNote').innerHTML = gain > 1
+      ? `当前分配比最优解少 <strong>${num(optTotal - total)}</strong> 个转化。最优比例约为 ${CH.map((c) => Math.round(opt[c.id]) + '%').join(' / ')}，点上面的按钮可以套用。`
+      : '当前分配已经很接近最优，再挪动预算也换不来多少转化 —— 这时候该考虑换素材或换渠道，而不是继续调比例。';
+  }
+}
+
+$('budget').addEventListener('input', (e) => {
+  budget = Number(e.target.value);
+  before = null;
+  render();
+});
+
+$('optimize').addEventListener('click', () => {
+  // 先把眼下的分配记下来，右边才有东西可比
+  before = { total: totalFor(mix), mix: CH.map((c) => Math.round(mix[c.id])).join(' / ') };
+  mix = optimalMix();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

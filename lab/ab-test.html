@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A/B 实验显著性计算器 · 雷馨怡</title>
+<meta name="description" content="输入两组访客与转化，实时算 z 值、p 值、95% 置信区间，并给出还需要的样本量。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .ab-bars {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(18px, 3vw, 40px);
+    align-items: end;
+    height: clamp(200px, 26vw, 260px);
+    margin: 6px 0 4px;
+  }
+  .ab-bar { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 10px; }
+  .ab-track { position: relative; flex: 1; display: flex; align-items: flex-end; }
+  .ab-fill {
+    position: relative;
+    width: 100%;
+    min-height: 4px;
+    border-radius: 10px 10px 4px 4px;
+    transition: height .35s var(--ease);
+  }
+  .ab-fill.a { background: #d9d9de; }
+  .ab-fill.b { background: var(--grad); }
+  .ab-val {
+    position: absolute; top: -26px; left: 0; right: 0;
+    font-size: clamp(18px, 2.4vw, 24px); font-weight: 750; letter-spacing: -.02em;
+  }
+  .ab-meta { font-size: 12.5px; line-height: 1.5; color: var(--mute); }
+  .ab-meta b { display: block; margin-bottom: 2px; font-size: 13.5px; color: var(--ink); }
+
+  .diff-wrap { margin-top: 22px; }
+  .diff-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--mute); margin-bottom: 8px; }
+  .diff-track {
+    position: relative; height: 34px; border-radius: 8px;
+    background: linear-gradient(90deg, #f3f3f5, #fbfbfc 50%, #f3f3f5);
+    border: 1px solid var(--line);
+  }
+  .diff-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--ink-2); }
+  .diff-zero::after {
+    content: '0'; position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
+    font-size: 10.5px; color: var(--mute);
+  }
+  .diff-band {
+    position: absolute; top: 7px; height: 20px; border-radius: 999px;
+    background: rgb(47 157 229 / .16); border: 1px solid rgb(47 157 229 / .5);
+    transition: left .3s var(--ease), width .3s var(--ease);
+  }
+  .diff-dot {
+    position: absolute; top: 4px; width: 26px; height: 26px; margin-left: -13px;
+    border-radius: 50%; background: var(--ink); border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgb(0 0 0 / .2);
+    transition: left .3s var(--ease);
+  }
+
+  .verdict {
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-top: 20px; padding: 15px 16px;
+    border-radius: 14px; background: var(--soft);
+    transition: background .3s var(--ease);
+  }
+  .verdict.is-sig { background: linear-gradient(100deg, rgb(47 157 229 / .09), rgb(242 105 140 / .09)); }
+  .verdict em { font-style: normal; font-size: 20px; line-height: 1; }
+  .verdict b { display: block; font-size: 14.5px; margin-bottom: 4px; }
+  .verdict p { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); }
+
+  .p-meter { margin-top: 20px; }
+  .p-track { position: relative; height: 6px; border-radius: 999px; background: var(--line); }
+  .p-thresh { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink-2); }
+  .p-mark {
+    position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+    border-radius: 50%; background: var(--pink); border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgb(0 0 0 / .2); transition: left .3s var(--ease);
+  }
+  .p-labels { display: flex; justify-content: space-between; margin-top: 7px; font-size: 11px; color: var(--faint); }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>数据实验室</b> / 01</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Experiment / AB Test</span>
+  <h1 class="lab-title">两组数字，差得算不算数？</h1>
+  <p class="lab-lede">
+    转化率从 8.0% 涨到 9.7%，是改动真的起作用，还是随机波动？输入两组的访客与转化，
+    这个页面会把双样本比例检验算完：z 值、p 值、差值区间，以及要下结论还差多少样本。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>实验数据</h2><span>两独立样本</span></div>
+
+        <div class="field">
+          <label>A 组 · 访客</label>
+          <input id="aN" type="number" min="0" step="10" value="2400">
+        </div>
+        <div class="field">
+          <label>A 组 · 转化</label>
+          <input id="aX" type="number" min="0" step="1" value="192">
+        </div>
+
+        <div class="field" style="margin-top:20px">
+          <label>B 组 · 访客</label>
+          <input id="bN" type="number" min="0" step="10" value="2380">
+        </div>
+        <div class="field">
+          <label>B 组 · 转化</label>
+          <input id="bX" type="number" min="0" step="1" value="232">
+        </div>
+
+        <div style="margin-top:18px">
+          <button class="btn btn-ghost" id="reset" type="button">恢复示例数据</button>
+        </div>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>怎么读</h2></div>
+        <p class="note">
+          p 值回答的是：如果两组其实没有差别，出现这么大差距的概率有多大。
+          小于 <strong>0.05</strong> 才按惯例称为「显著」。
+          但显著不等于重要 —— 样本足够大时，0.1 个百分点的差距也能显著。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>结果</h2><span id="stamp">双尾检验 · α = 0.05</span></div>
+
+        <div class="stat-row">
+          <dl class="stat"><dt>A 组转化率</dt><dd id="rateA">8.00<small>%</small></dd></dl>
+          <dl class="stat" id="upliftCard"><dt>B 组相对提升</dt><dd id="uplift">+22.1<small>%</small></dd></dl>
+          <dl class="stat"><dt>p 值</dt><dd id="pval">0.033</dd></dl>
+        </div>
+
+        <div class="ab-bars">
+          <div class="ab-bar">
+            <div class="ab-track"><div class="ab-fill a" id="barA" style="height:82%"><span class="ab-val" id="barValA">8.00%</span></div></div>
+            <div class="ab-meta"><b>A 组</b><span id="metaA">2,400 访客 · 192 转化</span></div>
+          </div>
+          <div class="ab-bar">
+            <div class="ab-track"><div class="ab-fill b" id="barB" style="height:100%"><span class="ab-val" id="barValB">9.75%</span></div></div>
+            <div class="ab-meta"><b>B 组</b><span id="metaB">2,380 访客 · 232 转化</span></div>
+          </div>
+        </div>
+
+        <div class="diff-wrap">
+          <div class="diff-head">
+            <span>差值 95% 置信区间</span>
+            <span id="diffText">+1.75pp（+0.13 ~ +3.36）</span>
+          </div>
+          <div class="diff-track" id="diffTrack">
+            <div class="diff-zero" id="zeroLine" style="left:50%"></div>
+            <div class="diff-band" id="diffBand"></div>
+            <div class="diff-dot" id="diffDot"></div>
+          </div>
+        </div>
+
+        <div class="p-meter">
+          <div class="diff-head" style="margin-bottom:6px">
+            <span>p 值落在这里</span><span id="zText">z = 2.13</span>
+          </div>
+          <div class="p-track">
+            <div class="p-thresh" id="pThresh"></div>
+            <div class="p-mark" id="pMark"></div>
+          </div>
+          <div class="p-labels"><span>0</span><span>0.05 显著线</span><span>0.2</span></div>
+        </div>
+
+        <div class="verdict" id="verdict">
+          <em id="vIcon">✓</em>
+          <div>
+            <b id="vTitle">差异显著，可以下结论</b>
+            <p id="vText">B 组比 A 组高 1.75 个百分点，p = 0.033。按 α = 0.05，这个差距不太可能来自随机波动。</p>
+          </div>
+        </div>
+
+        <p class="note" id="needNote">想稳定识别 10% 的相对提升，每组大约还需要 2,300 人。</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>示例数据，仅作演示 · 双样本比例 z 检验</span>
+  <a href="../showcase.html">看作品集 →</a>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (n, d = 2) => n.toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (n, d = 2) => fmt(n * 100, d) + '%';
+
+// 标准正态分布函数：用 Abramowitz–Stegun 的 erf 近似，误差 < 1.5e-7
+function erf(x) {
+  const s = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return s * y;
+}
+const phi = (z) => 0.5 * (1 + erf(z / Math.SQRT2));
+
+const DEFAULTS = { aN: 2400, aX: 192, bN: 2380, bX: 232 };
+
+function readInputs() {
+  const v = {};
+  for (const k of Object.keys(DEFAULTS)) v[k] = Math.max(0, Number($(k).value) || 0);
+  // 转化不可能多于访客
+  v.aX = Math.min(v.aX, v.aN);
+  v.bX = Math.min(v.bX, v.bN);
+  return v;
+}
+
+function render() {
+  const { aN, aX, bN, bX } = readInputs();
+  const p1 = aN ? aX / aN : 0;
+  const p2 = bN ? bX / bN : 0;
+  const diff = p2 - p1;
+  const pooled = aN + bN ? (aX + bX) / (aN + bN) : 0;
+  const sePooled = Math.sqrt(pooled * (1 - pooled) * (1 / (aN || 1) + 1 / (bN || 1)));
+  const z = sePooled > 0 ? diff / sePooled : 0;
+  const p = 2 * (1 - phi(Math.abs(z)));
+  const seDiff = Math.sqrt((p1 * (1 - p1)) / (aN || 1) + (p2 * (1 - p2)) / (bN || 1));
+  const lo = diff - 1.96 * seDiff;
+  const hi = diff + 1.96 * seDiff;
+
+  // 预览数字
+  $('rateA').innerHTML = fmt(p1 * 100) + '<small>%</small>';
+  $('barValA').textContent = pct(p1);
+  $('barValB').textContent = pct(p2);
+  $('metaA').textContent = `${aN.toLocaleString('zh-CN')} 访客 · ${aX.toLocaleString('zh-CN')} 转化`;
+  $('metaB').textContent = `${bN.toLocaleString('zh-CN')} 访客 · ${bX.toLocaleString('zh-CN')} 转化`;
+  $('pval').textContent = p < 0.001 ? '<0.001' : fmt(p, 3);
+  $('zText').textContent = `z = ${fmt(z, 2)}`;
+  $('diffText').textContent = `${diff >= 0 ? '+' : ''}${fmt(diff * 100)}pp（${lo >= 0 ? '+' : ''}${fmt(lo * 100)} ~ ${hi >= 0 ? '+' : ''}${fmt(hi * 100)}）`;
+
+  const uplift = p1 > 0 ? (p2 - p1) / p1 : 0;
+  $('uplift').innerHTML = `${uplift >= 0 ? '+' : ''}${fmt(uplift * 100, 1)}<small>%</small>`;
+  $('upliftCard').className = 'stat ' + (uplift >= 0 ? 'is-up' : 'is-down');
+
+  // 柱高：以较大的转化率为满格，留 8% 顶空
+  const top = Math.max(p1, p2, 0.0001) * 1.12;
+  $('barA').style.height = Math.max(2, (p1 / top) * 100) + '%';
+  $('barB').style.height = Math.max(2, (p2 / top) * 100) + '%';
+
+  // 差值区间：以 0 为中点，左右各取 max(|lo|,|hi|) 的 1.25 倍
+  const reach = Math.max(Math.abs(lo), Math.abs(hi), 0.0008) * 1.25;
+  const toX = (v) => 50 + (v / reach) * 50;
+  $('zeroLine').style.left = '50%';
+  const bandL = Math.min(toX(lo), toX(hi));
+  const bandW = Math.abs(toX(hi) - toX(lo));
+  $('diffBand').style.left = bandL + '%';
+  $('diffBand').style.width = Math.max(0.6, bandW) + '%';
+  $('diffDot').style.left = Math.max(2, Math.min(98, toX(diff))) + '%';
+
+  // p 值刻度：0 ~ 0.2
+  const pX = Math.max(0, Math.min(1, p / 0.2)) * 100;
+  $('pMark').style.left = pX + '%';
+  $('pThresh').style.left = (0.05 / 0.2) * 100 + '%';
+
+  // 结论
+  const sig = p < 0.05;
+  $('verdict').className = 'verdict' + (sig ? ' is-sig' : '');
+  $('vIcon').textContent = sig ? '✓' : '·';
+  $('vTitle').textContent = sig
+    ? (diff > 0 ? '差异显著：B 组更好' : '差异显著：A 组更好')
+    : '还看不出差别';
+  $('vText').textContent = sig
+    ? `${diff > 0 ? 'B' : 'A'} 组高出 ${fmt(Math.abs(diff) * 100)} 个百分点，p = ${fmt(p, 3)}。按 α = 0.05，这个差距不太可能来自随机波动。`
+    : `当前 p = ${fmt(p, 3)}，还没越过 0.05。差距可能真实存在，也可能只是样本噪声 —— 继续积累数据再判断。`;
+
+  // 需要多少样本：按 10% 相对提升、80% 把握度、双侧 0.05
+  const base = p1 > 0 ? p1 : 0.05;
+  const delta = base * 0.1;
+  const need = Math.ceil((2 * base * (1 - base) * Math.pow(1.96 + 0.84, 2)) / (delta * delta));
+  $('needNote').innerHTML = sig
+    ? `若想在下一轮稳定识别 <strong>10%</strong> 的相对提升（80% 把握度），每组约需 <strong>${need.toLocaleString('zh-CN')}</strong> 人。`
+    : `按当前基线，想识别 <strong>10%</strong> 的相对提升（80% 把握度），每组约需 <strong>${need.toLocaleString('zh-CN')}</strong> 人；还差 ${Math.max(0, need - Math.min(aN, bN)).toLocaleString('zh-CN')} 人。`;
+}
+
+for (const k of Object.keys(DEFAULTS)) $(k).addEventListener('input', render);
+$('reset').addEventListener('click', () => {
+  for (const [k, v] of Object.entries(DEFAULTS)) $(k).value = v;
+  render();
+});
+render();
+</script>
+</body>
+</html>

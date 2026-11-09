@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>留存分析台 · 雷馨怡</title>
+<meta name="description" content="八个注册队列的留存矩阵：热力图看结构，曲线看衰减，鼠标悬停读每一格。">
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="lab.css">
+<style>
+  .seg {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--soft);
+    border: 1px solid var(--line);
+  }
+  .seg button {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--mute);
+    cursor: pointer;
+    transition: background .2s var(--ease), color .2s var(--ease);
+  }
+  .seg button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+
+  .heat-wrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px 4px; }
+  table.heat { border-collapse: separate; border-spacing: 3px; width: 100%; min-width: 520px; }
+  table.heat th, table.heat td { text-align: center; font-size: 12px; }
+  table.heat thead th {
+    padding: 4px 0 8px;
+    font-weight: 600;
+    color: var(--faint);
+    font-size: 11px;
+    letter-spacing: .04em;
+  }
+  table.heat tbody th {
+    padding: 0 10px 0 2px;
+    text-align: left;
+    white-space: nowrap;
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+  table.heat tbody th small { display: block; font-weight: 500; color: var(--faint); font-size: 10.5px; }
+  td.cell {
+    height: 40px;
+    border-radius: 7px;
+    cursor: default;
+    transition: transform .14s var(--ease), box-shadow .14s var(--ease);
+    font-variant-numeric: tabular-nums;
+  }
+  td.cell:hover { transform: scale(1.06); box-shadow: 0 3px 10px rgb(0 0 0 / .18); position: relative; z-index: 2; }
+  td.cell.is-empty { background: repeating-linear-gradient(135deg, #fafafa, #fafafa 5px, #f3f3f5 5px, #f3f3f5 10px); }
+  tr.avg th { color: var(--ink); }
+  tr.avg td { font-weight: 750; }
+
+  .chart-wrap { position: relative; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 11.5px; color: var(--mute); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 14px; height: 3px; border-radius: 2px; display: block; }
+
+  .tip {
+    position: fixed;
+    z-index: 30;
+    pointer-events: none;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 11.5px;
+    line-height: 1.5;
+    box-shadow: 0 6px 18px rgb(0 0 0 / .22);
+    opacity: 0;
+    transform: translate(-50%, -120%);
+    transition: opacity .12s var(--ease);
+    white-space: nowrap;
+  }
+  .tip.is-on { opacity: 1; }
+
+  .is-curve .heat-wrap { display: none; }
+  .is-curve .chart-wrap { display: block; }
+  .chart-wrap { display: none; }
+</style>
+</head>
+<body>
+
+<header class="lab-top">
+  <a class="lab-back" href="../index.html#/home">← 回到主页</a>
+  <span class="lab-mark">雷馨怡 · <b>数据实验室</b> / 02</span>
+</header>
+
+<main class="lab-main">
+  <span class="lab-kicker"><i></i>Retention / Cohort</span>
+  <h1 class="lab-title">用户是走散了，还是一周就散了？</h1>
+  <p class="lab-lede">
+    把八个注册队列按「注册后第几周」排成矩阵：横着看是同一个队列的衰减，竖着看是同一周龄的横向对比。
+    数字是示例数据，交互是真的。
+  </p>
+
+  <div class="lab-grid">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><h2>视图</h2><span>8 个队列</span></div>
+        <div class="seg" role="group" aria-label="切换视图">
+          <button type="button" data-view="heat" aria-pressed="true">热力图</button>
+          <button type="button" data-view="curve" aria-pressed="false">留存曲线</button>
+        </div>
+
+        <div class="field" style="margin-top:20px">
+          <button class="btn btn-ghost" id="reseed" type="button">换一组示例数据</button>
+        </div>
+      </div>
+
+      <div class="panel panel-soft">
+        <div class="panel-head"><h2>读法</h2></div>
+        <p class="note">
+          深色 = 留在产品里的人多。真正的信号在<strong>竖列</strong>：同一周龄的留存如果逐队列变高，
+          说明产品在变好；只看整体平均会被新用户占比稀释。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="panel" id="board">
+        <div class="panel-head"><h2>留存矩阵</h2><span id="boardHint">W0 = 注册当周</span></div>
+
+        <div class="heat-wrap">
+          <table class="heat" id="heatTable"></table>
+        </div>
+
+        <div class="chart-wrap" id="chartWrap">
+          <svg id="chart" viewBox="0 0 640 280" role="img" aria-label="各队列留存曲线"></svg>
+          <div class="legend">
+            <span><i style="background:#d6d6da"></i>单个队列</span>
+            <span><i style="background:linear-gradient(90deg,#2f9de5,#f2698c)"></i>队列平均</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="stat-row">
+          <dl class="stat"><dt>次周留存（平均）</dt><dd id="s1">—</dd></dl>
+          <dl class="stat"><dt>第 4 周留存（平均）</dt><dd id="s4">—</dd></dl>
+          <dl class="stat"><dt>最好 / 最差队列</dt><dd id="sBest" style="font-size:19px">—</dd></dl>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="lab-foot">
+  <span>示例数据，仅作演示 · 每个队列 1,000+ 注册用户</span>
+  <a href="../showcase.html">看作品集 →</a>
+</footer>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const pct = (v) => (v * 100).toFixed(1) + '%';
+
+// 确定性随机：换种子就换一组数据，同一颗种子永远是同一张表
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+let seed = 20261109;
+let cohorts = [];
+
+function build() {
+  const rnd = mulberry32(seed);
+  cohorts = [];
+  for (let i = 0; i < 8; i++) {
+    const size = Math.round(1050 + rnd() * 520);
+    const quality = 0.5 + rnd() * 0.2;
+    const row = [1];
+    const weeks = 7 - i; // 越新的队列观察窗口越短
+    for (let w = 1; w <= weeks; w++) {
+      const decay = quality * (0.76 + rnd() * 0.12);
+      row.push(Math.max(0.015, row[w - 1] * decay));
+    }
+    cohorts.push({ week: i + 1, size, row });
+  }
+}
+
+const avgAt = (life) => {
+  const vals = cohorts.filter((c) => c.row[life] != null).map((c) => c.row[life]);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+};
+
+const tip = $('tip');
+function showTip(e, html) {
+  tip.innerHTML = html;
+  tip.style.left = e.clientX + 'px';
+  tip.style.top = e.clientY + 'px';
+  tip.classList.add('is-on');
+}
+const hideTip = () => tip.classList.remove('is-on');
+
+function renderTable() {
+  const t = $('heatTable');
+  let head = '<thead><tr><th></th><th>人数</th>';
+  for (let w = 0; w < 8; w++) head += `<th>W${w}</th>`;
+  head += '</tr></thead>';
+
+  let body = '<tbody>';
+  for (const c of cohorts) {
+    body += `<tr><th>第 ${c.week} 周</th><td style="color:var(--faint);font-size:11px">${c.size.toLocaleString('zh-CN')}</td>`;
+    for (let w = 0; w < 8; w++) {
+      const v = c.row[w];
+      if (v == null) { body += '<td class="cell is-empty"></td>'; continue; }
+      const a = Math.min(1, v / 0.72);
+      const bg = `rgba(47,157,229,${(0.07 + a * 0.86).toFixed(3)})`;
+      const col = a > 0.52 ? '#fff' : 'var(--ink-2)';
+      const label = w === 0 ? '100%' : pct(v);
+      body += `<td class="cell" style="background:${bg};color:${col}" data-week="${c.week}" data-life="${w}" data-v="${v}">${label}</td>`;
+    }
+    body += '</tr>';
+  }
+  // 平均行
+  body += '<tr class="avg"><th>平均</th><td></td>';
+  for (let w = 0; w < 8; w++) {
+    const v = avgAt(w);
+    body += `<td class="cell" style="background:#fff;color:var(--ink)">${v == null ? '—' : pct(v)}</td>`;
+  }
+  body += '</tr></tbody>';
+  t.innerHTML = head + body;
+
+  for (const td of t.querySelectorAll('td.cell[data-v]')) {
+    td.addEventListener('mousemove', (e) => {
+      const v = Number(td.dataset.v);
+      showTip(e, `第 ${td.dataset.week} 周队列 · W${td.dataset.life}<br>留存 ${pct(v)}`);
+    });
+    td.addEventListener('mouseleave', hideTip);
+  }
+}
+
+function curvePoints(row, width, height, pad) {
+  const pts = [];
+  const n = row.length;
+  for (let i = 0; i < n; i++) {
+    const x = pad.l + (i / Math.max(1, n - 1)) * (width - pad.l - pad.r);
+    const y = pad.t + (1 - Math.min(1, row[i])) * (height - pad.t - pad.b);
+    pts.push([x, y]);
+  }
+  return pts;
+}
+
+function renderChart() {
+  const svg = $('chart');
+  const W = 640, H = 280, pad = { l: 42, r: 16, t: 16, b: 34 };
+  const yFor = (v) => pad.t + (1 - v) * (H - pad.t - pad.b);
+  const xFor = (i) => pad.l + (i / 7) * (W - pad.l - pad.r);
+  let s = '';
+
+  // 网格与刻度
+  for (const v of [0, 0.25, 0.5, 0.75, 1]) {
+    const y = yFor(v);
+    s += `<line x1="${pad.l}" y1="${y}" x2="${W - pad.r}" y2="${y}" stroke="#eeeef1" stroke-width="1"/>`;
+    s += `<text x="${pad.l - 8}" y="${y + 4}" text-anchor="end" font-size="10.5" fill="#a1a1aa">${v * 100}%</text>`;
+  }
+  for (let i = 0; i < 8; i++) {
+    s += `<text x="${xFor(i)}" y="${H - 12}" text-anchor="middle" font-size="10.5" fill="#a1a1aa">W${i}</text>`;
+  }
+
+  // 单条队列（浅灰）
+  for (const c of cohorts) {
+    const pts = curvePoints(c.row, W, H, pad);
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    s += `<path d="${d}" fill="none" stroke="#dcdce1" stroke-width="1.6" stroke-linecap="round"/>`;
+  }
+
+  // 平均线
+  const avg = [];
+  for (let w = 0; w < 8; w++) { const v = avgAt(w); if (v != null) avg.push([xFor(w), yFor(v), v, w]); }
+  const d = avg.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  s += `<defs><linearGradient id="gline" x1="0" x2="1"><stop offset="0" stop-color="#2f9de5"/><stop offset="1" stop-color="#f2698c"/></linearGradient></defs>`;
+  s += `<path d="${d}" fill="none" stroke="url(#gline)" stroke-width="3" stroke-linecap="round"/>`;
+  for (const p of avg) {
+    s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#2f9de5" stroke-width="2" data-v="${p[2]}" data-w="${p[3]}"/>`;
+  }
+  svg.innerHTML = s;
+
+  for (const c of svg.querySelectorAll('circle[data-v]')) {
+    c.addEventListener('mousemove', (e) => showTip(e, `平均 · W${c.dataset.w}<br>留存 ${pct(Number(c.dataset.v))}`));
+    c.addEventListener('mouseleave', hideTip);
+  }
+}
+
+function renderStats() {
+  const w1 = avgAt(1), w4 = avgAt(4);
+  $('s1').textContent = w1 == null ? '—' : pct(w1);
+  $('s4').textContent = w4 == null ? '—' : pct(w4);
+  let best = null, worst = null;
+  for (const c of cohorts) {
+    const v = c.row[1];
+    if (!best || v > best.v) best = { v, week: c.week };
+    if (!worst || v < worst.v) worst = { v, week: c.week };
+  }
+  $('sBest').textContent = best ? `第 ${best.week} 周 / 第 ${worst.week} 周` : '—';
+}
+
+function renderAll() {
+  renderTable();
+  renderChart();
+  renderStats();
+}
+
+for (const btn of document.querySelectorAll('.seg button')) {
+  btn.addEventListener('click', () => {
+    for (const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', String(b === btn));
+    $('board').classList.toggle('is-curve', btn.dataset.view === 'curve');
+    $('boardHint').textContent = btn.dataset.view === 'curve' ? '按周龄对齐' : 'W0 = 注册当周';
+  });
+}
+
+$('reseed').addEventListener('click', () => {
+  seed = Math.floor(Math.random() * 1e9);
+  build();
+  renderAll();
+});
+
+build();
+renderAll();
+</script>
+</body>
+</html>
