@@ -821,11 +821,6 @@ export default function HomePage() {
     }
   }
 
-  // 导航里的「成长」已经不在这一页了，整页跳过去
-  function goGrowth() {
-    navigate('/growth')
-  }
-
   function goTalk() {
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
@@ -903,13 +898,14 @@ export default function HomePage() {
         </Link>
         <nav className="hp-nav-links" aria-label="页面导航">
           <a href="showcase.html">作品集</a>
-          <button type="button" onClick={goGrowth}>
-            成长
-          </button>
           <button type="button" onClick={goTalk}>
             留言
           </button>
         </nav>
+        {/* 成长独立成一页后，它值得一个常驻入口：手机上一排链接会收起，这里也留得住 */}
+        <Link className="hp-nav-growth" to="/growth">
+          个人成长
+        </Link>
         <Link className="hp-nav-enter" to="/app" onPointerEnter={prefetchAdmin} onFocus={prefetchAdmin}>
           进入管理系统
           <i aria-hidden="true">→</i>
