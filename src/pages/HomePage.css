@@ -1945,7 +1945,7 @@
   --say-rose: 242 105 140;
 
   position: relative;
-  margin-top: clamp(46px, 6vw, 88px);
+  margin-top: 0;
   padding-block: clamp(64px, 8vw, 116px) clamp(54px, 6.2vw, 92px);
   background: #050608;
   color: #fff;

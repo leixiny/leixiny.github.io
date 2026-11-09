@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { onIntroDone } from '../lib/intro'
 import { prefetchAdmin } from '../lib/prefetch'
 import { LEI_H, LEI_LEFT, LEI_LETTERS, LEI_TOP, LEI_W } from './leiStrokes'
-import GrowthSection from './GrowthSection'
+import SaySection from './SaySection'
 import type { LeiSeg } from './leiStrokes'
 import lumuUrl from '../assets/lumu.webp'
 import './HomePage.css'
@@ -821,11 +821,6 @@ export default function HomePage() {
     }
   }
 
-  // 导航里的「留言」：滚到底部那块，顺手把光标放进输入框
-  function goGrowth() {
-    document.getElementById('growth')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   function goTalk() {
     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     window.setTimeout(() => sayRef.current?.focus({ preventScroll: true }), 420)
@@ -903,9 +898,6 @@ export default function HomePage() {
         </Link>
         <nav className="hp-nav-links" aria-label="页面导航">
           <a href="showcase.html">作品集</a>
-          <button type="button" onClick={goGrowth}>
-            成长
-          </button>
           <button type="button" onClick={goTalk}>
             留言
           </button>
@@ -967,8 +959,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 收尾并进「个人成长」：白纸结束，整幅转黑，联系与留言都在这一块里 */}
-      <GrowthSection>
+      {/* 收尾：白纸结束，整幅转黑，只留联系方式与留言 */}
+      <SaySection>
         <div className="hp-say-grid">
           <div className="hp-say-col">
             <span className="hp-say-label">联系</span>
@@ -1040,16 +1032,13 @@ export default function HomePage() {
             {messages.length > 2 && <p className="hp-say-count">共 {messages.length} 条</p>}
           </div>
         </div>
-      </GrowthSection>
+      </SaySection>
 
       <footer className="hp-end">
         <div className="hp-wrap hp-end-row">
           <p>© 2026 雷馨怡 · 武汉理工大学</p>
           <nav className="hp-end-links" aria-label="页脚导航">
             <a href="showcase.html">作品集</a>
-            <button type="button" onClick={goGrowth}>
-              个人成长
-            </button>
             <Link to="/app">管理系统</Link>
             <button
               type="button"
