@@ -1,1 +1,0 @@
-var e={lead:`计划中`,active:`进行中`,paused:`暂停`,churned:`已完结`},t={todo:`待处理`,in_progress:`进行中`,done:`已完成`},n={low:`低`,medium:`中`,high:`高`},r={owner:`所有者`,admin:`管理员`,member:`成员`};export{t as i,r as n,n as r,e as t};
