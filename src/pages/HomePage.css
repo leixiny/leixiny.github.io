@@ -360,6 +360,8 @@
   position: relative;
   z-index: 1;
   margin: 0;
+  /* SVG 的字形会溢出盒模型，压到下面那颗按钮上，抢走它的点击 —— 字本身不接事件 */
+  pointer-events: none;
   /* 手写字天生比无衬线窄，字号要顶上来才有分量 */
   font-size: clamp(72px, min(40vw, 62vh), 660px);
   line-height: 1;
@@ -2323,6 +2325,8 @@
    跟在字的下方占自己的位置，不压字形；字写完前它只是透明，
    高度已经占住，所以出现时背景构图不会跳一下 */
 .hp-enter-home {
+  position: relative;
+  z-index: 2;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
