@@ -29,7 +29,10 @@ const emptyDraft = (sort: number): WorkDraft => ({
   published: true,
 })
 
-export default function WorksAdminPage() {
+/** 作品编辑的本体：表格 + 新增/编辑弹窗。
+ *  以前是后台的一个分区（/app/works），现在单独拎出去成了新管理系统（/manage），
+ *  旧后台（主页）不再挂它 —— 这里保持干净，谁要这块内容谁自己包外壳 */
+export function WorksManager() {
   // 切走再切回来时先用上次的列表，别又白一次
   const [works, setWorks] = useState<Work[]>(() => peek<Work[]>('works') ?? [])
   const [loading, setLoading] = useState(() => !peek('works'))
@@ -97,8 +100,8 @@ export default function WorksAdminPage() {
   return (
     <>
       <PageHeader
-        title="作品集"
-        description="作品档案数据。放映页现在放的是演示片，还没接这张表 —— 等素材齐了再把它接上去。"
+        title="作品管理"
+        description="作品档案数据。在这里改完保存，前台作品集立刻跟着变。"
         action={
           <div className="page-action-row">
             <a className="btn-secondary" href="showcase.html" target="_blank" rel="noreferrer">

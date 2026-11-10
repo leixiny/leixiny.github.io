@@ -1651,3 +1651,33 @@
     animation: none;
   }
 }
+
+/* ── 独立管理系统（/manage）：整片水面只放作品编辑这一块台面 ──
+   没有分区胶囊、没有索引卡，控制台因此比主页的更宽更正 */
+.works-studio .axon-console {
+  left: 24px;
+  right: 24px;
+  top: 92px;
+  bottom: 24px;
+}
+
+@media (max-width: 1100px) {
+  /* 主页这里要给胶囊行让到 158px；管理系统没有胶囊，台面可以直接抬起来 */
+  .works-studio .axon-console {
+    top: 92px;
+  }
+}
+
+@media (max-width: 760px) {
+  .works-studio .axon-console {
+    top: 104px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .works-studio .axon-user {
+    top: 64px;
+    right: 18px;
+  }
+}

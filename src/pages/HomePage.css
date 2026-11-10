@@ -311,9 +311,11 @@
 .hp-hero-mid {
   position: relative;
   display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   align-items: center;
   justify-content: center;
+  gap: clamp(6px, 1.4vh, 18px);
   min-height: 0;
   /* 投影必须挂在外层：和 background-clip:text 同元素会让雾从字缝里透出来 */
   filter: contrast(1.16) saturate(1.2) brightness(0.94)
@@ -1282,12 +1284,8 @@
 }
 
 .hp-hero-foot {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 20px clamp(24px, 4vw, 56px);
-  align-items: end;
+  display: block;
   padding-top: clamp(14px, 2vh, 24px);
-  border-top: 1px solid var(--rp-line);
   animation: hpUp 0.8s 0.2s var(--rp-ease) both;
 }
 
@@ -1299,15 +1297,7 @@
   color: var(--rp-ink-2);
 }
 
-.hp-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px 18px;
-}
-
-/* ---------- 首屏在深底上：文字与按钮一律反白 ---------- */
+/* ---------- 首屏在深底上：文字一律反白 ---------- */
 .hp-hero .hp-kicker {
   color: rgba(255, 255, 255, 0.94);
 }
@@ -1336,32 +1326,6 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.hp-hero .hp-hero-foot {
-  border-top-color: rgba(255, 255, 255, 0.13);
-}
-
-.hp-hero .hp-btn--solid {
-  background: #fff;
-  color: #0a0b11;
-}
-
-.hp-hero .hp-btn--solid:hover {
-  background-image: var(--rp-grad);
-  color: #fff;
-  box-shadow: 0 18px 40px -16px rgba(174, 228, 255, 0.55);
-}
-
-.hp-hero .hp-btn--ghost {
-  border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(4, 12, 18, 0.28);
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.hp-hero .hp-btn--ghost:hover {
-  border-color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.07);
-}
-
 .hp-hero .hp-link-quiet {
   color: rgba(255, 255, 255, 0.86);
   border-bottom-color: rgba(255, 255, 255, 0.3);
@@ -1370,66 +1334,6 @@
 .hp-hero .hp-link-quiet:hover {
   color: #fff;
   border-color: #fff;
-}
-
-.hp-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 52px;
-  padding: 0 26px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  transition:
-    background 0.24s var(--rp-ease),
-    color 0.24s var(--rp-ease),
-    border-color 0.24s var(--rp-ease),
-    transform 0.24s var(--rp-ease),
-    box-shadow 0.24s var(--rp-ease);
-}
-
-.hp-btn i {
-  font-style: normal;
-  transition: transform 0.24s var(--rp-ease);
-}
-
-.hp-btn--solid {
-  background: var(--rp-ink);
-  color: #fff;
-}
-
-.hp-btn--solid:hover {
-  background-image: var(--rp-grad);
-  transform: translateY(-2px);
-  box-shadow: 0 18px 34px -16px rgba(47, 157, 229, 0.85);
-}
-
-.hp-btn--solid:hover i {
-  transform: translateX(4px);
-}
-
-.hp-btn--ghost {
-  border-color: var(--rp-line-2);
-  background: #fff;
-  color: var(--rp-ink);
-}
-
-.hp-btn--ghost:hover {
-  border-color: var(--rp-ink);
-  transform: translateY(-2px);
-}
-
-.hp-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-  background-image: none;
 }
 
 .hp-link-quiet {
@@ -1604,16 +1508,6 @@
     min-height: calc(100svh - 72px);
   }
 
-  .hp-hero-foot {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-    gap: 22px;
-  }
-
-  .hp-hero-actions {
-    justify-content: flex-start;
-  }
-
   .hp-stats strong {
     font-size: 30px;
   }
@@ -1682,16 +1576,6 @@
 
   .hp-lead {
     max-width: none;
-  }
-
-  .hp-hero-actions {
-    gap: 12px;
-  }
-
-  .hp-btn {
-    height: 48px;
-    padding: 0 20px;
-    font-size: 14px;
   }
 
 }
@@ -2432,5 +2316,58 @@
 
   .hp-growth-meta {
     gap: 6px 20px;
+  }
+}
+
+/* ── 「点击进入主页」：字母动画写完才浮上来 ──
+   跟在字的下方占自己的位置，不压字形；字写完前它只是透明，
+   高度已经占住，所以出现时背景构图不会跳一下 */
+.hp-enter-home {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 28px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: #fff;
+  background-image: var(--rp-grad);
+  box-shadow: 0 18px 44px -18px rgba(47, 157, 229, 0.85);
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  transition:
+    opacity 0.55s var(--rp-ease),
+    transform 0.55s var(--rp-ease),
+    box-shadow 0.24s var(--rp-ease);
+}
+
+.hp-enter-home.is-show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.hp-enter-home i {
+  font-style: normal;
+  transition: transform 0.24s var(--rp-ease);
+}
+
+.hp-enter-home:hover {
+  box-shadow: 0 22px 54px -16px rgba(242, 105, 140, 0.75);
+}
+
+.hp-enter-home:hover i {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-enter-home {
+    transition: none;
+    transform: translateY(0);
   }
 }

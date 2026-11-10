@@ -7,10 +7,11 @@ import './axon.css'
 
 const AxonField = lazy(() => import('../axon/AxonField'))
 
-/** 十枚胶囊：里面七枚是分区，后面三枚是出口 */
+/** 十枚胶囊：作品编辑已经搬去独立的新管理系统（/manage），
+ *  这里剩下的分区是主页自己的：全部、项目、任务、成员、资料，加三枚出口 */
 const chips = [
   { to: '/app', label: '全部', end: true },
-  { to: '/app/works', label: '作品' },
+  { to: '/manage', label: '管理系统' },
   { to: '/app/customers', label: '项目' },
   { to: '/app/tasks', label: '任务' },
   { to: '/app/team', label: '成员' },
@@ -42,7 +43,7 @@ const cards: IndexCard[] = [
   {
     title: '首页',
     meta: '开屏 · 水滴',
-    note: '入口\n主页',
+    note: '入口\n首页',
     to: '/',
     cover: 'covers/page-home.webp',
   },
@@ -94,7 +95,7 @@ export default function AxonLayout() {
           </svg>
           <div>
             <b>雷馨怡</b>
-            <span>{organization?.name ?? '作品管理台'}</span>
+            <span>{organization?.name ?? '主页'}</span>
           </div>
         </header>
 
@@ -185,7 +186,7 @@ export default function AxonLayout() {
           </div>
           <div>
             <h2>[在做的事]</h2>
-            <p>一个自己的作品台：项目、任务、成员、作品档案，都在这里登记。</p>
+            <p>主页登记日常：项目、任务、成员都在这里；作品编辑单独搬去了管理系统。</p>
             <p>留在这里，是为了让手上的活儿一直看得见，也给下一件新东西留个位置。</p>
           </div>
           <div>

@@ -14,12 +14,12 @@ import {
   ProfilePage,
   TasksPage,
   TeamPage,
-  WorksAdminPage,
+  WorksStudioPage,
 } from './pages'
 
 const loaders: Record<string, () => Promise<void>> = {
   '/app': DashboardPage.preload,
-  '/app/works': WorksAdminPage.preload,
+  '/manage': WorksStudioPage.preload,
   '/app/customers': CustomersPage.preload,
   '/app/tasks': TasksPage.preload,
   '/app/team': TeamPage.preload,
@@ -40,7 +40,7 @@ export function prefetch(path: string) {
 /** 空闲时把后台页面都捂热；首屏不跟它抢带宽 */
 export function prefetchAdmin() {
   const run = () => {
-    for (const path of ['/app', '/app/customers', '/app/tasks', '/app/works']) prefetch(path)
+    for (const path of ['/app', '/app/customers', '/app/tasks', '/manage']) prefetch(path)
   }
   const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
   if (idle) idle(run)

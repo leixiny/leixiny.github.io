@@ -13,4 +13,5 @@ export const CustomerDetailPage = createPage(() => import('../pages/CustomerDeta
 export const TasksPage = createPage(() => import('../pages/TasksPage'))
 export const TeamPage = createPage(() => import('../pages/TeamPage'))
 export const ProfilePage = createPage(() => import('../pages/ProfilePage'))
-export const WorksAdminPage = createPage(() => import('../pages/WorksAdminPage'))
+/** 新管理系统：只管作品编辑，旧后台（主页）不再挂它 */
+export const WorksStudioPage = createPage(() => import('../pages/WorksStudioPage'))

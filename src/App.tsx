@@ -15,7 +15,7 @@ import {
   ProfilePage,
   TasksPage,
   TeamPage,
-  WorksAdminPage,
+  WorksStudioPage,
 } from './lib/pages'
 import HomePage from './pages/HomePage'
 
@@ -97,7 +97,7 @@ function AppRoutes() {
             </RequireAuth>
           )}
         />
-        {/* 管理系统（改作品、改项目）才需要登录 */}
+        {/* 主页 = 旧后台去掉作品编辑后的部分：日常看项目、任务、成员 */}
         <Route
           path="/app"
           element={(
@@ -109,13 +109,25 @@ function AppRoutes() {
           )}
         >
           <Route index element={<DashboardPage />} />
-          <Route path="works" element={<WorksAdminPage />} />
+          {/* 老地址搬家：收藏夹里的 #/app/works 直接送进新管理系统 */}
+          <Route path="works" element={<Navigate to="/manage" replace />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="customers/:id" element={<CustomerDetailPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="team" element={<TeamPage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
+        {/* 新管理系统 = 从旧后台单独拎出来的作品编辑，一个页面只做这一件事 */}
+        <Route
+          path="/manage"
+          element={(
+            <RequireAuth>
+              <RequireOrganization>
+                <WorksStudioPage />
+              </RequireOrganization>
+            </RequireAuth>
+          )}
+        />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

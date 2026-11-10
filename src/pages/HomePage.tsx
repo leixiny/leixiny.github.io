@@ -365,12 +365,14 @@ type MeltDrop = {
   rot: number
 }
 
-function WipeWord() {
+function WipeWord({ onWritten }: { onWritten?: () => void }) {
   const wrapRef = useRef<HTMLHeadingElement>(null)
   // 每点一次换一套 SVG/DOM，手写动画就能从头再来
   const [run, setRun] = useState(0)
   const [drops, setDrops] = useState<MeltDrop[]>([])
   const meltingRef = useRef(false)
+  // 写完只通报一次：点字化水重播是彩蛋，不再反复拉出按钮
+  const writtenRef = useRef(false)
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -433,6 +435,11 @@ function WipeWord() {
           glowTimer = window.setTimeout(() => {
             wrap.classList.add('is-glow')
             requestAnimationFrame(() => wrap.classList.add('is-written'))
+            // 「点击进入主页」挂在这一刻：最后一笔收住，按钮才浮出来
+            if (!writtenRef.current) {
+              writtenRef.current = true
+              onWritten?.()
+            }
           }, Math.round(total))
         }),
       )
@@ -670,6 +677,8 @@ export default function HomePage() {
   const [likes, setLikes] = useState<number | null>(null)
   const [views, setViews] = useState<number | null>(null)
   const [justLiked, setJustLiked] = useState(false)
+  // 字母动画写完才亮出来的那颗按钮：点进主页（旧后台去掉作品编辑后的部分）
+  const [wordDone, setWordDone] = useState(false)
   const wetRef = useRef<HTMLDivElement>(null)
 
   // 带 ?to=contact 过来：等页面落位，再滚到留言那块并放进光标。
@@ -906,7 +915,7 @@ export default function HomePage() {
         <Link className="hp-nav-growth" to="/growth">
           个人成长
         </Link>
-        <Link className="hp-nav-enter" to="/app" onPointerEnter={prefetchAdmin} onFocus={prefetchAdmin}>
+        <Link className="hp-nav-enter" to="/manage" onPointerEnter={prefetchAdmin} onFocus={prefetchAdmin}>
           进入管理系统
           <i aria-hidden="true">→</i>
         </Link>
@@ -941,24 +950,28 @@ export default function HomePage() {
           </div>
 
           <div className="hp-hero-mid">
-            <WipeWord />
+            <WipeWord onWritten={() => setWordDone(true)} />
+            {/* 字写完才出现：背景布局都不动，只是这一颗按钮浮上来 */}
+            <Link
+              className={`hp-enter-home ${wordDone ? 'is-show' : ''}`}
+              to="/app"
+              tabIndex={wordDone ? 0 : -1}
+              aria-hidden={!wordDone}
+              onPointerEnter={prefetchAdmin}
+              onFocus={prefetchAdmin}
+            >
+              点击进入主页
+              <i aria-hidden="true">→</i>
+            </Link>
           </div>
 
+          {/* 底部只留一行说明：入口在导航栏和字后的那颗按钮上，
+              右下角不再压按钮，让水珠画面整块露出来 */}
           <div className="hp-hero-foot">
             <p className="hp-lead">
               用数据讲清商业问题，把分析做成能落地的决策。
               这里是我做过的事，以及正在做的事。
             </p>
-
-            <div className="hp-hero-actions">
-              <a className="hp-btn hp-btn--solid" href="showcase.html">
-                查看作品集
-                <i aria-hidden="true">→</i>
-              </a>
-              <Link className="hp-btn hp-btn--ghost" to="/app">
-                进入管理系统
-              </Link>
-            </div>
           </div>
         </div>
       </section>

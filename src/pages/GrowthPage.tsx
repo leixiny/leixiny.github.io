@@ -21,7 +21,7 @@ export default function GrowthPage() {
           <a href="showcase.html">作品集</a>
           <Link to="/home?to=contact">留言</Link>
         </nav>
-        <Link className="hp-nav-enter" to="/app">
+        <Link className="hp-nav-enter" to="/manage">
           进入管理系统
           <i aria-hidden="true">→</i>
         </Link>
@@ -35,7 +35,7 @@ export default function GrowthPage() {
           <nav className="hp-end-links" aria-label="页脚导航">
             <Link to="/home">首页</Link>
             <a href="showcase.html">作品集</a>
-            <Link to="/app">管理系统</Link>
+            <Link to="/manage">管理系统</Link>
             <button
               type="button"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
