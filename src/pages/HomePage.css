@@ -2760,3 +2760,381 @@
     transform: translateY(0);
   }
 }
+
+/* ==========================================================================
+   个人成长页 · 蓝粉主题
+   只挂在 .growth-page 下，首页和后台一律不受影响。
+   蓝 #2f9de5 / 浅蓝 #aee4ff / 粉 #f2698c / 浅粉 #ffccd5
+   正文仍是深色，颜色只用在点缀、描边、标签和数字上，别拿浅色写字
+   ========================================================================== */
+.growth-page {
+  --gp-blue: #2f9de5;
+  --gp-sky: #aee4ff;
+  --gp-pink: #f2698c;
+  --gp-blush: #ffccd5;
+  --gp-ink: #0d1a24;
+  --gp-line: rgba(47, 157, 229, 0.2);
+  --gp-line-pink: rgba(242, 105, 140, 0.22);
+  --gp-grad: linear-gradient(96deg, #2f9de5 0%, #7f8fe6 52%, #f2698c 100%);
+  --gp-wash: #f7fbff;
+}
+
+/* 底色：白纸不变，只在四角各透一团很淡的蓝和粉 */
+.home-page.growth-page {
+  background-color: #fff;
+  background-image:
+    radial-gradient(1120px 620px at 6% -8%, rgba(174, 228, 255, 0.5), transparent 62%),
+    radial-gradient(980px 560px at 98% 4%, rgba(255, 204, 213, 0.46), transparent 60%),
+    radial-gradient(900px 620px at 84% 96%, rgba(174, 228, 255, 0.34), transparent 62%),
+    linear-gradient(180deg, #ffffff 0%, var(--gp-wash) 46%, #fff8fa 100%);
+  background-attachment: scroll;
+}
+
+/* 区块本身让出底色 */
+.home-page.growth-page .hp-growth {
+  background: transparent;
+}
+
+/* ---------- 导航 ---------- */
+.growth-page .hp-nav {
+  background: rgba(255, 255, 255, 0.74);
+  border-bottom-color: var(--gp-line);
+}
+
+.growth-page .hp-nav-links a:hover,
+.growth-page .hp-nav-links button:hover {
+  color: #1673ad;
+}
+
+.growth-page .hp-nav-enter {
+  border-color: rgba(47, 157, 229, 0.42);
+  background: rgba(255, 255, 255, 0.6);
+  color: #135f8c;
+}
+
+.growth-page .hp-nav-enter:hover {
+  background: #eaf7ff;
+  border-color: rgba(47, 157, 229, 0.7);
+  color: #0e4f75;
+}
+
+/* ---------- 页头 ---------- */
+.growth-page .hp-growth-kicker {
+  color: #3d7597;
+}
+
+.growth-page .hp-growth-kicker::before {
+  width: 30px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--gp-grad);
+}
+
+.growth-page .hp-growth-head h1 {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-growth-lead {
+  color: #4a5c68;
+}
+
+.growth-page .hp-growth-meta dt {
+  color: #3a6f8f;
+}
+
+.growth-page .hp-growth-meta dd {
+  color: #24333d;
+}
+
+/* ---------- 四个数字 ---------- */
+.growth-page .hp-growth-stats {
+  border-top-color: var(--gp-line);
+  border-bottom-color: var(--gp-line-pink);
+}
+
+.growth-page .hp-gstat-value {
+  background-image: linear-gradient(96deg, #1673ad 0%, #7569cd 50%, #cf4268 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 单位那两个字不参与渐变，否则会跟着透明掉 */
+.growth-page .hp-gstat-value span {
+  color: #67757f;
+  -webkit-text-fill-color: #67757f;
+}
+
+.growth-page .hp-gstat-label {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-gstat-note {
+  color: #5b6b77;
+}
+
+/* ---------- 页内目录 ---------- */
+.growth-page .hp-toc button {
+  border-color: var(--gp-line);
+  background: rgba(255, 255, 255, 0.72);
+  color: #2c4757;
+}
+
+.growth-page .hp-toc button i {
+  color: #5b8fae;
+}
+
+.growth-page .hp-toc button:hover {
+  border-color: rgba(47, 157, 229, 0.55);
+  background: #eef8ff;
+  color: #135f8c;
+}
+
+.growth-page .hp-toc button:hover i {
+  color: var(--gp-pink);
+}
+
+/* ---------- 区块标题 ---------- */
+.growth-page .hp-block-mark {
+  color: #2b7ba8;
+}
+
+.growth-page .hp-block-head h2 {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-block-head p {
+  color: #4d5d69;
+}
+
+/* ---------- 学习路径：竖线从蓝走到粉 ---------- */
+.growth-page .hp-timeline li {
+  border-left: 0;
+  background-image: linear-gradient(180deg, rgba(47, 157, 229, 0.45), rgba(242, 105, 140, 0.4));
+  background-size: 1px 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+.growth-page .hp-timeline li::before {
+  left: -4.5px;
+  top: 5px;
+  width: 7px;
+  height: 7px;
+  background: #fff;
+  border: 1.5px solid var(--gp-blue);
+  box-shadow: 0 0 0 3px rgba(174, 228, 255, 0.75);
+}
+
+.growth-page .hp-timeline li:last-child {
+  background-image: none;
+}
+
+.growth-page .hp-tl-period {
+  color: #5b7d93;
+}
+
+.growth-page .hp-tl-title {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-tl-note {
+  color: #4d5d69;
+}
+
+.growth-page .hp-tl-takeaway {
+  border-left: 2px solid transparent;
+  border-image: linear-gradient(180deg, var(--gp-blue), var(--gp-pink)) 1;
+  background: linear-gradient(90deg, rgba(174, 228, 255, 0.34), rgba(255, 204, 213, 0.24));
+  color: #22333e;
+  padding: 8px 12px;
+}
+
+.growth-page .hp-tl-takeaway span {
+  color: #c0406a;
+}
+
+.growth-page .hp-tl-tags li {
+  border-color: rgba(47, 157, 229, 0.28);
+  background: rgba(238, 248, 255, 0.9);
+  color: #1c6f9e;
+}
+
+/* ---------- 能力卡片 ---------- */
+.growth-page .hp-skill-card {
+  border-color: var(--gp-line);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 14px 34px -28px rgba(21, 84, 120, 0.5);
+}
+
+.growth-page .hp-skill-card:hover {
+  border-color: rgba(242, 105, 140, 0.4);
+  box-shadow: 0 18px 40px -26px rgba(194, 74, 112, 0.42);
+}
+
+.growth-page .hp-skill-card h3 {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-skill-intro {
+  color: #5c7183;
+}
+
+.growth-page .hp-skill-list li {
+  border-top-color: rgba(47, 157, 229, 0.14);
+}
+
+.growth-page .hp-skill-name {
+  color: #16303f;
+}
+
+/* 等级标签按语义分色：常用=蓝、在用=粉、了解=灰 */
+.growth-page .hp-skill-level {
+  border-color: rgba(47, 157, 229, 0.3);
+  background: #eef8ff;
+  color: #1a6f9c;
+}
+
+.growth-page .hp-skill-level[data-level='在用'] {
+  border-color: rgba(242, 105, 140, 0.32);
+  background: #fff0f4;
+  color: #b23e61;
+}
+
+.growth-page .hp-skill-level[data-level='了解'] {
+  border-color: #e3e7ec;
+  background: #f6f7f9;
+  color: #68727c;
+}
+
+.growth-page .hp-skill-evidence {
+  color: #4f606c;
+}
+
+/* ---------- 做事的方法 ---------- */
+.growth-page .hp-principles {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--gp-blue), var(--gp-pink)) 1;
+}
+
+.growth-page .hp-principles li {
+  border-bottom-color: rgba(47, 157, 229, 0.14);
+}
+
+@media (min-width: 900px) {
+  .growth-page .hp-principles li + li {
+    border-left-color: rgba(47, 157, 229, 0.16);
+  }
+}
+
+.growth-page .hp-principle-mark {
+  color: #c0406a;
+}
+
+.growth-page .hp-principles h3 {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-principle-note {
+  color: #4d5d69;
+}
+
+.growth-page .hp-principle-eg {
+  color: #22333e;
+}
+
+.growth-page .hp-principle-eg span {
+  color: #1a6f9c;
+}
+
+/* ---------- 业余与现在 ---------- */
+.growth-page .hp-hobby {
+  border-color: var(--gp-line);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.growth-page .hp-hobby:hover {
+  border-color: rgba(47, 157, 229, 0.42);
+  background: linear-gradient(180deg, #f4fbff 0%, #fff6f9 100%);
+}
+
+.growth-page .hp-hobby-mark {
+  color: #6b9cb8;
+}
+
+.growth-page .hp-hobby h3 {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-hobby p {
+  color: #4f606c;
+}
+
+.growth-page .hp-hobby-gain {
+  border-top-color: rgba(242, 105, 140, 0.28);
+  color: #23404f;
+}
+
+.growth-page .hp-now {
+  border-top-color: var(--gp-line);
+}
+
+.growth-page .hp-now dt {
+  color: #2b7ba8;
+}
+
+.growth-page .hp-now dd {
+  color: #2c3f4b;
+}
+
+/* ---------- 收尾 ---------- */
+.growth-page .hp-growth-close {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--gp-blue), var(--gp-pink)) 1;
+}
+
+.growth-page .hp-growth-close p {
+  color: var(--gp-ink);
+}
+
+.growth-page .hp-growth-btn {
+  border-color: transparent;
+  background-image: var(--gp-grad);
+  box-shadow: 0 14px 30px -18px rgba(47, 157, 229, 0.8);
+}
+
+.growth-page .hp-growth-btn:hover {
+  box-shadow: 0 18px 36px -16px rgba(242, 105, 140, 0.7);
+  transform: translateY(-1px);
+}
+
+.growth-page .hp-growth-btn--ghost {
+  border-color: rgba(47, 157, 229, 0.42);
+  background-image: none;
+  background: rgba(255, 255, 255, 0.8);
+  color: #135f8c;
+  box-shadow: none;
+}
+
+.growth-page .hp-growth-btn--ghost:hover {
+  background: #eef8ff;
+  transform: translateY(-1px);
+}
+
+.growth-page .hp-growth-actions .hp-growth-btn {
+  transition:
+    transform 0.24s var(--rp-ease),
+    box-shadow 0.24s var(--rp-ease),
+    background 0.24s var(--rp-ease),
+    border-color 0.24s var(--rp-ease);
+}
+
+/* 键盘走到哪儿都要看得见 */
+.growth-page .hp-toc button:focus-visible,
+.growth-page .hp-growth-btn:focus-visible,
+.growth-page .hp-nav-enter:focus-visible {
+  outline: 2px solid var(--gp-blue);
+  outline-offset: 3px;
+}
+
+

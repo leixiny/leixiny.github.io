@@ -121,7 +121,9 @@ export default function GrowthSection() {
                     <li key={it.name}>
                       <p className="hp-skill-top">
                         <span className="hp-skill-name">{it.name}</span>
-                        <span className="hp-skill-level">{it.level}</span>
+                        <span className="hp-skill-level" data-level={it.level}>
+                          {it.level}
+                        </span>
                       </p>
                       <p className="hp-skill-evidence">{it.evidence}</p>
                     </li>
