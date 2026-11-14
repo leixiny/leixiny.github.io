@@ -41,7 +41,8 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
 .acts a i{width:6px;height:6px;border-radius:50%;background:currentColor}
 .acts a em{font-style:normal;font-size:12px;line-height:1;transition:transform .2s}
 .acts a:hover em{transform:translateX(2px)}
-.acts a b{display:block;width:13px;height:7px;border-top:1px solid currentColor;border-bottom:1px solid currentColor}
+/* 右上角只剩「聊一聊」和「返回主页」，原来那个汉堡图标一并删掉了 */
+
 #hint{position:absolute;left:50%;top:33px;transform:translateX(-50%);font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:var(--ink);padding-bottom:6px;border-bottom:1px solid var(--line);text-decoration:none}
 .bot{position:absolute;left:32px;right:32px;bottom:26px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;font-size:12.5px;line-height:1.35;pointer-events:none}
 .bot p{color:var(--ink);max-width:21em}
@@ -84,13 +85,13 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
   .d-body{padding:18px 18px 16px;gap:10px}
   .d-foot{flex-wrap:wrap}
   #d-close{top:calc(3vh + 8px);right:calc(3.5vw + 8px)}
-  /* 三个出口在 390 宽下会挤成两行：收字号和左右留白，并且不许折行 */
+  /* 两个出口在 390 宽下会挤成两行：收字号和左右留白，并且不许折行 */
   .acts{gap:5px}
   .acts a{height:28px;padding:0 9px;font-size:10.5px;letter-spacing:0;white-space:nowrap}
   .acts a i{width:5px;height:5px}
 }
 @media (max-width:400px){
-  /* 再窄一点就只剩两个入口：邮件在手机上本来就能从系统邮件里发 */
+  /* 再窄一点只留「返回主页」：邮件在手机上本来就能从系统邮件里发 */
   .acts a[href^="mailto"]{display:none}
 }
 @media (prefers-reduced-motion:reduce){
@@ -122,7 +123,7 @@ body{font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:
     <header class="top" id="top">
       <div class="logo"><svg viewBox="0 0 22 18"><path d="M11 0l11 18h-6.200L11 9.600 6.200 18H0z"/></svg>雷馨怡</div>
       <div id="pager"><span title="重播">←</span><span title="直接看作品">→</span></div>
-      <nav class="acts"><a href="mailto:3121410697@qq.com"><i></i>聊一聊</a><a href="index.html#/manage">回管理系统<em>→</em></a><a href="index.html">回首页<b></b></a></nav>
+      <nav class="acts"><a href="mailto:3121410697@qq.com"><i></i>聊一聊</a><a href="index.html">返回主页<em>→</em></a></nav>
     </header>
     <footer class="bot" id="bot">
       <p>四个工具用来把数字讲清，四个游戏用来把交互练熟 —— 都能直接打开玩。</p>
